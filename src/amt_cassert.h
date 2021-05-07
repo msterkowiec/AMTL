@@ -15,10 +15,11 @@
 
 #include <set>
 #ifdef _WIN32
-#define AMT_CASSERT(a) ((a) ? 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_WIDE(#a)))
+#define AMT_CASSERT(a) ((a) ? 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
 #endif
 
 #include <string>
+#include <cstdio>
 #include <stdio.h>
 
 	#if defined(_WIN32) 
@@ -27,13 +28,15 @@
 	#include <windows.h>
 
 	template<bool>
-	inline void __custom_assert(bool a, const char* szFileName, long lLine, const WCHAR* wszDesc)
-	{
+	inline void __custom_assert(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{		
 		if (!a)
 		{
-			char msg[1024];
+			static const size_t BUFLEN = 1024;
+			char msg[BUFLEN];
 			DWORD nCurrentThreadId = GetCurrentThreadId();
-			sprintf(msg, "Assertion failed at line %d in thread id %d in file %s.", lLine, nCurrentThreadId, szFileName);
+			_snprintf(msg, BUFLEN - 1,  "Assertion failed at line %d in thread id %d in file %s\n%s", lLine, nCurrentThreadId, szFileName, szDesc);
+			msg[BUFLEN - 1] = 0;
 
 			MessageBoxA(NULL, msg, (LPCSTR)"Assertion failed", MB_OK | MB_ICONEXCLAMATION);
 		}
