@@ -349,7 +349,7 @@ namespace amt
 			}		
 			
 			#if defined(_MSC_VER) && __cplusplus < 201402L
-			std::pair<Key, ValueType>* operator ->()
+			std::pair<const Key, ValueType>* operator ->()
 			#else
 			auto operator ->()
 			#endif
@@ -358,23 +358,23 @@ namespace amt
 				AssertIsValid();
 				AssertNotEnd();
 				#if defined(_MSC_VER) && __cplusplus < 201402L
-				return (std::pair<Key, ValueType>*) ((ITER*)this)->operator->();
+				return (std::pair<const Key, ValueType>*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
 			}
 
 			#if defined(_MSC_VER) && __cplusplus < 201402L
-			std::pair<Key, ValueType>& operator *()
+			std::pair<const Key, ValueType>& operator *()
 			#else
-			auto operator *()
+			auto& operator *()
 			#endif
 			{
 				CRegisterReadingThread r(*this);
 				AssertIsValid();
 				AssertNotEnd();
 				#if defined(_MSC_VER) && __cplusplus < 201402L
-				return (std::pair<Key, ValueType>&) ((ITER*)this)->operator*();
+				return (std::pair<const Key, ValueType>&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
 				#endif
