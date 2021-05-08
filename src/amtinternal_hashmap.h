@@ -172,7 +172,7 @@ namespace amt
 							{				
 								AMT_DEBUG_CASSERT(TryFindInOtherPlace(ptr, i) == (size_t) -1);
 								AMT_DEBUG_CASSERT(slot.m_nSlotUsed == 1);
-								AMT_DEBUG_CASSERT(slot.m_nSlotWanted == 0);
+								//AMT_DEBUG_CASSERT(slot.m_nSlotWanted == 0);  // commented out... actually in may occur that another thread still didn't decrement its will to use this slot
 								slot.m_nSlotUsed = 0; // slot not occupied/used ny more
 								return;
 							}
