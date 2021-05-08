@@ -33,7 +33,7 @@ Thus, when using AMTL it is recommended to use the following four various config
 Currently AMTL may be considered a working POC.
 
 What is done:
-- amt::map
+- amt::map, amt::set
 - amt::vector - without iterators and some methods missing (emplace, reserve)
 - initial version of control of multithreaded access to trivial types (AMTScalarType)
 - numeric overflow (partially)
@@ -45,7 +45,7 @@ To-do, at least:
 - move constructor and move assignment handled in amt::map and amt::vector
 - iterators of vector; also missing reserve, emplace
 - completion of code for verification of numeric overflow: a) 64-bit types, b) double/float c) double/float on the right of operators
-- set, list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
+- list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
 - unordered_map, unordered_set, unordered_multimap, unordered_multiset
 - vector<bool>
 - last but not least: a) prepare test suite b) test AMTL with as large codebase as possible (replacing as many types from std with amt as possible)
