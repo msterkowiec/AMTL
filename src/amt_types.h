@@ -70,7 +70,10 @@ namespace amt
 											                          >::type
 
 #else
-#define __AMT_TRY_WRAP_TYPE__(T, dontWrap) T
+#define __AMT_TRY_WRAP_TYPE__(T, dontWrap, Allocator) T
+#define __AMT_TRY_WRAP_MAPPED_TYPE__(Key, T, dontWrap, Allocator) T
+#define __AMT_CHANGE_ALLOCATOR_IF_NEEDED__(T, dontWrap, Allocator) Allocator
+#define __AMT_CHANGE_MAP_ALLOCATOR_IF_NEEDED__(Key, T, dontWrap, Allocator) Allocator
 #endif
 
 
