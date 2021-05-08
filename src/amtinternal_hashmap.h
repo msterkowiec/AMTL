@@ -15,6 +15,7 @@
 
 #include "amt_types.h"
 #include "amtinternal_utils.h"
+#include "amt_cassert.h"
 
 #if __AMT_IGNORE_UNREGISTERED_SCALARS__
 #define AMT_VERIFY_SLOT(ptr) do {if(ptr==nullptr) return;} while(false)
