@@ -40,7 +40,7 @@ namespace amt
 
 		struct AMTCounterHashMapElem
 		{
-			std::uint32_t m_ptrPart; // pointer to instance of scalar type; in 32 bits it's full pointer; in 64 bits it's bits 16-47 (bits 0-15 are in hash, bits 48-63 are not needed)
+			std::uint32_t m_ptrPart; // pointer to instance of scalar type; in 32 bits it's full pointer; in 64 bits it's bits 0-2 and 19-47 (bits 3-18 are in hash, bits 48-63 are not needed); this is to minimize size of data in 64 bits and use hash itself, having still quite a good hash (so bits 0-2 are skipped in hash, since typically data is 8-byte aligned)
 			std::atomic<std::uint8_t> m_nPendingReadRequests;
 			std::atomic<std::uint8_t> m_nPendingWriteRequests;
 			std::atomic<std::uint8_t> m_nSlotUsed;  
