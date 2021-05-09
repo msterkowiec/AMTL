@@ -599,6 +599,7 @@ namespace amt
 	template<typename T>
 	class AMTPointerType 
 	{
+		typedef typename std::remove_pointer<T>::type TypePointedTo;
 		static_assert(std::is_pointer<T>::value, "Template parameter of AMTPointerType has to be a trivial type");
 
 	private:
@@ -743,22 +744,22 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			return m_val;
 		}
-		inline std::remove_pointer<T>& operator *()
+		inline const T operator ->() const
+		{
+			CRegisterReadingThread r(*this);
+			return m_val;
+		}		
+		inline TypePointedTo& operator *()
 		{
 			CRegisterReadingThread r(*this);
 			return *m_val;
 		}
-		inline const std::remove_pointer<T>& operator *() const
+		inline const TypePointedTo& operator *() const
 		{
 			CRegisterReadingThread r(*this);
 			return *m_val;
 		}
 
-		/*inline operator bool() const
-		{
-			CRegisterReadingThread r(*this);
-			return m_val != nullptr;
-		}*/
 		inline AMTPointerType()
 		{
 			Init();
@@ -781,7 +782,7 @@ namespace amt
 		{
 			Uninit();
 		}
-		inline operator bool() const
+		/*inline operator bool() const
 		{
 			CRegisterReadingThread r(*this);
 			return m_val != nullptr;
@@ -790,7 +791,7 @@ namespace amt
 		{
 			CRegisterReadingThread r(*this);
 			return m_val != nullptr;
-		}
+		}*/
 
 		inline AMTPointerType& operator = (const T t)
 		{
