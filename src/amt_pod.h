@@ -930,7 +930,7 @@ namespace amt
 	using _double = AMTScalarType<double>;
 
 	template<typename T>
-	using raw_ptr = T*; // temporarily commented out, should ne AMTPointerType<T*>;
+	using raw_ptr = AMTPointerType<T*>;
 
 	#else
 
@@ -973,7 +973,7 @@ namespace amt
 	using _FLOAT = amt::_float;
 	using _DOUBLE = amt::_double;
 	template<typename T>
-	using RAW_PTR = T*; // temporarily commented out, should ne AMTPointerType<T*>;
+	using RAW_PTR = AMTPointerType<T*>;
 	// ...
 	#else
 
