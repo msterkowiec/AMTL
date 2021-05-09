@@ -843,6 +843,12 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			return m_val;
 		}
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline operator U()
+		{
+			CRegisterReadingThread r(*this);
+			return (U) m_val;
+		}		
 		inline T* operator &()
 		{
 			CRegisterReadingThread r(*this);
