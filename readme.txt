@@ -5,6 +5,9 @@
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
+[![CMake](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml)
+
+
 Assertive MultiThreading Library (AMT) is intended to have no impact on actual release builds.
 Its main purpose is to provide types for special builds (debug or special release with asserts) that can detect errors in code.
 
