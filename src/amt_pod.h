@@ -388,13 +388,13 @@ namespace amt
 			return m_val;
 		}
 
-		template<typename T>
+		template<typename Tt>
 		class AMTScalarTypePtr
 		{
-			AMTScalarType<T>* m_ptr;
+			AMTScalarType<Tt>* m_ptr;
 
 		public:
-			inline AMTScalarTypePtr(AMTScalarType<T>* ptr) : m_ptr(ptr)
+			inline AMTScalarTypePtr(AMTScalarType<Tt>* ptr) : m_ptr(ptr)
 			{
 			}
 			template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -402,7 +402,7 @@ namespace amt
 			{
 				return (U*)&(m_ptr->m_val);
 			}
-			inline operator AMTScalarType<T>*() const
+			inline operator AMTScalarType<Tt>*() const
 			{
 				return m_ptr;
 			}
