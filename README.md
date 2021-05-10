@@ -25,7 +25,7 @@ All user of AMTL should do to use it is:
   - __AMT_RELEASE_WITH_ASSERTS__ should be off (0) in release builds (in such case AMTL has no effect),
   - __AMT_RELEASE_WITH_ASSERTS__ should be on (1) for test release builds with asserts - here's where features of AMTL can help detect issues
 
-Thus, when using AMTL it is recommended to use the following four various configurations in various starges of development and testing:
+Thus, when using AMTL it is recommended to use the following four various configurations in various stages of development and testing:
 - debug,
 - release with asserts without optimizations - good for debugging issues
 - release with asserts with optimizations - good for regression test suits, slightly worse for debugging due to many symbols optimized out and many calls inlined
@@ -43,7 +43,6 @@ What is done:
 
 To-do, at least:
 - customize cassert; e.g. be able to pass ptr to cassert function or force throw instead of displaying assert msg (may be suitable for tests)
-- polish AMTScalarType, fix AMTPointerType (the latter commented out for now)
 - amt::string
 - move constructor and move assignment handled in amt::map and amt::vector
 - iterators of vector; also missing reserve, emplace
@@ -51,4 +50,5 @@ To-do, at least:
 - list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
 - unordered_map, unordered_set, unordered_multimap, unordered_multiset
 - vector<bool>
-- last but not least: a) prepare test suite b) test AMTL with as large codebase as possible (replacing as many types from std with amt as possible)
+- polish AMTScalarType and AMTPointerType
+- last but not least: a) prepare test suite b) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
