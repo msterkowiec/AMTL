@@ -50,18 +50,18 @@ public:
 			for (size_t i = 0; i < sizeof(T); ++i)
 				if (setBytesToExclude.find(i) == setBytesToExclude.end())
 				{
-					bool bChessboardHasChanged = (m_arRawDataCopy[i] != ((unsigned char*)m_pObj)[i]);
-					AMT_CASSERT(!bChessboardHasChanged);
-					if (bChessboardHasChanged)
+					bool bDataHasChanged = (m_arRawDataCopy[i] != ((unsigned char*)m_pObj)[i]);
+					AMT_CASSERT(!bDataHasChanged);
+					if (bDataHasChanged)
 						nPosThatDiffers = i;
 				}
 		}
 		else
 			if (byteToExclude == (size_t)-1)
 			{
-				bool bChessboardHasChanged = memcmp(m_arRawDataCopy, m_pObj, sizeof(T)) != 0;
-				AMT_CASSERT(!bChessboardHasChanged);
-				if (bChessboardHasChanged)
+				bool bDataHasChanged = memcmp(m_arRawDataCopy, m_pObj, sizeof(T)) != 0;
+				AMT_CASSERT(!bDataHasChanged);
+				if (bDataHasChanged)
 					nPosThatDiffers = GetPosThatDiffers(m_arRawDataCopy, (unsigned char*)m_pObj, sizeof(T));
 			}
 			else
@@ -69,30 +69,30 @@ public:
 				{
 					if (byteToExclude == 0)
 					{
-						bool bChessboardHasChanged = memcmp(&(m_arRawDataCopy[1]), ((unsigned char*)m_pObj) + 1, sizeof(T) - 1) != 0;
-						AMT_CASSERT(!bChessboardHasChanged);
-						if (bChessboardHasChanged)
+						bool bDataHasChanged = memcmp(&(m_arRawDataCopy[1]), ((unsigned char*)m_pObj) + 1, sizeof(T) - 1) != 0;
+						AMT_CASSERT(!bDataHasChanged);
+						if (bDataHasChanged)
 							nPosThatDiffers = GetPosThatDiffers(m_arRawDataCopy + 1, ((unsigned char*)m_pObj) + 1, sizeof(T) - 1);
 					}
 					else
 						if (byteToExclude == sizeof(T) - 1)
 						{
-							bool bChessboardHasChanged = memcmp(m_arRawDataCopy, m_pObj, sizeof(T) - 1) != 0;
-							AMT_CASSERT(!bChessboardHasChanged);
-							if (bChessboardHasChanged)
+							bool bDataHasChanged = memcmp(m_arRawDataCopy, m_pObj, sizeof(T) - 1) != 0;
+							AMT_CASSERT(!bDataHasChanged);
+							if (bDataHasChanged)
 								nPosThatDiffers = GetPosThatDiffers(m_arRawDataCopy, (unsigned char*)m_pObj, sizeof(T) - 1);
 						}
 						else
 						{
-							bool bChessboardHasChanged = memcmp(m_arRawDataCopy, m_pObj, byteToExclude) != 0;
-							AMT_CASSERT(!bChessboardHasChanged);
-							if (bChessboardHasChanged)
+							bool bDataHasChanged = memcmp(m_arRawDataCopy, m_pObj, byteToExclude) != 0;
+							AMT_CASSERT(!bDataHasChanged);
+							if (bDataHasChanged)
 								nPosThatDiffers = GetPosThatDiffers(m_arRawDataCopy, (unsigned char*)m_pObj, byteToExclude);
 							else
 							{
-								bChessboardHasChanged = memcmp(&(m_arRawDataCopy[byteToExclude + 1]), ((unsigned char*)m_pObj) + byteToExclude + 1, sizeof(T) - byteToExclude - 1) != 0;
-								AMT_CASSERT(!bChessboardHasChanged);
-								if (bChessboardHasChanged)
+								bDataHasChanged = memcmp(&(m_arRawDataCopy[byteToExclude + 1]), ((unsigned char*)m_pObj) + byteToExclude + 1, sizeof(T) - byteToExclude - 1) != 0;
+								AMT_CASSERT(!bDataHasChanged);
+								if (bDataHasChanged)
 									nPosThatDiffers = GetPosThatDiffers(&(m_arRawDataCopy[byteToExclude + 1]), ((unsigned char*)m_pObj) + byteToExclude + 1, sizeof(T) - byteToExclude - 1);
 							}
 						}
