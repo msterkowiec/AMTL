@@ -15,14 +15,19 @@
 
 #include <set>
 #ifdef _WIN32
-#define AMT_CASSERT(a) ((a) ? 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
+#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
+#else
+	#ifdef _DEBUG
+	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
+	#else
+	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__))
+	#endif
 #endif
 
-#include <string>
-#include <cstdio>
-#include <stdio.h>
-
-	#if defined(_WIN32) 
+	#ifdef _WIN32
+	#include <string>
+	#include <cstdio>
+	#include <stdio.h>
 	#include <wtypes.h>
 	#include <processthreadsapi.h>
 	#include <windows.h>
@@ -42,11 +47,17 @@
 		}
 	}
 	#else
-	#define AMT_CASSERT(a)
+	#include <iostream>
+	#include <thread>
+	#include <cstdio>
+	template<bool>
+	inline void __custom_assert(bool a, const char* szFileName, long lLine)
+	{
+		std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ". Press <ENTER> to continue.\n";
+		getchar();
+	}
 	#endif
 
 #else
 #define AMT_CASSERT(a)
 #endif
-
-
