@@ -78,13 +78,91 @@ namespace amt
 			}
 		};
 
+		//
+		// Structure that is intended to have fully safe multithreaded access even during resize (well, only if it is sure that resize() will be synchronized externally - not to be called from more that one thread at the same time)
+		//
+		// Note: some tests indicate that std::deque can give similar properties but it is platform and implementation dependent
+		//
+		template<typename T, size_t SLICE_SIZE>
+		class CExpandableSlicedVector
+		{
+			std::atomic<size_t> m_nSize;
+			std::atomic<std::vector<T*>*> m_pVecSlicesPtr;
+			std::atomic<std::vector<T*>*> m_pScheduledToDelete;
+			std::atomic<unsigned char> m_nRemoveScheduledToDelete;
+
+		public:
+			__FORCEINLINE__ CExpandableSlicedVector()
+			{
+				m_nSize = 0;
+				m_pVecSlicesPtr = nullptr; // new std::vector<std::vector<T>*>();
+				m_pScheduledToDelete = nullptr;
+				m_nRemoveScheduledToDelete = 0;
+			}
+			void resize(size_t newSize)
+			{
+				if (newSize <= m_nSize)
+					if (newSize == m_nSize)
+						return;
+					else
+						throw std::exception("Cannot shrink CExpandableSlicedVector");
+
+				std::vector<T*>* pOldVecSlicedPtr = m_pVecSlicesPtr;
+				std::vector<T*>* pNewVecSlicesPtr = new std::vector<T*>();
+				size_t newVecSize = newSize / SLICE_SIZE + ((newSize % SLICE_SIZE) ? 1 : 0);
+				pNewVecSlicesPtr->resize(newVecSize);
+				size_t oldVecSize = 0;
+				if (pOldVecSlicedPtr)
+				{
+					oldVecSize = pOldVecSlicedPtr->size();
+					memcpy(&(*pNewVecSlicesPtr)[0], &(*pOldVecSlicedPtr)[0], oldVecSize * sizeof(T*));
+				}
+				for (size_t i = oldVecSize; i < newVecSize; ++i)
+					(*pNewVecSlicesPtr)[i] = new T[SLICE_SIZE];
+				m_pVecSlicesPtr = pNewVecSlicesPtr;
+				m_nSize = newSize;
+				if (pOldVecSlicedPtr)
+				{
+					if (m_pScheduledToDelete.load())
+						RemoveScheduledToDelete();
+					m_pScheduledToDelete = pOldVecSlicedPtr;
+				}
+			}
+			__FORCEINLINE__ size_t size() const
+			{
+				return m_nSize;
+			}
+			__FORCEINLINE__ T& operator [] (size_t n)
+			{
+				AMT_DEBUG_CASSERT(n < m_nSize);
+				if (m_pScheduledToDelete.load())
+					if (m_pScheduledToDelete.load() != m_pVecSlicesPtr)
+						RemoveScheduledToDelete();
+				return (*m_pVecSlicesPtr)[n / SLICE_SIZE][n % SLICE_SIZE];
+			}
+			__FORCEINLINE__ void RemoveScheduledToDelete()
+			{
+				if (++m_nRemoveScheduledToDelete == 1)
+				{
+					if (m_pScheduledToDelete.load())
+					{
+						delete m_pScheduledToDelete.load();
+						m_pScheduledToDelete = nullptr;
+					}
+				}
+				--m_nRemoveScheduledToDelete;
+			}
+		};
+
+
 		struct AMTCounterHashMapBucket
 		{
 			static_assert(sizeof(AMTCounterHashMapElem) == 8, "");
-
-			std::deque<AMTCounterHashMapElem> m_vecBucketElems; // std::deque is an interesting alternative to vector - this makes part of synch code not needed (at the price of slightly more costly access to elements by index)
+			
+			//std::deque<AMTCounterHashMapElem> m_deqBucketElems; // std::deque is an interesting alternative to vector - this makes part of synch code not needed (at the price of slightly more costly access to elements by index)
+			CExpandableSlicedVector<AMTCounterHashMapElem, 8> m_deqBucketElems;			
 			std::atomic<AMTCounterType> m_nBeingResized; // e.g. true when underlying deque changes size; note that writing to an exisitng element is not considered reorganization (synch on m_nSlotUsed)
-
+			
 			__FORCEINLINE__ std::uint32_t GetPtrRest(void* ptr)
 			{
 				if (sizeof(size_t) == 4)
@@ -95,15 +173,16 @@ namespace amt
 			__FORCEINLINE__ AMTCounterHashMapBucket()
 			{
 				m_nBeingResized = 0;			
-				m_vecBucketElems.resize(INITIAL_BUCKET_SIZE); // let's initialize all at once to avoid slow downs when running - all slots will be marked unused
+				m_deqBucketElems.resize(INITIAL_BUCKET_SIZE); // let's initialize all at once to avoid slow downs when running - all slots will be marked unused
 			}
 			__FORCEINLINE__ void RegisterAddress(void* ptr)
 			{
 				do
 				{
-					for (size_t i = 0; i < m_vecBucketElems.size(); ++i)
+					size_t num = m_deqBucketElems.size();
+					for (size_t i = 0; i < num; ++i)
 					{
-						AMTCounterHashMapElem& slot = m_vecBucketElems[i];
+						AMTCounterHashMapElem& slot = m_deqBucketElems[i];
 						if (slot.m_nSlotUsed == 0)
 						{
 							if ((++slot.m_nSlotWanted) == 1) // synch done this way; 1 means slot occupied but not ready to use
@@ -130,17 +209,23 @@ namespace amt
 							}
 						}
 					}
-					
-					{
-						size_t oldSize = m_vecBucketElems.size();
+
+					// Check if another thread increased size of this bucket meanwhile:
+					if (num < m_deqBucketElems.size())
+						continue;
+
+					// Increase size of deque:
+					size_t oldSize = num;
 						
-						if ((++m_nBeingResized) == 1)
+					if ((++m_nBeingResized) == 1)
+					{
+						if (m_deqBucketElems.size() == oldSize) // no changes by other threads meanwhile?
 						{
-							if (m_vecBucketElems.size() == oldSize) // no changes by other threads meanwhile?
-								m_vecBucketElems.resize(oldSize ? oldSize * 2 : 1); // can throw bad_alloc!
+							size_t newSize = oldSize ? oldSize * 2 : 1;
+							m_deqBucketElems.resize(newSize); // can throw bad_alloc!
 						}
-						--m_nBeingResized;
 					}
+					--m_nBeingResized;					
 				} 
 				while (true);
 			}
@@ -148,10 +233,11 @@ namespace amt
 			__FORCEINLINE__ size_t TryFindInOtherPlace(void* ptr, size_t idxToExclude)
 			{
 				std::uint32_t ptrRest = GetPtrRest(ptr);
-				for (size_t i = 0; i < m_vecBucketElems.size(); ++i)
+				size_t num = m_deqBucketElems.size(); 
+				for (size_t i = 0; i < num; ++i)
 					if (i != idxToExclude)
 					{
-						AMTCounterHashMapElem& slot = m_vecBucketElems[i];
+						AMTCounterHashMapElem& slot = m_deqBucketElems[i];
 						if (slot.m_ptrPart == ptrRest)
 							if (slot.m_nSlotUsed)
 								if (slot.m_ptrPart == ptrRest)
@@ -163,16 +249,17 @@ namespace amt
 			{
 				std::uint32_t ptrRest = GetPtrRest(ptr);
 
-				for (size_t i = 0; i < m_vecBucketElems.size(); ++i)
+				size_t num = m_deqBucketElems.size(); 
+				for (size_t i = 0; i < num; ++i)
 				{
-					AMTCounterHashMapElem& slot = m_vecBucketElems[i];
+					AMTCounterHashMapElem& slot = m_deqBucketElems[i];
 					if (slot.m_ptrPart == ptrRest)
 						if (slot.m_nSlotUsed)
 							if (slot.m_ptrPart == ptrRest)
 							{				
 								AMT_DEBUG_CASSERT(TryFindInOtherPlace(ptr, i) == (size_t) -1);
 								AMT_DEBUG_CASSERT(slot.m_nSlotUsed == 1);
-								//AMT_DEBUG_CASSERT(slot.m_nSlotWanted == 0);  // commented out... actually in may occur that another thread still didn't decrement its will to use this slot
+								//AMT_DEBUG_CASSERT(slot.m_nSlotWanted == 0); // commented out... actually in may occur that another thread still didn't decrement its will to use this slot
 								slot.m_nSlotUsed = 0; // slot not occupied/used ny more
 								return;
 							}
@@ -185,9 +272,10 @@ namespace amt
 				std::uint32_t ptrRest = GetPtrRest(ptr);
 				AMT_DEBUG_CASSERT(sizeof(size_t) == 4 || (((size_t)(ptrRest >> 3)) << 19) + (((size_t)ptrRest)&7) + (((((size_t)ptr) >> 3) & 65535) <<3) == (size_t)ptr);
 
-				for (size_t i = 0; i < m_vecBucketElems.size(); ++i)
+				size_t num = m_deqBucketElems.size(); 
+				for (size_t i = 0; i < num; ++i)
 				{
-					AMTCounterHashMapElem& slot = m_vecBucketElems[i];
+					AMTCounterHashMapElem& slot = m_deqBucketElems[i];
 					if (slot.m_ptrPart == ptrRest)
 						if (slot.m_nSlotUsed)
 							if (slot.m_ptrPart == ptrRest)
@@ -209,8 +297,6 @@ namespace amt
 		// Let constructor be private - access via GetCounterHashMap()
 		AMTCountersHashMap()
 		{
-
-
 		}
 
 		static_assert(HASH_SIZE >= 65536 && HASH_SIZE <= 16 * 1024 * 1024 && NumOfBits<HASH_SIZE>::value == 1, ""); // fow now don't even think of changing it : )		
@@ -270,4 +356,3 @@ namespace amt
 	};
 
 }
-
