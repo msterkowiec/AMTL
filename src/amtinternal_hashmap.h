@@ -105,7 +105,7 @@ namespace amt
 					if (newSize == m_nSize)
 						return;
 					else
-						throw std::exception("Cannot shrink CExpandableSlicedVector");
+						throw std::runtime_error("Cannot shrink CExpandableSlicedVector");
 
 				std::vector<T*>* pOldVecSlicedPtr = m_pVecSlicesPtr;
 				std::vector<T*>* pNewVecSlicesPtr = new std::vector<T*>();
