@@ -345,7 +345,6 @@ namespace amt
 			bucket.UnregisterAddress(ptr);
 		}
 
-		// returns a pair: nPendingReadRequests, nPendingWriteRequests (and lock - so it is recommended to make work and destroy this object - which means: release lock - asap)
 		__FORCEINLINE__ AMTCountersHashMap::AMTCounterHashMapElem* GetReadWriteCounters(void* ptr)
 		{
 			AMTCounterHashMapBucket& bucket = GetBucket(ptr);
