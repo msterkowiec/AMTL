@@ -24,7 +24,7 @@ namespace amt
 	#if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
 
 	// This is really tempting to move read/write counters to some global hash_map and enjoy having sizeof(amt::uint8_t)==1 instead of 3
-	// However such solution, apart from slowing down (and, thus, potentially worse detection of synch issues) would have many, many other weak points (e.g. order of initialization of global variables)
+	// This is the case of __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ - the code will work with all the memcpy/memmove and persistency but will be significantly slower
 
 	template<typename T> 
 	class AMTScalarType
