@@ -33,7 +33,7 @@ namespace amt
 			* partial read(single index)
 			* partial write(e.g.push_back without reallocation)
 			* write
-			Øadne read'y nie konfliktowa≥yby ze sobπ, wszystkie write'y konfliktwa≥yby ze sobπ nawzajem, a takøe z full read'em, a dodatkowo write knnfliktowa≥by z wszystkim
+			≈ªadne read'y nie konfliktowa≈Çyby ze sobƒÖ, wszystkie write'y konfliktwa≈Çyby ze sobƒÖ nawzajem, a tak≈ºe z full read'em, a dodatkowo write knnfliktowa≈Çby z wszystkim
         */
 		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingPartialReadRequests;
@@ -48,30 +48,30 @@ namespace amt
 			m_nPendingPartialWriteRequests = 0;
 
 		}
-		__FORCEINLINE__ void RegisterReadingThread() const
+		__AMT_FORCEINLINE__ void RegisterReadingThread() const
 		{
 			++m_nPendingReadRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 0); // + ?
 		}
-		__FORCEINLINE__ void UnregisterReadingThread() const
+		__AMT_FORCEINLINE__ void UnregisterReadingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 0); // + ?
 			--m_nPendingReadRequests;
 		}
-		__FORCEINLINE__ void RegisterWritingThread() const
+		__AMT_FORCEINLINE__ void RegisterWritingThread() const
 		{
 			++m_nPendingWriteRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 1 && m_nPendingPartialWriteRequests == 0);
 			AMT_CASSERT(m_nPendingReadRequests == 0 && m_nPendingPartialReadRequests == 0); // + ?
 		}
-		__FORCEINLINE__ void UnregisterWritingThread() const
+		__AMT_FORCEINLINE__ void UnregisterWritingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 1 && m_nPendingPartialWriteRequests == 0);
 			AMT_CASSERT(m_nPendingReadRequests == 0 && m_nPendingPartialReadRequests == 0) ; // + ?
 			--m_nPendingWriteRequests;
 		}
 
-		__FORCEINLINE__ void RegisterPartiallyReadingThread() const
+		__AMT_FORCEINLINE__ void RegisterPartiallyReadingThread() const
 		{
 			++m_nPendingPartialReadRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 0);
@@ -79,7 +79,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingPartialWriteRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterPartiallyReadingThread() const
+		__AMT_FORCEINLINE__ void UnregisterPartiallyReadingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 0); // + ?
 			#if __AMT_REPORT_DOUBTFUL_CASES_WITH_VECTOR__
@@ -87,7 +87,7 @@ namespace amt
 			#endif
 			--m_nPendingPartialReadRequests;
 		}
-		__FORCEINLINE__ void RegisterPartiallyWritingThread() const
+		__AMT_FORCEINLINE__ void RegisterPartiallyWritingThread() const
 		{
 			++m_nPendingPartialWriteRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 1);
@@ -96,7 +96,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingPartialReadRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterPartiallyWritingThread() const
+		__AMT_FORCEINLINE__ void UnregisterPartiallyWritingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 1);
 			AMT_CASSERT(m_nPendingReadRequests == 0);
@@ -184,57 +184,57 @@ namespace amt
 			AMT_CASSERT(m_nPendingPartialReadRequests == 0);
 			AMT_CASSERT(m_nPendingPartialWriteRequests == 0);
 		}
-		__FORCEINLINE__ size_t size() const
+		__AMT_FORCEINLINE__ size_t size() const
 		{
 			CRegisterReadingThread r(*this); // it is assumed to be full read in order to conflict with any time of write
 			return ((Base*)this)->size();
 		}
-		__FORCEINLINE__ size_t capacity() const
+		__AMT_FORCEINLINE__ size_t capacity() const
 		{
 			CRegisterPartiallyReadingThread r(*this); 
 			return ((Base*)this)->capacity();
 		}
-		__FORCEINLINE__ void clear()
+		__AMT_FORCEINLINE__ void clear()
 		{
 			CRegisterWritingThread r(*this);
 			((Base*)this)->clear();
 		}
-		__FORCEINLINE__ bool empty() const
+		__AMT_FORCEINLINE__ bool empty() const
 		{
 			CRegisterPartiallyReadingThread r(*this); 
 			return ((Base*)this)->empty();
 		}
-		__FORCEINLINE__ ValueType& operator[](size_t idx)
+		__AMT_FORCEINLINE__ ValueType& operator[](size_t idx)
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			AMT_CASSERT(idx < ((Base*)this)->size());
 			return ((Base*)this)->operator[](idx);
 		}
-		__FORCEINLINE__ const ValueType& operator[](size_t idx) const
+		__AMT_FORCEINLINE__ const ValueType& operator[](size_t idx) const
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			AMT_CASSERT(idx < ((Base*)this)->size());
 			return ((Base*)this)->operator[](idx);
 		}
-		__FORCEINLINE__ ValueType& at(size_t idx)
+		__AMT_FORCEINLINE__ ValueType& at(size_t idx)
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			AMT_CASSERT(idx < ((Base*)this)->size());
 			return ((Base*)this)->at(idx);
 		}
-		__FORCEINLINE__ const ValueType& at(size_t idx) const
+		__AMT_FORCEINLINE__ const ValueType& at(size_t idx) const
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			AMT_CASSERT(idx < ((Base*)this)->size());
 			return ((Base*)this)->at(idx);
 		}
 
-		inline ValueType* data() __NOEXCEPT__
+		inline ValueType* data() __AMT_NOEXCEPT__
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			return ((Base*)this)->data();
 		}
-		inline const ValueType* data() const __NOEXCEPT__
+		inline const ValueType* data() const __AMT_NOEXCEPT__
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			return ((Base*)this)->data();
@@ -261,32 +261,32 @@ namespace amt
 		};
 
 	public:
-		__FORCEINLINE__ void resize(size_t n)
+		__AMT_FORCEINLINE__ void resize(size_t n)
 		{
 			CRegisterWritingThread r(*this); // maybe to be verified later (PartiallyWriting under some circumstances?)
 			ResizeWithInitHelper<ValueType, AllocatorType, std::is_scalar<T>::value>::resize(n, *((Base*)this)); // this trick is needed when wrapping up is on (__AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__)
 		}
-		__FORCEINLINE__ void resize(size_t n, const ValueType& val)
+		__AMT_FORCEINLINE__ void resize(size_t n, const ValueType& val)
 		{
 			CRegisterWritingThread r(*this); // maybe to be verified later (PartiallyWriting under some circumstances?)
 			((Base*)this)->resize(n, val);
 		}
-		__FORCEINLINE__ void shrink_to_fit()
+		__AMT_FORCEINLINE__ void shrink_to_fit()
 		{
 			CRegisterWritingThread r(*this);
 			((Base*)this)->shrink_to_fit();
 		}
-		__FORCEINLINE__ ValueType& front() const
+		__AMT_FORCEINLINE__ ValueType& front() const
 		{
 			CRegisterPartiallyReadingThread r(*this);
 			return ((Base*)this)->front();
 		}
-		__FORCEINLINE__ ValueType& back() const
+		__AMT_FORCEINLINE__ ValueType& back() const
 		{
 			CRegisterReadingThread r(*this); // partially?
 			return ((Base*)this)->back();
 		}
-		__FORCEINLINE__ void push_back(const T& t)
+		__AMT_FORCEINLINE__ void push_back(const T& t)
 		{
 			if (((Base*)this)->capacity() > ((Base*)this)->size())
 			{
@@ -299,12 +299,12 @@ namespace amt
 				((Base*)this)->push_back(t);
 			}
 		}
-		__FORCEINLINE__ void pop_back()
+		__AMT_FORCEINLINE__ void pop_back()
 		{
 			CRegisterWritingThread r(*this); // partially? however now, contrary to push_back without allocation, an element disappers, so cuncurrent read at the back() can fail
 			return ((Base*)this)->pop_back();
 		}
-		__FORCEINLINE__ void emplace_back(const T& t)
+		__AMT_FORCEINLINE__ void emplace_back(const T& t)
 		{
 			if (((Base*)this)->capacity() > ((Base*)this)->size())
 			{
@@ -319,7 +319,7 @@ namespace amt
 		}
 		#if __cplusplus >= 201703L
 		template< class... Args >
-		__FORCEINLINE__ ValueType& emplace_back(Args&&... args)
+		__AMT_FORCEINLINE__ ValueType& emplace_back(Args&&... args)
 		{
 			if (((Base*)this)->capacity() > ((Base*)this)->size())
 			{
@@ -334,7 +334,7 @@ namespace amt
 		}
 		#else
 		template< class... Args >
-		__FORCEINLINE__ void emplace_back(Args&&... args)
+		__AMT_FORCEINLINE__ void emplace_back(Args&&... args)
 		{
 			if (((Base*)this)->capacity() > ((Base*)this)->size())
 			{
@@ -348,25 +348,25 @@ namespace amt
 			}
 		}
 		#endif
-		__FORCEINLINE__ void swap(vector& o)
+		__AMT_FORCEINLINE__ void swap(vector& o)
 		{
 			CRegisterWritingThread r(*this);
 			CRegisterWritingThread r2(o);
 			return ((Base*)this)->swap(*((Base*)&o));
 		}
 
-		__FORCEINLINE__ iterator erase(iterator it)
+		__AMT_FORCEINLINE__ iterator erase(iterator it)
 		{
 			CRegisterWritingThread r(*this);
 			return ((Base*)this)->erase(it);
 		}
-		__FORCEINLINE__ iterator erase(iterator itFirst, iterator itLast)
+		__AMT_FORCEINLINE__ iterator erase(iterator itFirst, iterator itLast)
 		{
 			CRegisterWritingThread r(*this);
 			return ((Base*)this)->erase(itFirst, itLast);
 		}
 
-		//__FORCEINLINE__ void erase(size_t i)
+		//__AMT_FORCEINLINE__ void erase(size_t i)
 		//{
 		//	CRegisterWritingThread r(*this);
 		//	((Base*)this)->erase(i);
@@ -384,32 +384,32 @@ namespace amt
 			((Base*)this)->assign(n, val);
 		}
 
-		__FORCEINLINE__ vector& operator = (const vector& o)
+		__AMT_FORCEINLINE__ vector& operator = (const vector& o)
 		{
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
-		__FORCEINLINE__ friend bool operator < (const vector& v1, const vector& v2)
+		__AMT_FORCEINLINE__ friend bool operator < (const vector& v1, const vector& v2)
 		{
 			CRegisterReadingThread r(v1);
 			CRegisterReadingThread r2(v2);
 			return *((Base*)&v1) < *((Base*)&v2);
 		}
-		__FORCEINLINE__ friend bool operator <= (const vector& v1, const vector&v2)
+		__AMT_FORCEINLINE__ friend bool operator <= (const vector& v1, const vector&v2)
 		{
 			CRegisterReadingThread r(v1);
 			CRegisterReadingThread r2(v2);
 			return *((Base*)&v1) <= *((Base*)&v2);
 		}
-		__FORCEINLINE__ friend bool operator > (const vector& v1, const vector& v2)
+		__AMT_FORCEINLINE__ friend bool operator > (const vector& v1, const vector& v2)
 		{
 			CRegisterReadingThread r(v1);
 			CRegisterReadingThread r2(v2);
 			return *((Base*)&v1) > *((Base*)&v2);
 		}
-		__FORCEINLINE__ friend bool operator >= (const vector& v1, const vector& v2)
+		__AMT_FORCEINLINE__ friend bool operator >= (const vector& v1, const vector& v2)
 		{
 			CRegisterReadingThread r(v1);
 			CRegisterReadingThread r2(v2);
