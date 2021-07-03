@@ -1011,7 +1011,7 @@ namespace amt
 	struct AmtCastToSigned
 	{
 		template<typename T>
-		static inline typename std::make_signed<typename T>::type Cast(AMTScalarType<T> x)
+		static inline typename std::make_signed<T>::type Cast(AMTScalarType<T> x)
 		{
 			return x.MakeSigned();
 		}
@@ -1020,7 +1020,7 @@ namespace amt
 	struct AmtCastToSigned<true>
 	{
 		template<typename T = int>
-		static inline typename std::make_signed<typename T>::type Cast(T x)
+		static inline typename std::make_signed<T>::type Cast(T x)
 		{
 			AMT_CASSERT(false);
 			return 0; // not used actually, just a syntactic trick
