@@ -39,23 +39,23 @@ namespace amt
 			m_nPendingWriteRequests = 0;
 			m_nCountOperInvalidateIter = 0;
 		}
-		__FORCEINLINE__ void RegisterReadingThread() const
+		__AMT_FORCEINLINE__ void RegisterReadingThread() const
 		{
 			++m_nPendingReadRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 0);
 		}
-		__FORCEINLINE__ void UnregisterReadingThread() const
+		__AMT_FORCEINLINE__ void UnregisterReadingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 0);
 			--m_nPendingReadRequests;
 		}
-		__FORCEINLINE__ void RegisterWritingThread() const
+		__AMT_FORCEINLINE__ void RegisterWritingThread() const
 		{
 			++m_nPendingWriteRequests;
 			AMT_CASSERT(m_nPendingWriteRequests == 1);
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 		}
-		__FORCEINLINE__ void UnregisterWritingThread() const
+		__AMT_FORCEINLINE__ void UnregisterWritingThread() const
 		{
 			AMT_CASSERT(m_nPendingWriteRequests == 1);
 			AMT_CASSERT(m_nPendingReadRequests == 0);
@@ -103,21 +103,21 @@ namespace amt
 			mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 			#endif
 
-			__FORCEINLINE__ void RegisterReadingThread() const
+			__AMT_FORCEINLINE__ void RegisterReadingThread() const
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				++m_nPendingReadRequests;
 				AMT_CASSERT(m_nPendingWriteRequests == 0);
 				#endif
 			}
-			__FORCEINLINE__ void UnregisterReadingThread() const
+			__AMT_FORCEINLINE__ void UnregisterReadingThread() const
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				AMT_CASSERT(m_nPendingWriteRequests == 0);
 				--m_nPendingReadRequests;
 				#endif
 			}
-			__FORCEINLINE__ void RegisterWritingThread() const
+			__AMT_FORCEINLINE__ void RegisterWritingThread() const
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				++m_nPendingWriteRequests;
@@ -125,7 +125,7 @@ namespace amt
 				AMT_CASSERT(m_nPendingReadRequests == 0);
 				#endif
 			}
-			__FORCEINLINE__ void UnregisterWritingThread() const
+			__AMT_FORCEINLINE__ void UnregisterWritingThread() const
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				AMT_CASSERT(m_nPendingWriteRequests == 1);
@@ -219,7 +219,7 @@ namespace amt
 			};
 
 		public:
-			__FORCEINLINE__ IteratorBase()
+			__AMT_FORCEINLINE__ IteratorBase()
 			{
 				m_pMap = nullptr;
 				m_nCountOperInvalidateIter = (size_t) -1;
@@ -228,7 +228,7 @@ namespace amt
 				m_nPendingWriteRequests = 0;
 				#endif
 			}
-			__FORCEINLINE__ IteratorBase(ITER it, const map* pMap) : ITER()
+			__AMT_FORCEINLINE__ IteratorBase(ITER it, const map* pMap) : ITER()
 			{
 				*((ITER*)this) = it;
 				m_pMap = pMap;
@@ -238,7 +238,7 @@ namespace amt
 				m_nPendingWriteRequests = 0;
 				#endif
 			}
-			__FORCEINLINE__ IteratorBase(const IteratorBase& o)
+			__AMT_FORCEINLINE__ IteratorBase(const IteratorBase& o)
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				m_nPendingReadRequests = 0;
@@ -251,7 +251,7 @@ namespace amt
 				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
 				*((ITER*)this) = *((ITER*)&o);
 			}
-			__FORCEINLINE__ IteratorBase& operator = (const IteratorBase& o)
+			__AMT_FORCEINLINE__ IteratorBase& operator = (const IteratorBase& o)
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
@@ -263,7 +263,7 @@ namespace amt
 				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
 				return *this;
 			}
-			__FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
+			__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterReadingThread r(it1);
@@ -274,7 +274,7 @@ namespace amt
 				AMT_CASSERT(it1.m_pMap == it2.m_pMap);
 				return *((ITER*)&it1) == *((ITER*)&it2);
 			}
-			__FORCEINLINE__ friend bool operator != (const IteratorBase& it1, const IteratorBase& it2)
+			__AMT_FORCEINLINE__ friend bool operator != (const IteratorBase& it1, const IteratorBase& it2)
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterReadingThread r(it1);
@@ -285,13 +285,13 @@ namespace amt
 				AMT_CASSERT(it1.m_pMap == it2.m_pMap);
 				return *((ITER*)&it1) != *((ITER*)&it2);
 			}
-			__FORCEINLINE__ ~IteratorBase()
+			__AMT_FORCEINLINE__ ~IteratorBase()
 			{
 				CRegisterWritingThread r(*this); // not necessarily wrapped up in #if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				AMT_CASSERT(m_nPendingReadRequests == 0);
 				AMT_CASSERT(m_nPendingWriteRequests == 1);
 			}
-			__FORCEINLINE__ bool IsIteratorValid() const
+			__AMT_FORCEINLINE__ bool IsIteratorValid() const
 			{
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				return m_nCountOperInvalidateIter == m_pMap->m_nCountOperInvalidateIter; // good enough
@@ -299,21 +299,21 @@ namespace amt
 				return true;
 				#endif
 			}
-			__FORCEINLINE__ void AssertIsValid(const map* pMap = nullptr) const
+			__AMT_FORCEINLINE__ void AssertIsValid(const map* pMap = nullptr) const
 			{
 				AMT_CASSERT(m_pMap != nullptr);
 				AMT_CASSERT(m_pMap == pMap || pMap == nullptr); // passing map is not mandatory but lets make sure that iterator is not used versus wrong object
 				AMT_CASSERT(IsIteratorValid());
 			}
-			__FORCEINLINE__ void AssertNotBegin() const
+			__AMT_FORCEINLINE__ void AssertNotBegin() const
 			{			
 				SAssertNotBegin<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::RunCheck<ITER>(*((ITER*)this), *m_pMap);
 			}
-			__FORCEINLINE__ void AssertNotEnd() const
+			__AMT_FORCEINLINE__ void AssertNotEnd() const
 			{
 				SAssertNotEnd<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::RunCheck<ITER>(*((ITER*)this), *m_pMap);
 			}
-			__FORCEINLINE__ IteratorBase& operator++()
+			__AMT_FORCEINLINE__ IteratorBase& operator++()
 			{
 				CRegisterWritingThread r(*this);
 				AssertIsValid();
@@ -321,7 +321,7 @@ namespace amt
 				((ITER*)this)->operator++();
 				return *this;
 			}
-			__FORCEINLINE__ IteratorBase& operator--()
+			__AMT_FORCEINLINE__ IteratorBase& operator--()
 			{
 				CRegisterWritingThread r(*this);
 				AssertIsValid();
@@ -329,7 +329,7 @@ namespace amt
 				((ITER*)this)->operator--();
 				return *this;
 			}
-			__FORCEINLINE__ IteratorBase operator++(int) // postfix operator
+			__AMT_FORCEINLINE__ IteratorBase operator++(int) // postfix operator
 			{
 				CRegisterWritingThread r(*this);
 				AssertIsValid();
@@ -338,7 +338,7 @@ namespace amt
 				((ITER*)this)->operator++();
 				return it;
 			}
-			__FORCEINLINE__ IteratorBase operator--(int) // postfix operator
+			__AMT_FORCEINLINE__ IteratorBase operator--(int) // postfix operator
 			{
 				CRegisterWritingThread r(*this);
 				AssertIsValid();
@@ -413,24 +413,24 @@ namespace amt
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 		}
 
-		__FORCEINLINE__ size_t size() const
+		__AMT_FORCEINLINE__ size_t size() const
 		{
 			CRegisterReadingThread r(*this);			
 			return ((Base*)this)->size();
 		}
-		__FORCEINLINE__ bool empty() const
+		__AMT_FORCEINLINE__ bool empty() const
 		{
 			CRegisterReadingThread r(*this);
 			return ((Base*)this)->empty();
 		}
-		__FORCEINLINE__ void clear()
+		__AMT_FORCEINLINE__ void clear()
 		{
 			CRegisterWritingThread r(*this);
 			++ m_nCountOperInvalidateIter;
 			((Base*)this)->clear();
 		}
 
-		__FORCEINLINE__ ValueType& operator[](const Key& key)
+		__AMT_FORCEINLINE__ ValueType& operator[](const Key& key)
 		{
 			if (((Base*)this)->find(key) == ((Base*)this)->end())
 			{
@@ -445,17 +445,17 @@ namespace amt
 			}
 		}
 
-		__FORCEINLINE__ ValueType& at(const Key& key)
+		__AMT_FORCEINLINE__ ValueType& at(const Key& key)
 		{
 			CRegisterReadingThread r(*this);
 			return ((Base*)this)-at(key);
 		}
-		__FORCEINLINE__ const ValueType& at(const Key& key) const
+		__AMT_FORCEINLINE__ const ValueType& at(const Key& key) const
 		{
 			CRegisterReadingThread r(*this);
 			return ((Base*)this)->at(key);
 		}
-		__FORCEINLINE__ map& operator = (const map& o)
+		__AMT_FORCEINLINE__ map& operator = (const map& o)
 		{
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
@@ -463,76 +463,76 @@ namespace amt
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
-		__FORCEINLINE__ friend bool operator == (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator == (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) == *((Base*)&m2);
 		}
-		__FORCEINLINE__ friend bool operator != (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator != (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) != *((Base*)&m2);
 		}
-		__FORCEINLINE__ friend bool operator < (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator < (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) < *((Base*)&m2);
 		}
-		__FORCEINLINE__ friend bool operator <= (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator <= (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) <= *((Base*)&m2);
 		}
-		__FORCEINLINE__ friend bool operator > (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator > (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) > *((Base*)&m2);
 		}
-		__FORCEINLINE__ friend bool operator >= (const map& m1, const map& m2)
+		__AMT_FORCEINLINE__ friend bool operator >= (const map& m1, const map& m2)
 		{
 			CRegisterReadingThread r(m1);
 			CRegisterReadingThread r2(m2);
 			return *((Base*)&m1) >= *((Base*)&m2);
 		}
 
-		__FORCEINLINE__ iterator find(const Key& key)
+		__AMT_FORCEINLINE__ iterator find(const Key& key)
 		{
 			CRegisterReadingThread r(*this);
 			auto baseIt = ((Base*)this)->find(key);
 			iterator it(baseIt, this);
 			return it;
 		}
-		__FORCEINLINE__ const_iterator find(const Key& k) const
+		__AMT_FORCEINLINE__ const_iterator find(const Key& k) const
 		{
 			CRegisterReadingThread r(*this);
 			auto baseIt = ((Base*)this)->find(k);
 			iterator it(baseIt, this);
 			return it;
 		}
-		__FORCEINLINE__  size_t count(const Key& k) const
+		__AMT_FORCEINLINE__  size_t count(const Key& k) const
 		{
 			CRegisterReadingThread r(*this);
 			return ((Base*)this)->count(k);
 		}
-		__FORCEINLINE__ void erase(iterator it)
+		__AMT_FORCEINLINE__ void erase(iterator it)
 		{
 			CRegisterWritingThread r(*this);
 			it.AssertIsValid(this);
 			++m_nCountOperInvalidateIter;
 			((Base*)this)->erase(it);
 		}
-		__FORCEINLINE__ size_t erase(const Key& key)
+		__AMT_FORCEINLINE__ size_t erase(const Key& key)
 		{
 			CRegisterWritingThread r(*this);
 			++m_nCountOperInvalidateIter;
 			return ((Base*)this)->erase(key);
 		}
-		__FORCEINLINE__ void erase(iterator first, iterator last)
+		__AMT_FORCEINLINE__ void erase(iterator first, iterator last)
 		{
 			CRegisterWritingThread r(*this);
 			first.AssertIsValid(this);
@@ -541,7 +541,7 @@ namespace amt
 			((Base*)this)->erase(first, last);
 		}
 
-		__FORCEINLINE__ void swap(map& o)
+		__AMT_FORCEINLINE__ void swap(map& o)
 		{
 			CRegisterWritingThread r(*this);
 			CRegisterWritingThread r2(o);
@@ -550,7 +550,7 @@ namespace amt
 			return ((Base*)this)->swap(*((Base*)&o));
 		}
 		template< class... Args >
-		__FORCEINLINE__ std::pair<iterator, bool> emplace(Args&&... args)
+		__AMT_FORCEINLINE__ std::pair<iterator, bool> emplace(Args&&... args)
 		{
 			CRegisterWritingThread r(*this);
 			auto resBase = ((Base*)this)->emplace(args...);		
@@ -560,7 +560,7 @@ namespace amt
 			return res;
 		}
 		template< class... Args >
-		__FORCEINLINE__ iterator emplace_hint(const_iterator position, Args&&... args)
+		__AMT_FORCEINLINE__ iterator emplace_hint(const_iterator position, Args&&... args)
 		{
 			CRegisterWritingThread r(*this);
 			position.AssertIsValid();
@@ -653,7 +653,7 @@ namespace amt
 			const_iterator res(resBase, this);
 			return res;
 		}
-		inline const_iterator cbegin() const __NOEXCEPT__
+		inline const_iterator cbegin() const __AMT_NOEXCEPT__
 		{
 			CRegisterReadingThread r(*this);
 			auto resBase = ((Base*)this)->cbegin();
@@ -674,7 +674,7 @@ namespace amt
 			const_reverse_iterator res(resBase, this);
 			return res;
 		}
-		inline const_reverse_iterator crbegin() const __NOEXCEPT__
+		inline const_reverse_iterator crbegin() const __AMT_NOEXCEPT__
 		{
 			CRegisterReadingThread r(*this);
 			auto resBase = ((Base*)this)->crbegin();
@@ -695,7 +695,7 @@ namespace amt
 			const_iterator res(resBase, this);
 			return res;
 		}
-		inline const_iterator cend() const __NOEXCEPT__
+		inline const_iterator cend() const __AMT_NOEXCEPT__
 		{
 			CRegisterReadingThread r(*this);
 			auto resBase = ((Base*)this)->cend();
@@ -716,7 +716,7 @@ namespace amt
 			const_reverse_iterator res(resBase, this);
 			return res;
 		}
-		inline const_reverse_iterator crend() const __NOEXCEPT__
+		inline const_reverse_iterator crend() const __AMT_NOEXCEPT__
 		{
 			CRegisterReadingThread r(*this);
 			auto resBase = ((Base*)this)->crend();
