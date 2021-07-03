@@ -46,7 +46,7 @@ namespace amt
 			std::atomic<std::uint8_t> m_nSlotUsed;  
 			std::atomic<std::uint8_t> m_nSlotWanted; // slot is taken in two steps: if (++m_nSlotWanted == 1), then a thread can increment m_nSlotUsed (all this complication is due to the fact that m_ptrPart==nullptr means nothing because it is only the part of the pointer (rest is in the hash itself)
 
-			__FORCEINLINE__ AMTCounterHashMapElem()
+			__AMT_FORCEINLINE__ AMTCounterHashMapElem()
 			{
 				m_nPendingReadRequests = 0;
 				m_nPendingWriteRequests = 0;
@@ -54,7 +54,7 @@ namespace amt
 				m_nSlotWanted = 0;
 				m_ptrPart = 0;
 			}
-			__FORCEINLINE__ AMTCounterHashMapElem(AMTCounterHashMapElem&& o) __NOEXCEPT__
+			__AMT_FORCEINLINE__ AMTCounterHashMapElem(AMTCounterHashMapElem&& o) __AMT_NOEXCEPT__
 			{
 				AMT_CASSERT(o.m_nSlotWanted.load() == 0); // != would mean missing thread synch - move constr should be called only during reorganization
 
@@ -92,7 +92,7 @@ namespace amt
 			std::atomic<unsigned char> m_nRemoveScheduledToDelete;
 
 		public:
-			__FORCEINLINE__ CExpandableSlicedVector()
+			__AMT_FORCEINLINE__ CExpandableSlicedVector()
 			{
 				m_nSize = 0;
 				m_pVecSlicesPtr = nullptr; // new std::vector<std::vector<T>*>();
@@ -128,11 +128,11 @@ namespace amt
 					m_pScheduledToDelete = pOldVecSlicedPtr;
 				}
 			}
-			__FORCEINLINE__ size_t size() const
+			__AMT_FORCEINLINE__ size_t size() const
 			{
 				return m_nSize;
 			}
-			__FORCEINLINE__ T& operator [] (size_t n)
+			__AMT_FORCEINLINE__ T& operator [] (size_t n)
 			{
 				AMT_DEBUG_CASSERT(n < m_nSize);
 				if (m_pScheduledToDelete.load())
@@ -140,7 +140,7 @@ namespace amt
 						RemoveScheduledToDelete();
 				return (*m_pVecSlicesPtr)[n / SLICE_SIZE][n % SLICE_SIZE];
 			}
-			__FORCEINLINE__ void RemoveScheduledToDelete()
+			__AMT_FORCEINLINE__ void RemoveScheduledToDelete()
 			{
 				if (++m_nRemoveScheduledToDelete == 1)
 				{
@@ -163,19 +163,19 @@ namespace amt
 			CExpandableSlicedVector<AMTCounterHashMapElem, 8> m_deqBucketElems;			
 			std::atomic<AMTCounterType> m_nBeingResized; // e.g. true when underlying deque changes size; note that writing to an exisitng element is not considered reorganization (synch on m_nSlotUsed)
 			
-			__FORCEINLINE__ std::uint32_t GetPtrRest(void* ptr)
+			__AMT_FORCEINLINE__ std::uint32_t GetPtrRest(void* ptr)
 			{
 				if (sizeof(size_t) == 4)
 					return reinterpret_cast<uintptr_t>(ptr);
 				else
 					return ((std::uint32_t) (((uintptr_t)ptr) >> 16) & ~7) + (((uintptr_t)ptr) & 7); // bits 8-23 are in hash itself, the last 16 bits are not needed, so we need bits 0-7 and 24-47
 			}
-			__FORCEINLINE__ AMTCounterHashMapBucket()
+			__AMT_FORCEINLINE__ AMTCounterHashMapBucket()
 			{
 				m_nBeingResized = 0;			
 				m_deqBucketElems.resize(INITIAL_BUCKET_SIZE); // let's initialize all at once to avoid slow downs when running - all slots will be marked unused
 			}
-			__FORCEINLINE__ void RegisterAddress(void* ptr)
+			__AMT_FORCEINLINE__ void RegisterAddress(void* ptr)
 			{
 				do
 				{
@@ -230,7 +230,7 @@ namespace amt
 				while (true);
 			}
 			// Helper method for debugging:
-			__FORCEINLINE__ size_t TryFindInOtherPlace(void* ptr, size_t idxToExclude)
+			__AMT_FORCEINLINE__ size_t TryFindInOtherPlace(void* ptr, size_t idxToExclude)
 			{
 				std::uint32_t ptrRest = GetPtrRest(ptr);
 				size_t num = m_deqBucketElems.size(); 
@@ -245,7 +245,7 @@ namespace amt
 					}
 				return (size_t)-1;
 			}
-			__FORCEINLINE__ void UnregisterAddress(void* ptr)
+			__AMT_FORCEINLINE__ void UnregisterAddress(void* ptr)
 			{
 				std::uint32_t ptrRest = GetPtrRest(ptr);
 
@@ -267,7 +267,7 @@ namespace amt
 				AMT_DEBUG_CASSERT(false);
 			}
 
-			__FORCEINLINE__ AMTCounterHashMapElem* GetReadWriteCounters(void* ptr)
+			__AMT_FORCEINLINE__ AMTCounterHashMapElem* GetReadWriteCounters(void* ptr)
 			{
 				std::uint32_t ptrRest = GetPtrRest(ptr);
 				AMT_DEBUG_CASSERT(sizeof(size_t) == 4 || (((size_t)(ptrRest >> 3)) << 19) + (((size_t)ptrRest)&7) + (((((size_t)ptr) >> 3) & 65535) <<3) == (size_t)ptr);
@@ -301,13 +301,13 @@ namespace amt
 
 		static_assert(HASH_SIZE >= 65536 && HASH_SIZE <= 16 * 1024 * 1024 && NumOfBits<HASH_SIZE>::value == 1, ""); // fow now don't even think of changing it : )		
 
-		__FORCEINLINE__ std::uint32_t GetHash(void* ptr)
+		__AMT_FORCEINLINE__ std::uint32_t GetHash(void* ptr)
 		{
 			//size_t res = ((size_t)ptr) & (HASH_SIZE - 1);
 			size_t res = (((size_t)ptr) >> 3) & (HASH_SIZE - 1); // lowest 3 bits and higher 29 bits of pointers will be contained in m_ptrPart (this is to minimize size of buckets, taking into consideration that variables are typically 8-byte aligned)
 			return (std::uint32_t) res;
 		}
-		__FORCEINLINE__ AMTCounterHashMapBucket& GetBucket(void* ptr)
+		__AMT_FORCEINLINE__ AMTCounterHashMapBucket& GetBucket(void* ptr)
 		{
 			std::uint32_t hash = GetHash(ptr);
 			AMT_DEBUG_CASSERT(hash < HASH_SIZE);
@@ -315,7 +315,7 @@ namespace amt
 		}
 
 	public:
-		__FORCEINLINE__ static AMTCountersHashMap* GetCounterHashMap()
+		__AMT_FORCEINLINE__ static AMTCountersHashMap* GetCounterHashMap()
 		{
 			static volatile bool s_bCreated = false;
 			static AMTCountersHashMap* s_pMap = nullptr;
@@ -333,19 +333,19 @@ namespace amt
 			return s_pMap;
 		}
 
-		__FORCEINLINE__ void RegisterAddress(void* ptr)
+		__AMT_FORCEINLINE__ void RegisterAddress(void* ptr)
 		{
 			AMTCounterHashMapBucket& bucket = GetBucket(ptr);
 			bucket.RegisterAddress(ptr);
 		}
 
-		__FORCEINLINE__ void UnregisterAddress(void* ptr)
+		__AMT_FORCEINLINE__ void UnregisterAddress(void* ptr)
 		{
 			AMTCounterHashMapBucket& bucket = GetBucket(ptr);
 			bucket.UnregisterAddress(ptr);
 		}
 
-		__FORCEINLINE__ AMTCountersHashMap::AMTCounterHashMapElem* GetReadWriteCounters(void* ptr)
+		__AMT_FORCEINLINE__ AMTCountersHashMap::AMTCounterHashMapElem* GetReadWriteCounters(void* ptr)
 		{
 			AMTCounterHashMapBucket& bucket = GetBucket(ptr);
 			return bucket.GetReadWriteCounters(ptr);
@@ -355,3 +355,4 @@ namespace amt
 	};
 
 }
+
