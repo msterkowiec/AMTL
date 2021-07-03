@@ -7,27 +7,40 @@
 
 #pragma once
 
+#include "amt_config.h"
 
 // noexcept
 #if defined(_MSC_VER) && __cplusplus < 201402L
-#define __NOEXCEPT__
+#define __AMT_NOEXCEPT__
 #else
-#define __NOEXCEPT__ noexcept
+#define __AMT_NOEXCEPT__ noexcept
 #endif
 
 // __forceinline
 #ifdef _MSC_VER
-#define __FORCEINLINE__ __forceinline
+	#if __AMT_DONT_FORCE_INLINE__ > 0
+	#define __AMT_FORCEINLINE__ inline
+	#else
+	#define __AMT_FORCEINLINE__ __forceinline
+	#endif
 #elif defined(__GNUC__)
-#define __FORCEINLINE__ inline __attribute__((__always_inline__))
+	#if __AMT_DONT_FORCE_INLINE__ > 0
+	#define __AMT_FORCEINLINE__ inline
+	#else
+	#define __AMT_FORCEINLINE__ inline __attribute__((__always_inline__))
+	#endif
 #elif defined(__CLANG__)
 #if __has_attribute(__always_inline__)
-#define __FORCEINLINE__ inline __attribute__((__always_inline__))
+	#if __AMT_DONT_FORCE_INLINE__ > 0
+	#define __AMT_FORCEINLINE__ inline
+	#else
+	#define __AMT_FORCEINLINE__ inline __attribute__((__always_inline__))
+	#endif
 #else
-#define __FORCEINLINE__ inline
+#define __AMT_FORCEINLINE__ inline
 #endif
 #else
-#define __FORCEINLINE__ inline
+#define __AMT_FORCEINLINE__ inline
 #endif
 
 // __declspec(dllexport)
