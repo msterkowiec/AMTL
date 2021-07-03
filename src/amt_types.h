@@ -41,30 +41,30 @@ namespace amt
 #endif
 
 //
-// Values in containters will automatically be wrapped up for simple types:
+// Values in containters will automatically be wrapped up for simple types - temporarily excluding bool
 //
 #if __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ > 0
 	#define __AMT_TRY_WRAP_TYPE__(T, dontWrap, Allocator) typename std::conditional<																    \
-												  std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<T>>::value,          \
+												  std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<T>>::value && !std::is_same<T, bool>::value,          \
 												  typename std::conditional<std::is_pointer<T>::value, AMTPointerType<T>, AMTScalarType<T>>::type,      \
 												  T                                                                                                     \
 											   >::type 
 
 	// We need this too because if we replace value type (T) on the fly, we also have to change allocator type (C++17 forces it). This is also why we avoid auto-replace value type if non-standard allocator is used
 	#define __AMT_CHANGE_ALLOCATOR_IF_NEEDED__(T, dontWrap, Allocator) typename std::conditional<                                                                                                             \
-	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<T>>::value,                                        \
+	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<T>>::value && !std::is_same<T, bool>::value,                                        \
 															              typename std::conditional<std::is_pointer<T>::value, std::allocator<AMTPointerType<T>>, std::allocator<AMTScalarType<T>> >::type,   \
 															              std::allocator<T>                                                                                                                   \
 											                          >::type
 
 	#define __AMT_TRY_WRAP_MAPPED_TYPE__(Key, T, dontWrap, Allocator) typename std::conditional<                                                                                                 \
-	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<std::pair<const Key, T>>>::value,     \
+	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<std::pair<const Key, T>>>::value && !std::is_same<T, bool>::value,     \
 															              typename std::conditional<std::is_pointer<T>::value, AMTPointerType<T>, AMTScalarType<T>>::type,                       \
 															              T                                                                                                                      \
 											                          >::type 
 
 	#define __AMT_CHANGE_MAP_ALLOCATOR_IF_NEEDED__(Key, T, dontWrap, Allocator) typename std::conditional<                                                                                      \
-	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<std::pair<const Key, T>>>::value,    \
+	   								 			  	 		              std::is_scalar<T>::value && !(dontWrap) && std::is_same<Allocator,std::allocator<std::pair<const Key, T>>>::value && !std::is_same<T, bool>::value,    \
 															              typename std::conditional<std::is_pointer<T>::value, std::allocator<std::pair<const Key, AMTPointerType<T>>>, std::allocator<std::pair<const Key, AMTScalarType<T>>> >::type,   \
 															              std::allocator<std::pair<const Key, T>>                                                                                \
 											                          >::type
