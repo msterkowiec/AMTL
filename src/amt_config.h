@@ -10,12 +10,12 @@
 // 
 // __AMT_RELEASE_WITH_ASSERTS__
 //
-// Main configurable setting of Asserive MultiThreading Library
+// Main configurable setting of Assertive MultiThreading Library
 // Comment it out for release builds without additional checks
 //
-// ================================
+// ====================================
 #define __AMT_RELEASE_WITH_ASSERTS__
-// ================================
+// ====================================
 
 #if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
 
@@ -55,6 +55,9 @@
 #define __AMT_CHECK_ITERATORS_VALIDITY__ 1
 #define __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__ 1
 #define __AMT_CHECK_NUMERIC_OVERFLOW__ 1
+
+// Use this setting to speed up compilation time (forcing inline may cause huge slowdowns)
+#define __AMT_DONT_FORCE_INLINE__ 0
 
 // Switch it on only for internal debugging of AMT (e.g. internal assertions will be on)
 #define __AMT_DEBUG__ 1
