@@ -33,7 +33,7 @@ namespace amt
 			* partial read(single index)
 			* partial write(e.g.push_back without reallocation)
 			* write
-			Żadne read'y nie konfliktowałyby ze sobą, wszystkie write'y konfliktwałyby ze sobą nawzajem, a także z full read'em, a dodatkowo write knnfliktowałby z wszystkim
+			Reads conflict with each other, all writes conflict with each other and with full read and, additionally, write conflicts with anything else			
         */
 		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingPartialReadRequests;
