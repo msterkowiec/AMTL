@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include "amt_cassert.h"
 #include "amt_types.h"
 
@@ -30,6 +31,9 @@ namespace amt
 	class AMTScalarType
 	{
 		static_assert(std::is_scalar<T>::value, "Template parameter of AMTScalarType has to be a scalar type");
+		typedef typename std::make_unsigned<T>::type unsigned_T;
+		typedef typename std::make_signed<T>::type signed_T;
+		typedef typename std::conditional<std::is_signed<T>::value, typename std::make_unsigned<T>::type, typename std::make_signed<T>::type>::type opposite_signedness_T;
 
 	private:
 		T m_val;		
@@ -39,7 +43,7 @@ namespace amt
 		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 		#endif
 
-		__FORCEINLINE__ void Init()
+		__AMT_FORCEINLINE__ void Init()
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			static_assert(sizeof(AMTScalarType) == sizeof(T), "sizeof(AMTScalarType) is expected to be the same as sizeof the underlying type");
@@ -50,7 +54,7 @@ namespace amt
 			m_nPendingWriteRequests = 0;
 			#endif
 		}
-		__FORCEINLINE__ void Uninit()
+		__AMT_FORCEINLINE__ void Uninit()
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -65,7 +69,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void RegisterReadingThread() const
+		__AMT_FORCEINLINE__ void RegisterReadingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -79,7 +83,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingWriteRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterReadingThread() const
+		__AMT_FORCEINLINE__ void UnregisterReadingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -93,7 +97,7 @@ namespace amt
 			--m_nPendingReadRequests;
 			#endif
 		}
-		__FORCEINLINE__ void RegisterWritingThread() const
+		__AMT_FORCEINLINE__ void RegisterWritingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -109,7 +113,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterWritingThread() const
+		__AMT_FORCEINLINE__ void UnregisterWritingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -179,12 +183,27 @@ namespace amt
 			CRegisterReadingThread r2(o);
 			m_val = o.m_val;
 		}
+		/*inline AMTScalarType(const AMTScalarType<opposite_signedness_T>& o)
+		{
+			Init();
+			CRegisterWritingThread r(*this);
+			CRegisterReadingThread r2(o);
+			// to-do: check if conversion to type with opposite signedness is ok!!
+			m_val = o.m_val;
+		}*/
 		inline AMTScalarType(T t)
 		{
 			Init();
 			CRegisterWritingThread r(*this);
 			m_val = t;
 		}
+		/*inline AMTScalarType(opposite_signedness_T t)
+		{
+			Init();
+			CRegisterWritingThread r(*this);
+			// to-do: check if conversion to type with opposite signedness is ok!!
+			m_val = t;
+		}*/
 		inline ~AMTScalarType()
 		{
 			Uninit();
@@ -246,10 +265,20 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			return m_val;
 		}*/
+		unsigned_T MakeUnsigned() const
+		{
+			CRegisterReadingThread r(*this);
+			return (unsigned_T)m_val;
+		}
+		signed_T MakeSigned() const
+		{
+			CRegisterReadingThread r(*this);
+			return (signed_T)m_val;
+		}
 		#if __AMT_CHECK_NUMERIC_OVERFLOW__
 	private:
 		template<typename U, typename V>
-		__FORCEINLINE__ static void VerifyOverflow_Add(U u, V v)
+		__AMT_FORCEINLINE__ static void VerifyOverflow_Add(U u, V v)
 		{
 			if (!std::is_floating_point<U>::value)
 				if (std::is_floating_point<V>::value)
@@ -270,7 +299,7 @@ namespace amt
 					}
 		}
 		template<typename U, typename V>
-		__FORCEINLINE__ static void VerifyOverflow_Subtract(U u, V v)
+		__AMT_FORCEINLINE__ static void VerifyOverflow_Subtract(U u, V v)
 		{
 			if (!std::is_floating_point<U>::value)
 				if (std::is_floating_point<V>::value)
@@ -292,7 +321,7 @@ namespace amt
 		}
 
 		template<typename U, typename V>
-		__FORCEINLINE__ static void VerifyOverflow_Mul(U u, V v)
+		__AMT_FORCEINLINE__ static void VerifyOverflow_Mul(U u, V v)
 		{
 			if (!std::is_floating_point<U>::value)
 				if (std::is_floating_point<V>::value)
@@ -328,7 +357,7 @@ namespace amt
 		}
 
 		template<typename U, typename V>
-		__FORCEINLINE__ static void VerifyOverflow_Div(U u, V v)
+		__AMT_FORCEINLINE__ static void VerifyOverflow_Div(U u, V v)
 		{
 			AMT_CASSERT(v != 0);
 			
@@ -360,13 +389,29 @@ namespace amt
 		inline AMTScalarType& operator += (const T& t)
 		{
 			CRegisterReadingThread r1(*this);
+			VerifyOverflow_Add(m_val, t);
 			m_val += t;
 			return *this;
 		}
 		inline AMTScalarType& operator -= (const T& t)
 		{
 			CRegisterReadingThread r1(*this);
+			VerifyOverflow_Subtract(m_val, t);
 			m_val -= t;
+			return *this;
+		}
+		inline AMTScalarType& operator *= (const T& t)
+		{
+			CRegisterReadingThread r1(*this);
+			VerifyOverflow_Mul(m_val, t);
+			m_val *= t;
+			return *this;
+		}
+		inline AMTScalarType& operator /= (const T& t)
+		{
+			CRegisterReadingThread r1(*this);
+			VerifyOverflow_Div(m_val, t);
+			m_val /= t;
 			return *this;
 		}
 		inline AMTScalarType& operator |= (const T& t)
@@ -387,6 +432,20 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			return m_val;
 		}
+		/*template<class = typename std::enable_if<std::is_signed<T>::value>::type>
+		operator unsigned_T() const volatile
+		{
+			CRegisterReadingThread r(*this);
+			// to-do: add value verification here!!!
+			return m_val;
+		}
+		template<class = typename std::enable_if<std::is_unsigned<T>::value>::type>
+		operator signed_T() const volatile
+		{
+			CRegisterReadingThread r(*this);
+			// to-do: add value verification here!!!
+			return m_val;
+		}*/
 
 		template<typename Tt>
 		class AMTScalarTypePtr
@@ -491,14 +550,14 @@ namespace amt
 		#if __AMT_CHECK_NUMERIC_OVERFLOW__
 
 		// Addition:
-		inline friend AMTScalarType operator + (const AMTScalarType& var1, const AMTScalarType& var2)
+		/*inline friend AMTScalarType operator + (const AMTScalarType& var1, const AMTScalarType& var2)
 		{
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
 			VerifyOverflow_Add(var1.m_val, var2.m_val);
 			AMTScalarType<T> ret(var1.m_val + var2.m_val);
 			return ret;
-		}
+		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType operator + (const AMTScalarType& var1, U u)
 		{
@@ -517,14 +576,14 @@ namespace amt
 		}
 
 		// Subtraction:
-		inline friend AMTScalarType<T> operator - (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
+		/*inline friend AMTScalarType<T> operator - (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
 			VerifyOverflow_Subtract(var1.m_val, var2.m_val);
 			AMTScalarType<T> ret(var1.m_val - var2.m_val);
 			return ret;
-		}
+		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend T operator - (const AMTScalarType<T>& var1, U u)
 		{
@@ -541,14 +600,14 @@ namespace amt
 		}
 
 		// Multiplication:
-		inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
+		/*inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
 			VerifyOverflow_Mul(var1.m_val, var2.m_val);
 			AMTScalarType<T> ret(var1.m_val * var2.m_val);
 			return ret;
-		}
+		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, U u)
 		{
@@ -567,14 +626,14 @@ namespace amt
 		}
 
 		// Division:
-		inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
+		/*inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
 			VerifyOverflow_Div(var1.m_val, var2.m_val);
 			AMTScalarType<T> ret(var1.m_val / var2.m_val);
 			return ret;
-		}
+		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, U u)
 		{
@@ -591,6 +650,21 @@ namespace amt
 			AMTScalarType<T> ret(u / var2.m_val);
 			return ret;
 		}
+
+		/*template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline friend AMTScalarType<T> operator & (const AMTScalarType<T>& var1, U u)
+		{
+			CRegisterReadingThread r1(var1);
+			AMTScalarType<T> ret(var1.m_val & u);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline friend AMTScalarType<T> operator | (U u, const AMTScalarType<T>& var2)
+		{
+			CRegisterReadingThread r(var2);
+			AMTScalarType<T> ret(u | var2.m_val);
+			return ret;
+		}*/
 
 		#endif
 	};
@@ -610,7 +684,7 @@ namespace amt
 		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 		#endif
 
-		__FORCEINLINE__ void Init()
+		__AMT_FORCEINLINE__ void Init()
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			static_assert(sizeof(AMTPointerType) == sizeof(T), "sizeof(AMTPointerType) is expected to be the same as sizeof the underlying type");
@@ -621,7 +695,7 @@ namespace amt
 			m_nPendingWriteRequests = 0;
 			#endif
 		}
-		__FORCEINLINE__ void Uninit()
+		__AMT_FORCEINLINE__ void Uninit()
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -636,7 +710,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void RegisterReadingThread() const
+		__AMT_FORCEINLINE__ void RegisterReadingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -649,7 +723,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingWriteRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterReadingThread() const
+		__AMT_FORCEINLINE__ void UnregisterReadingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -663,7 +737,7 @@ namespace amt
 			--m_nPendingReadRequests;
 			#endif
 		}
-		__FORCEINLINE__ void RegisterWritingThread() const
+		__AMT_FORCEINLINE__ void RegisterWritingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -679,7 +753,7 @@ namespace amt
 			AMT_CASSERT(m_nPendingReadRequests == 0);
 			#endif
 		}
-		__FORCEINLINE__ void UnregisterWritingThread() const
+		__AMT_FORCEINLINE__ void UnregisterWritingThread() const
 		{
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
@@ -931,8 +1005,53 @@ namespace amt
 
 	template<typename T>
 	using raw_ptr = AMTPointerType<T*>;
+	
+	// Auxiliary structs to make code compile before C++17 (without if constexpr):
+	template<bool IS_SCALAR>
+	struct AmtCastToSigned
+	{
+		template<typename T>
+		static inline typename std::make_signed<typename T>::type Cast(AMTScalarType<T> x)
+		{
+			return x.MakeSigned();
+		}
+	};
+	template<>
+	struct AmtCastToSigned<true>
+	{
+		template<typename T = int>
+		static inline typename std::make_signed<typename T>::type Cast(T x)
+		{
+			AMT_CASSERT(false);
+			return 0; // not used actually, just a syntactic trick
+		}
+	};
+	template<bool IS_SCALAR>
+	struct AmtNumToSigned
+	{
+		template<typename T> 
+		static inline int Cast(T& x)
+		{
+			AMT_CASSERT(false);
+			return 0; // not used actually, just a syntactic trick
+		}
+	};
+	template<>
+	struct AmtNumToSigned<true>
+	{
+		template<typename T>
+		static inline typename std::make_signed<typename std::conditional<std::is_same<T, bool>::value, std::uint8_t, T>::type>::type Cast(T x)
+		{
+			return x;
+		}
+	};
 
-	#else
+	#define AMT_NUM_TO_SIGNED(x) ((std::make_signed<std::conditional<std::is_same<decltype(x), bool>::value, std::uint8_t, decltype(x)>::type>::type)x) 		
+	#define AMT_NUM_TO_UNSIGNED(x) ((std::make_unsigned<std::conditional<std::is_same<decltype(x), bool>::value, std::int8_t, decltype(x)>::type>::type)x) 		
+	#define AMT_CAST_TO_SIGNED(x) (std::is_scalar<decltype(x)>::value ? amt::AmtNumToSigned<std::is_scalar<decltype(x)>::value>::Cast(x) : amt::AmtCastToSigned<std::is_scalar<decltype(x)>::value>::Cast(x))
+	// to-do: #define AMT_CAST_TO_UNSIGNED(x) 
+
+	#else // #if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
 
 	template<typename T>
 	using AMTScalarType = T;
@@ -955,6 +1074,9 @@ namespace amt
 
 	template<typename T>
 	using raw_ptr = T*;
+
+	#define AMT_CAST_TO_SIGNED(x) x
+	#define AMT_CAST_TO_UNSIGNED(x) x
 
 	#endif
 
