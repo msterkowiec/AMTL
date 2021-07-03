@@ -54,3 +54,18 @@ To-do, at least:
 - make sure that all the traits of types from amt namespace are exactly the same as the traits of their equivalents from std namespace
 - polish AMTScalarType and AMTPointerType
 - last but not least: a) prepare test suite b) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
+
+Known issues
+AMTL is a fresh project (its idea sprang in the middle of April 2021), so many things are still missing and many may have been unnoticed, anyway here is the list of possible issues spotted so far:
+- it may be not enough to replace amt types with amt "assertive" types to compile successfully - adding manually some casts may be inevitable - e.g. when implicit cast that changes signedness is used in the existing code (anyway such problems with compilation may indicate points in code that require attention - and as such it may be treated as additional value of AMTL not an issue : )
+  This is due to the fact that C++ doesn't allow to have more than one suitable operator for conversion, no possibility to have "last_resort" operator, though it seems it would be nice to have it for such wrapper classes like in AMTL
+- compilation times in release (with optimizations) sometimes tends to be... almost infinite with VS :) Replacing some __AMT_FORCEINLINE__ with just "inline" may solve the issue (see macro __AMT_DONT_FORCE_INLINE__ in amt_config.h)
+- AMTL may raise false alarms/false positives; particularly annoying is the following case with subtraction of two unsigned numeric types:
+  amt::uint8_t a = 1;
+  amt::uint8_t b = 2;
+  amt::int8_t c = a - b; // Here AMTL raises assertion failure, because a - b gives overflow on the type of left operand (which is unsigned), although this is 100% safe with C++ numeric types
+  Probably better than abandon usage of AMTL is to explicitly express intention, e.g. in the following way:
+  amt::int8_t c = ((std::int8_t)a) - b;
+  or better something like this, though for sure it would be cumbersome as hell:
+  amt::int8_t c = ((std::make_signed<decltype(a)>::type)a) - b;
+  That's why the following macros are available: AMT_CAST_TO_SIGNED(x) and AMT_CAST_TO_UNSIGNED(x) - what's important, they are currently defaulted just to "x" if AMTL feature is off (if amt_config.h leaves __AMT_RELEASE_WITH_ASSERTS__ undefined)
