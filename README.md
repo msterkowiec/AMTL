@@ -9,16 +9,22 @@
 [![CMake-MSVC](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml/badge.svg)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml)
 
 
+# Purpose
+
 Assertive MultiThreading Library (AMT) is intended to have no impact on actual release builds.
 Its main purpose is to provide types for special builds (debug or special release with asserts) that can detect errors in code.
 
 AMT provides equivalents of standard types (like std::map, std::vector, std::int8_t etc.) within amt namespace.
 In release build these types are typedef'ed back to std, so effectively there is no change in release mode/
 
+# Features
+
 Cases of improper usages that currently can be detected:
 * missing thread synchronization (concurrent access to container or a variable that can cause problems),
 * numeric overflow
 * operations on invalidated iterators
+
+# Usage
 
 All user of AMTL should do to use it is: 
 * change in the application under tests the types from namespace std to amt for as many variables/objects as possible (e.g. even replace all std::map, std::vector, std::intXX_t, std::uintXX_t to amt::)
@@ -36,13 +42,13 @@ Thus, when using AMTL it is recommended to use the following four various config
 
 Currently AMTL may be considered a working POC.
 
-What is done:
+# What is done:
 - amt::map, amt::set
 - amt::vector - without iterators and some methods missing (emplace, reserve)
 - initial version of control of multithreaded access to trivial types (AMTScalarType)
 - numeric overflow (partially)
 
-To-do, at least:
+# To-do, at least:
 - customize cassert; e.g. be able to pass ptr to cassert function or force throw instead of displaying assert msg (may be suitable for tests)
 - amt::string
 - move constructor and move assignment handled in amt::map and amt::vector
@@ -55,7 +61,7 @@ To-do, at least:
 - polish AMTScalarType and AMTPointerType
 - last but not least: a) prepare test suite b) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
 
-Known issues
+# Known issues
 AMTL is a fresh project (its idea sprang in the middle of April 2021), so many things are still missing and many may have been unnoticed, anyway here is the list of possible issues spotted so far:
 - it may be not enough to replace amt types with amt "assertive" types to compile successfully - adding manually some casts may be inevitable - e.g. when implicit cast that changes signedness is used in the existing code (anyway such problems with compilation may indicate points in code that require attention - and as such it may be treated as additional value of AMTL not an issue : )
   This is due to the fact that C++ doesn't allow to have more than one suitable operator for conversion, no possibility to have "last_resort" operator, though it seems it would be nice to have it for such wrapper classes like in AMTL
@@ -69,3 +75,16 @@ AMTL is a fresh project (its idea sprang in the middle of April 2021), so many t
   or better something like this, though for sure it would be cumbersome as hell:
   amt::int8_t c = ((std::make_signed<decltype(a)>::type)a) - b;
   That's why the following macros are available: AMT_CAST_TO_SIGNED(x) and AMT_CAST_TO_UNSIGNED(x) - what's important, they are currently defaulted just to "x" if AMTL feature is off (if amt_config.h leaves __AMT_RELEASE_WITH_ASSERTS__ undefined)
+
+# Origin
+
+It may be worth adding a few words about project origin. As said, its idea sprang in the middle of April 2021 - during bug fixing of a piece of software that solves chess moremovers (it's been developed "after hours" for quite many years and treated as very well tested - large test suite, "robust", "reliable" etc. etc.)
+However this time I was a bit lazy and didn't want to put too much effort into finding out the cause of some thread synchronization issue. AMTL, or more exactly some initial class, showed the exact two places in code and exact two threads that clashed.
+I must admit I was impressed by the result - practically with no effort I had it solved (AMTL, like a good teacher, showed me: "here and here you have a sync issue"). There was no alternative but to try to continue this...
+BTW: since then, AMTL showed me about 10 other issues (about half of them multithreading/sync issues, another half was integer overflow that had been unnoticed earlier - somehow all the tests had been passing...)
+
+# Hopes
+
+Like in the song by Pink Floyd, the hopes are quite high : )
+First of all, AMTL seems to have a potential to make C++ software much better tested and much more robust - and, thus, save time, money and maybe even lives (depending on kind of software).
+Eventually a similar solution might/should become a part of standard library - and become switchable by some macro - without need to use symbols from amt namespace any more.
