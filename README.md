@@ -51,7 +51,6 @@ Currently AMTL may be considered a working POC.
 # To-do, at least:
 - customize cassert; e.g. be able to pass ptr to cassert function or force throw instead of displaying assert msg (may be suitable for tests)
 - amt::string
-- move constructor and move assignment handled in amt::map and amt::vector
 - iterators of vector; also missing reserve, emplace
 - completion of code for verification of numeric overflow: a) 64-bit types, b) double/float c) double/float on the right of operators
 - list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
