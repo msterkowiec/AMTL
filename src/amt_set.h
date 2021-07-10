@@ -261,6 +261,18 @@ namespace amt
 				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
 				return *this;
 			}
+			__AMT_FORCEINLINE__ IteratorBase& operator = (IteratorBase&& o)
+			{
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterWritingThread r(*this);
+				CRegisterWritingThread r2(o);
+				#endif
+				o.AssertIsValid();
+				m_pSet = o.m_pSet;
+				*((ITER*)this) = std::move(*((ITER*)&o));
+				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+				return *this;
+			}
 			__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
@@ -403,12 +415,28 @@ namespace amt
 			Init();
 			CRegisterWritingThread r2(*this);
 		}
+		inline set(set&& o)
+		{
+			CRegisterWritingThread r(o);
+			Init();
+			CRegisterWritingThread r2(*this);
+			*((Base*)this) = std::move(*((Base*)&o));
+		}
 		inline set& operator = (const set& o)
 		{
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			++m_nCountOperInvalidateIter;
 			*((Base*)this) = *((Base*)&o);
+			return *this;
+		}
+		inline set& operator = (set&& o)
+		{
+			CRegisterWritingThread r(o);
+			CRegisterWritingThread r2(*this);
+			++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
+			*((Base*)this) = std::move(*((Base*)&o));
+			++o.m_nCountOperInvalidateIter;
 			return *this;
 		}
 		inline ~set()
@@ -701,4 +729,3 @@ namespace amt
 #endif
 
 }
-
