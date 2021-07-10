@@ -176,6 +176,13 @@ namespace amt
 			Init();
 			CRegisterWritingThread r2(*this);
 		}
+		inline vector(vector&& o) 
+		{
+			CRegisterWritingThread r(o);
+			Init();
+			CRegisterWritingThread r2(*this);
+			*((Base*)this) = std::move(*((Base*)&o));
+		}
 		inline ~vector()
 		{
 			CRegisterWritingThread r(*this);
@@ -391,6 +398,14 @@ namespace amt
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
+		__AMT_FORCEINLINE__ vector& operator = (vector&& o)
+		{
+			CRegisterWritingThread r(o);
+			CRegisterWritingThread r2(*this);
+			*((Base*)this) = std::move(*((Base*)&o));
+			return *this;
+		}
+
 		__AMT_FORCEINLINE__ friend bool operator < (const vector& v1, const vector& v2)
 		{
 			CRegisterReadingThread r(v1);
