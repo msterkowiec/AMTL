@@ -37,6 +37,5 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	std::thread thread2(&VectorUnsynchWriteTestFunc, 1, std::ref(vec));
 	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
 		std::this_thread::yield();
-	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[0], true);
-	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[1], true);
+	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[0] || VectorUnsynchWriteTestFuncExcCaught[1], true);
 }
