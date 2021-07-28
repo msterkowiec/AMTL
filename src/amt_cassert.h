@@ -20,7 +20,7 @@
 	#ifdef _DEBUG
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
 	#else
-	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__))
+	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, #a))
 	#endif
 #endif
 
@@ -51,9 +51,9 @@
 	#include <thread>
 	#include <cstdio>
 	template<bool>
-	inline void __custom_assert(bool a, const char* szFileName, long lLine)
+	inline void __custom_assert(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ". Press <ENTER> to continue.\n";
+		std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ": " << szDesc << " Press <ENTER> to continue.\n";
 		getchar();
 	}
 	#endif
