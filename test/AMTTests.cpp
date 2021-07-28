@@ -12,7 +12,7 @@ TEST(AMTTest, BasicTest) {
 }
 
 bool VectorUnsynchWriteTestFuncExcCaught[2] = {false, false};
-std::atomic<size_t> VectorUnsynchWriteTestThreadComplete = 0;
+std::atomic<size_t> VectorUnsynchWriteTest_ThreadsComplete;
 
 void VectorUnsynchWriteTestFunc(size_t threadNo, amt::vector<int>& vec)
 {
@@ -24,16 +24,17 @@ void VectorUnsynchWriteTestFunc(size_t threadNo, amt::vector<int>& vec)
 	{
 		VectorUnsynchWriteTestFuncExcCaught[threadNo] = true;
 	}
-	++ VectorUnsynchWriteTestThreadComplete;
+	++ VectorUnsynchWriteTest_ThreadsComplete;
 	return;
 }
 
 TEST(AMTTest, VectorUnsynchWriteTest) {
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::vector<int> vec;
+	VectorUnsynchWriteTest_ThreadsComplete = 0
 	std::thread thread1(0, vec, &VectorUnsynchWriteTestFunc);
 	std::thread thread2(1, vec, &VectorUnsynchWriteTestFunc);
-	while (VectorUnsynchWriteTestThreadComplete != 2)
+	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
 		std::this_thread::yield();
 	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[0], true);
 	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[1], true);
