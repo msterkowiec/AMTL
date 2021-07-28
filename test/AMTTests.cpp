@@ -33,8 +33,8 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::vector<int> vec;
 	VectorUnsynchWriteTest_ThreadsComplete = 0;
-	std::thread thread1(0, vec, &VectorUnsynchWriteTestFunc);
-	std::thread thread2(1, vec, &VectorUnsynchWriteTestFunc);
+	std::thread thread1(&VectorUnsynchWriteTestFunc, 0, vec);
+	std::thread thread2(&VectorUnsynchWriteTestFunc, 1, vec);
 	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
 		std::this_thread::yield();
 	EXPECT_EQ(VectorUnsynchWriteTestFuncExcCaught[0], true);
