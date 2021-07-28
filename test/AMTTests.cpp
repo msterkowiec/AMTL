@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <thread>
 #include <atomic>
 #include "amt_vector.h"
 
@@ -31,7 +32,7 @@ void VectorUnsynchWriteTestFunc(size_t threadNo, amt::vector<int>& vec)
 TEST(AMTTest, VectorUnsynchWriteTest) {
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::vector<int> vec;
-	VectorUnsynchWriteTest_ThreadsComplete = 0
+	VectorUnsynchWriteTest_ThreadsComplete = 0;
 	std::thread thread1(0, vec, &VectorUnsynchWriteTestFunc);
 	std::thread thread2(1, vec, &VectorUnsynchWriteTestFunc);
 	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
