@@ -50,10 +50,11 @@ void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 		{
 			if (VectorSynchWriteTest_AssertionFailed)
 				return;			
+			size = GetCurrentSize(vec);	
 			i = size - 1;		
 		}
 		++ vec[i];
-		size_t size = GetCurrentSize(vec);	
+		size = GetCurrentSize(vec);	
 	}
 	return;
 }
