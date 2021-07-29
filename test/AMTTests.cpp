@@ -157,7 +157,7 @@ bool MapUnsynchWriteTest_AssertionFailed = false;
 			VectorUnsynchWriteTest_AssertionFailed = true;
 }*/
 
-void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int>& map)
+void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map)
 {
 	try
 	{
