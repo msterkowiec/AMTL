@@ -17,7 +17,6 @@ TEST(AMTTest, BasicTest) {
 // Test vector for unsynchronized access when writing. Expected assertion failure.
 
 bool VectorUnsynchWriteTestFunc_AssertionFailed = false;
-std::atomic<size_t> VectorUnsynchWriteTest_ThreadsComplete;
 
 void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
@@ -29,8 +28,7 @@ void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, 
 void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
-			vec.push_back(i);
-	++VectorUnsynchWriteTest_ThreadsComplete;
+		vec.push_back(i);
 	return;
 }
 void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
@@ -44,10 +42,9 @@ void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 TEST(AMTTest, VectorUnsynchWriteTest) {
 	amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
-	VectorUnsynchWriteTest_ThreadsComplete = 0;
 	std::thread thread1(&VectorUnsynchWriteTest_WriterThread, 0, std::ref(vec));
 	std::thread thread2(&VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec));
-	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
-		std::this_thread::yield();
-	 EXPECT_EQ(VectorUnsynchWriteTestFunc_AssertionFailed, true);
+	thread1.join();
+	thread2.join();	
+	EXPECT_EQ(VectorUnsynchWriteTestFunc_AssertionFailed, true);
 }
