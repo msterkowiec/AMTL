@@ -14,26 +14,75 @@ TEST(AMTTest, BasicTest) {
 }
 
 // ----------------------------------------------------------------------
+// Test vector for synchronized access when writing. Expected no assertion failure.
+
+bool VectorSynchWriteTest_AssertionFailed = false;
+std::mutex mtxVectorSynchWriteTest;
+
+void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
+			VectorSynchWriteTest_AssertionFailed = true;
+}
+
+void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
+{
+	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+	{
+		std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+		vec.push_back(i);
+	}
+	return;
+}
+inline size_t GetCurrentSize()
+{
+	std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+	return vec.size();
+}
+void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
+{
+	size_t size = GetCurrentSize();	
+	for (size_t i = 0; i < size && !VectorSynchWriteTest_AssertionFailed; ++i)
+	{
+		std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+		++ vec[i];
+		size_t size = GetCurrentSize();	
+	}
+	return;
+}
+
+TEST(AMTTest, VectorSynchWriteTest) {
+	amt::SetCustomAssertHandler<0>(&VectorSynchWriteTest_CustomAssertHandler);
+	amt::vector<int> vec;
+	std::thread thread1(&VectorSynchWriteTest_WriterThread, 0, std::ref(vec));
+	std::thread thread2(&VectorSynchWriteTest_ReaderThread, 1, std::ref(vec));
+	thread1.join();
+	thread2.join();	
+	EXPECT_EQ(VectorSynchWriteTest_AssertionFailed, false);
+}
+
+// ----------------------------------------------------------------------
 // Test vector for unsynchronized access when writing. Expected assertion failure.
 
-bool VectorUnsynchWriteTestFunc_AssertionFailed = false;
+bool VectorUnsynchWriteTest_AssertionFailed = false;
 
 void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
 		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
-			VectorUnsynchWriteTestFunc_AssertionFailed = true;
+			VectorUnsynchWriteTest_AssertionFailed = true;
 }
 
 void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
-	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
+	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 		vec.push_back(i);
 	return;
 }
 void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
-	for (size_t i = 0; i < vec.size() && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
+	for (size_t i = 0; i < vec.size() && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 		++ vec[i];
 	return;
 }
@@ -45,5 +94,5 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	std::thread thread2(&VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec));
 	thread1.join();
 	thread2.join();	
-	EXPECT_EQ(VectorUnsynchWriteTestFunc_AssertionFailed, true);
+	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
 }
