@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <time.h> 
 #include "amt_vector.h"
+#include "amt_map.h"
 #include "amt_pod.h"
 
 TEST(AMTTest, BasicTest) {
