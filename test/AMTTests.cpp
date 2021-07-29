@@ -144,3 +144,43 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	thread2.join();	
 	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
 }
+
+// ----------------------------------------------------------------------
+// Test map for unsynchronized access when writing. Expected assertion failure.
+
+bool MapUnsynchWriteTest_AssertionFailed = false;
+
+/*void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
+			VectorUnsynchWriteTest_AssertionFailed = true;
+}*/
+
+void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int>& map)
+{
+	try
+	{
+		size_t iStart = threadNo ? 32678 : 0;
+		size_t iEnd = threadNo ? 65536 : 32768;
+		for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
+			map[i] = i + threadNo;
+	}
+	catch(...)
+	{
+		MapUnsynchWriteTest_AssertionFailed = true;
+	}
+	return;
+}
+
+TEST(AMTTest, MapUnsynchWriteTest) {
+	srand (time(NULL));
+	//amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::map<int, int> map;
+	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(map));
+	std::thread thread2(&MapUnsynchWriteTest_ReaderThread, 1, std::ref(map));
+	thread1.join();
+	thread2.join();	
+	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
+}
