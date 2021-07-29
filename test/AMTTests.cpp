@@ -35,19 +35,19 @@ void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 	}
 	return;
 }
-inline size_t GetCurrentSize()
+inline size_t GetCurrentSize(const amt::vector<int>& vec)
 {
 	std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 	return vec.size();
 }
 void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
-	size_t size = GetCurrentSize();	
+	size_t size = GetCurrentSize(vec);	
 	for (size_t i = 0; i < size && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
 		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 		++ vec[i];
-		size_t size = GetCurrentSize();	
+		size_t size = GetCurrentSize(vec);	
 	}
 	return;
 }
