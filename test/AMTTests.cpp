@@ -47,7 +47,11 @@ void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 	{
 		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 		while (i >= size)
+		{
+			if (VectorSynchWriteTest_AssertionFailed)
+				return;			
 			i = size - 1;		
+		}
 		++ vec[i];
 		size_t size = GetCurrentSize(vec);	
 	}
@@ -87,7 +91,11 @@ void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 	{
 		while (i >= vec.size())
+		{
+			if (VectorSynchWriteTest_AssertionFailed)
+				return;
 			i = vec.size() - 1;
+		}
 		++ vec[i];
 	}
 	return;
