@@ -30,14 +30,14 @@ void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
-		std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+		std::unique_lock<std::mutex> lock(mtxVectorSynchWriteTest);
 		vec.push_back(i);
 	}
 	return;
 }
 inline size_t GetCurrentSize()
 {
-	std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+	std::unique_lock<std::mutex> lock(mtxVectorSynchWriteTest);
 	return vec.size();
 }
 void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
