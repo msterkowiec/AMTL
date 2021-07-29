@@ -3,6 +3,8 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <cstdlib>
+#include <time.h> 
 #include "amt_vector.h"
 
 TEST(AMTTest, BasicTest) {
@@ -46,20 +48,18 @@ void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
 		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-		while (i >= size)
+		if (size)
 		{
-			if (VectorSynchWriteTest_AssertionFailed)
-				return;			
-			size = GetCurrentSize(vec);	
-			i = size - 1;		
+			size_t idx = rand () % size;
+			++ vec[idx];
 		}
-		++ vec[i];
 		size = GetCurrentSize(vec);	
 	}
 	return;
 }
 
 TEST(AMTTest, VectorSynchWriteTest) {
+	srand (time(NULL));
 	amt::SetCustomAssertHandler<0>(&VectorSynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	std::thread thread1(&VectorSynchWriteTest_WriterThread, 0, std::ref(vec));
@@ -91,18 +91,17 @@ void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 	{
-		while (i >= vec.size())
+		if (vec.size())
 		{
-			if (VectorSynchWriteTest_AssertionFailed)
-				return;
-			i = vec.size() - 1;
+			size_t idx = rand () % vec.size();
+			++ vec[idx];
 		}
-		++ vec[i];
 	}
 	return;
 }
 
 TEST(AMTTest, VectorUnsynchWriteTest) {
+	srand (time(NULL));
 	amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	std::thread thread1(&VectorUnsynchWriteTest_WriterThread, 0, std::ref(vec));
