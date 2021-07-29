@@ -43,9 +43,11 @@ inline size_t GetCurrentSize(const amt::vector<int>& vec)
 void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
 	size_t size = GetCurrentSize(vec);	
-	for (size_t i = 0; i < size && !VectorSynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
 		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+		while (i >= size)
+			i = size - 1;		
 		++ vec[i];
 		size_t size = GetCurrentSize(vec);	
 	}
@@ -82,8 +84,12 @@ void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 }
 void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
-	for (size_t i = 0; i < vec.size() && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	{
+		while (i >= vec.size())
+			i = vec.size() - 1;
 		++ vec[i];
+	}
 	return;
 }
 
