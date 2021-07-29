@@ -24,7 +24,7 @@ bool IntUnsynchWriteTest_AssertionFailed = false;
 void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
 			IntUnsynchWriteTest_AssertionFailed = true;
 }
 
