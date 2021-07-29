@@ -17,7 +17,7 @@ TEST(AMTTest, BasicTest) {
 // Test vector for synchronized access when writing. Expected no assertion failure.
 
 bool VectorSynchWriteTest_AssertionFailed = false;
-std::mutex mtxVectorSynchWriteTest;
+std::recursive_mutex mtxVectorSynchWriteTest;
 
 void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
@@ -30,14 +30,14 @@ void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
-		std::unique_lock<std::mutex> lock(mtxVectorSynchWriteTest);
+		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 		vec.push_back(i);
 	}
 	return;
 }
 inline size_t GetCurrentSize()
 {
-	std::unique_lock<std::mutex> lock(mtxVectorSynchWriteTest);
+	std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 	return vec.size();
 }
 void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
@@ -45,7 +45,7 @@ void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 	size_t size = GetCurrentSize();	
 	for (size_t i = 0; i < size && !VectorSynchWriteTest_AssertionFailed; ++i)
 	{
-		std::unique_lock<std::mutext> lock(mtxVectorSynchWriteTest);
+		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
 		++ vec[i];
 		size_t size = GetCurrentSize();	
 	}
