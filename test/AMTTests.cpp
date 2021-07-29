@@ -179,7 +179,7 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::map<int, int> map;
 	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(map));
-	std::thread thread2(&MapUnsynchWriteTest_ReaderThread, 1, std::ref(map));
+	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(map));
 	thread1.join();
 	thread2.join();	
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
