@@ -6,8 +6,10 @@
 #include <cstdlib>
 #include <time.h> 
 #include "amt_vector.h"
-#include "amt_map.h"
 #include "amt_pod.h"
+#ifdef _WIN32 
+#include "amt_map.h"
+#endif
 
 TEST(AMTTest, BasicTest) {
 
