@@ -35,7 +35,6 @@ void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < vec.size() && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
 		++ vec[i];
-	++VectorUnsynchWriteTest_ThreadsComplete;
 	return;
 }
 
