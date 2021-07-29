@@ -14,6 +14,7 @@ TEST(AMTTest, BasicTest) {
 }
 
 // ----------------------------------------------------------------------
+// Test vector for unsynchronized access when writing. Expected assertion failure.
 
 bool VectorUnsynchWriteTestFunc_AssertionFailed = false;
 std::atomic<size_t> VectorUnsynchWriteTest_ThreadsComplete;
@@ -21,28 +22,31 @@ std::atomic<size_t> VectorUnsynchWriteTest_ThreadsComplete;
 void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect
-		{
+		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
 			VectorUnsynchWriteTestFunc_AssertionFailed = true;
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
 }
 
-void VectorUnsynchWriteTestFunc(size_t threadNo, amt::vector<int>& vec)
+void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
 	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
 			vec.push_back(i);
 	++VectorUnsynchWriteTest_ThreadsComplete;
 	return;
 }
-
+void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
+{
+	for (size_t i = 0; i < vec.size() && !VectorUnsynchWriteTestFunc_AssertionFailed; ++i)
+		++ vec[i];
+	++VectorUnsynchWriteTest_ThreadsComplete;
+	return;
+}
 
 TEST(AMTTest, VectorUnsynchWriteTest) {
 	amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	VectorUnsynchWriteTest_ThreadsComplete = 0;
-	std::thread thread1(&VectorUnsynchWriteTestFunc, 0, std::ref(vec));
-	std::thread thread2(&VectorUnsynchWriteTestFunc, 1, std::ref(vec));
+	std::thread thread1(&VectorUnsynchWriteTest_WriterThread, 0, std::ref(vec));
+	std::thread thread2(&VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec));
 	while (VectorUnsynchWriteTest_ThreadsComplete != 2)
 		std::this_thread::yield();
 	 EXPECT_EQ(VectorUnsynchWriteTestFunc_AssertionFailed, true);
