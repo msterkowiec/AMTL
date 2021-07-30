@@ -31,7 +31,7 @@ void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 
 void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val)
 {
-	for (size_t i = 0; i < 32678 && !IntUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
 		if (threadNo)
 			++ val;
 		else
@@ -118,13 +118,13 @@ void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, 
 
 void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 {
-	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 		vec.push_back(i);
 	return;
 }
 void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
 {
-	for (size_t i = 0; i < 32678 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 	{
 		if (vec.size())
 		{
