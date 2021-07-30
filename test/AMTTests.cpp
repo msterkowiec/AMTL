@@ -155,33 +155,24 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 
 bool MapUnsynchWriteTest_AssertionFailed = false;
 
-/*void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
 		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
 			VectorUnsynchWriteTest_AssertionFailed = true;
-}*/
+}
 
 void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map)
 {
-	try
-	{
-		size_t iStart = threadNo ? 32678 : 0;
-		size_t iEnd = threadNo ? 65536 : 32768;
-		for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
-			map[i] = i + threadNo;
-	}
-	catch(...)
-	{
-		MapUnsynchWriteTest_AssertionFailed = true;
-	}
-	return;
+	size_t iStart = threadNo ? 32678 : 0;
+	size_t iEnd = threadNo ? 65536 : 32768;
+	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
+		map[i] = i + threadNo;
 }
 
 TEST(AMTTest, MapUnsynchWriteTest) {
 	srand (time(NULL));
-	//amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
-	amt::SetThrowCustomAssertHandler<0>();
+	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
 	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map));
 	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map));
