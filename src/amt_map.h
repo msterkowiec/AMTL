@@ -484,7 +484,7 @@ namespace amt
 		}
 		__AMT_FORCEINLINE__ map& operator = (map&& o)
 		{
-			CRegisterWritimgThread r(o);
+			CRegisterWritingThread r(o);
 			CRegisterWritingThread r2(*this);
 			++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
 			*((Base*)this) = std::move(*((Base*)&o));
