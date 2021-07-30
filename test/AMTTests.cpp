@@ -159,7 +159,7 @@ void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 {
 	if (!a)
 		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
-			VectorUnsynchWriteTest_AssertionFailed = true;
+			MapUnsynchWriteTest_AssertionFailed = true;
 }
 
 void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map)
