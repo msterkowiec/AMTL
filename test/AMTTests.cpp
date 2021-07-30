@@ -7,9 +7,9 @@
 #include <time.h> 
 #include "amt_vector.h"
 #include "amt_pod.h"
-#ifdef _WIN32 
+//#ifdef _WIN32 
 #include "amt_map.h"
-#endif
+//#endif
 
 TEST(AMTTest, BasicTest) {
 
