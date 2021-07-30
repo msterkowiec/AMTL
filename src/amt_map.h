@@ -614,6 +614,7 @@ namespace amt
 			iterator res(resBase, this);
 			return res;
 		}
+		#ifdef _WIN32 // temporary workaround for Linux
 		template <class InputIterator>
 		void insert(InputIterator first, InputIterator last)
 		{
@@ -623,6 +624,7 @@ namespace amt
 			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert<InputIterator>(first, last);
 		}
+		#endif
 		iterator lower_bound(const Key& k)
 		{
 			CRegisterReadingThread r(*this);
