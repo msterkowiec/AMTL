@@ -151,7 +151,7 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 // ----------------------------------------------------------------------
 // Test map for unsynchronized access when writing. Expected assertion failure.
 
-#ifdef _WIN32  // temporarily commented out for Linux until fixed gcc-specific compilation issue: "explicit specialization in non-namespace scope"
+//#ifdef _WIN32  // temporarily commented out for Linux until fixed gcc-specific compilation issue: "explicit specialization in non-namespace scope"
 
 bool MapUnsynchWriteTest_AssertionFailed = false;
 
@@ -181,4 +181,4 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
 }
 
-#endif
+//#endif
