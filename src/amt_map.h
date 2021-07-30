@@ -319,11 +319,11 @@ namespace amt
 			}
 			__AMT_FORCEINLINE__ void AssertNotBegin() const
 			{			
-				SAssertNotBegin<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::RunCheck<ITER>(*((ITER*)this), *m_pMap);
+				SAssertNotBegin<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::template RunCheck<ITER>(*((ITER*)this), *m_pMap);
 			}
 			__AMT_FORCEINLINE__ void AssertNotEnd() const
 			{
-				SAssertNotEnd<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::RunCheck<ITER>(*((ITER*)this), *m_pMap);
+				SAssertNotEnd<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::template RunCheck<ITER>(*((ITER*)this), *m_pMap);
 			}
 			__AMT_FORCEINLINE__ IteratorBase& operator++()
 			{
