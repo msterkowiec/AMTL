@@ -373,6 +373,34 @@ TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 // ----------------------------------------------------------------------------
 // Tests for char (amt::_char or amt::int8_t)
 
+TEST(AMTTest, CharNumericOverflowTest_AllOK) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 1;
+	try
+	{	
+		ch *= 5;
+		ch += 55;
+		
+		amt::int8_t o = ch * 2.1;
+		EXPECT_EQ((std::uint8_t) o, 126);
+		
+		ch /= 10;
+		ch -= 6;
+		++ ch;
+		ch++;
+		ch = ch * 1.5;
+		ch *= 1.7;
+		
+		EXPECT_EQ((std::uint8_t) ch, 5);
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
 TEST(AMTTest, CharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
