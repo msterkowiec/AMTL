@@ -554,6 +554,34 @@ TEST(AMTTest, CharNumericOverflowTest_DivZero) {
 // ------------------------------------------------------
 // Tests for unsigned char (amt::uint8_t)
 
+TEST(AMTTest, UCharNumericOverflowTest_AllOK) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t uch = 1;
+	try
+	{	
+		uch *= 5;
+		uch += 55;
+		
+		amt::int8_t o = uch * 4.2;
+		EXPECT_EQ((std::uint8_t) o, 252);
+		
+		uch /= 10;
+		uch -= 6;
+		++ uch;
+		uch++;
+		uch = uch * 1.5;
+		uch *= 1.7;
+		
+		EXPECT_EQ((std::uint8_t) uch, 5);
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
 TEST(AMTTest, UCharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
