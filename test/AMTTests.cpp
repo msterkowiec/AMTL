@@ -18,6 +18,8 @@ TEST(AMTTest, BasicTest) {
 	EXPECT_EQ(vec.size(), 1);
 }
 
+// ======================================================================
+//  Group of tests for unsynchronized access
 // ----------------------------------------------------------------------
 // Test unsynchronized access to integer
 
@@ -209,3 +211,53 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, true);
 }
 
+// =================================================================================================
+// Group of test for invalid iterators
+// ----------------------------------------------------------------------------
+
+bool SetIteratorValidity_AssertionFailed = false;
+
+void SetIteratorValidity_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if(strstr(szDesc, "IsIteratorValid()") != nullptr || strstr(szDesc, "m_pSet") != nullptr) // make sure this the assertion we expect		
+			SetIteratorValidity_AssertionFailed = true;
+}
+
+TEST(AMTTest, SetCheckIteratorValidityTest) {
+	SetIteratorValidity_AssertionFailed = false
+	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	amt::set<int> set;
+	auto it = set.begin();
+	++ it; // cannot increment on end
+	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+}
+
+TEST(AMTTest, SetCheckIteratorValidityTest_2) {
+	SetIteratorValidity_AssertionFailed = false
+	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	amt::set<int> set;
+	auto it = set.begin();
+	-- it; // cannot decrement on begin
+	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+}
+
+TEST(AMTTest, SetCheckIteratorValidityTest_3) {
+	SetIteratorValidity_AssertionFailed = false
+	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	amt::set<int> set;
+	auto it = set.begin();
+	set.insert(1); // invalidates it
+	bool isEnd = it == set.end();
+	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+}
+
+TEST(AMTTest, SetCheckIteratorValidityTest_4) {
+	SetIteratorValidity_AssertionFailed = false
+	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	amt::set<int> set;
+	amt::set<int> set2;
+	auto it = set.begin();
+	bool isEnd = it == set2.end(); // cannot use it of set vs end() of different object (set2)
+	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+}
