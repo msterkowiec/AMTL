@@ -225,7 +225,7 @@ void SetIteratorValidity_CustomAssertHandler(bool a, const char* szFileName, lon
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest) {
-	SetIteratorValidity_AssertionFailed = false
+	SetIteratorValidity_AssertionFailed = false;
 	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
 	amt::set<int> set;
 	auto it = set.begin();
@@ -234,7 +234,7 @@ TEST(AMTTest, SetCheckIteratorValidityTest) {
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_2) {
-	SetIteratorValidity_AssertionFailed = false
+	SetIteratorValidity_AssertionFailed = false;
 	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
 	amt::set<int> set;
 	auto it = set.begin();
@@ -243,7 +243,7 @@ TEST(AMTTest, SetCheckIteratorValidityTest_2) {
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_3) {
-	SetIteratorValidity_AssertionFailed = false
+	SetIteratorValidity_AssertionFailed = false;
 	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
 	amt::set<int> set;
 	auto it = set.begin();
@@ -253,7 +253,7 @@ TEST(AMTTest, SetCheckIteratorValidityTest_3) {
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_4) {
-	SetIteratorValidity_AssertionFailed = false
+	SetIteratorValidity_AssertionFailed = false;
 	amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
 	amt::set<int> set;
 	amt::set<int> set2;
