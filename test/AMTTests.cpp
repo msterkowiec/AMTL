@@ -508,16 +508,31 @@ TEST(AMTTest, CharNumericOverflowTest_Div) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
+TEST(AMTTest, CharNumericOverflowTest_DivZero) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 1;	
+	try
+	{
+		ch /= 0; 
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
 // ------------------------------------------------------
 // Tests for unsigned char (amt::uint8_t)
 
 TEST(AMTTest, UCharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t ch = 254;	
+	amt::uint8_t uch = 254;	
 	try
 	{
-		ch += 2; // numeric overflow; unsigned char max is 255
+		uch += 2; // numeric overflow; unsigned char max is 255
 	}
 	catch(amt::AMTCassertException& e)
 	{
@@ -529,10 +544,10 @@ TEST(AMTTest, UCharNumericOverflowTest_Add) {
 TEST(AMTTest, UCharNumericOverflowTest_Inc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t ch = 255;	
+	amt::uint8_t uch = 255;	
 	try
 	{
-		++ch; // numeric overflow; unsigned char max is 255
+		++uch; // numeric overflow; unsigned char max is 255
 	}
 	catch(amt::AMTCassertException& e)
 	{
@@ -544,14 +559,164 @@ TEST(AMTTest, UCharNumericOverflowTest_Inc) {
 TEST(AMTTest, UCharNumericOverflowTest_PostInc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t ch = 255;	
+	amt::uint8_t uch = 255;	
 	try
 	{
-		ch++; // numeric overflow; unsigned char max is 255
+		uch++; // numeric overflow; unsigned char max is 255
 	}
 	catch(amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_Sub) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 5;	
+	try
+	{
+		uch -= 10; // numeric overflow; unsigned char min is 0
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_Dec) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 0;	
+	try
+	{
+		--uch; // numeric overflow; unsigned char min is 0
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_PostDec) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 0;	
+	try
+	{
+		uch--; // numeric overflow; unsigned char min is 0
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_Mul_fine) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 51;	
+	try
+	{
+		uch *= 5; // ok, unsigned char max is 255
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_Mul) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 16;	
+	try
+	{
+		uch *= 16; // assertion failure, unsigned char max is 255
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_MulFloat) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 100;	
+	try
+	{
+		uch *= 2.6; // assertion failure, unsigned char max is 255
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_MulNeg) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 16;	
+	try
+	{
+		uch *= -1; // assertion failure
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_Div) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 10;	
+	try
+	{
+		uch /= -1; // assertion failure
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_DivFloat) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 100;	
+	try
+	{
+		uch /= 0.3; // assertion failure
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
+TEST(AMTTest, UCharNumericOverflowTest_DivZero) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 10;	
+	try
+	{
+		uch /= 0; // assertion failure
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
 }
