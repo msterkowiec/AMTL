@@ -28,7 +28,7 @@ bool IntUnsynchWriteTest_AssertionFailed = false;
 void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
 			IntUnsynchWriteTest_AssertionFailed = true;
 }
 
@@ -62,7 +62,7 @@ std::recursive_mutex mtxVectorSynchWriteTest;
 void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
 			VectorSynchWriteTest_AssertionFailed = true;
 }
 
@@ -115,7 +115,7 @@ bool VectorUnsynchWriteTest_AssertionFailed = false;
 void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
 			VectorUnsynchWriteTest_AssertionFailed = true;
 }
 
@@ -157,7 +157,7 @@ bool MapUnsynchWriteTest_AssertionFailed = false;
 void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
 			MapUnsynchWriteTest_AssertionFailed = true;
 }
 
@@ -188,7 +188,7 @@ bool SetUnsynchWriteTest_AssertionFailed = false;
 void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
 			SetUnsynchWriteTest_AssertionFailed = true;
 }
 
@@ -220,7 +220,7 @@ bool SetIteratorValidity_AssertionFailed = false;
 void SetIteratorValidity_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "IsIteratorValid()") != nullptr || strstr(szDesc, "m_pSet") != nullptr) // make sure this the assertion we expect		
+		if(strstr(szDesc, "IsIteratorValid()") != nullptr || strstr(szDesc, "m_pSet") != nullptr || strstr(szDesc, "set") != nullptr) // make sure this is the assertion we expect		
 			SetIteratorValidity_AssertionFailed = true;
 }
 
