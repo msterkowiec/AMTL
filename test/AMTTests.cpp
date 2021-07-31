@@ -688,7 +688,7 @@ TEST(AMTTest, UCharNumericOverflowTest_Div) {
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, false);
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, UCharNumericOverflowTest_DivFloat) {
@@ -703,7 +703,7 @@ TEST(AMTTest, UCharNumericOverflowTest_DivFloat) {
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, false);
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, UCharNumericOverflowTest_DivZero) {
@@ -718,5 +718,5 @@ TEST(AMTTest, UCharNumericOverflowTest_DivZero) {
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, false);
+	EXPECT_EQ(assertionFailed, true);
 }
