@@ -343,7 +343,7 @@ TEST(AMTTest, MapCheckIteratorValidityTest_3) {
 TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::map<int, int> amp;
+	amt::map<int, int> map;
 	amt::map<int, int> map2;
 	auto it = map.begin();
 	bool isEnd = false;
