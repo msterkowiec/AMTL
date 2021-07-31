@@ -8,6 +8,7 @@
 #include "amt_vector.h"
 #include "amt_pod.h"
 #include "amt_map.h"
+#include "amt_set.h"
 
 TEST(AMTTest, BasicTest) {
 
@@ -175,5 +176,36 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	thread1.join();
 	thread2.join();	
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
+}
+
+// ----------------------------------------------------------------------
+// Test set for unsynchronized access when writing. Expected assertion failure.
+
+bool SetUnsynchWriteTest_AssertionFailed = false;
+
+void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this the assertion we expect		
+			SetUnsynchWriteTest_AssertionFailed = true;
+}
+
+void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set)
+{
+	size_t iStart = threadNo ? 32678 : 0;
+	size_t iEnd = threadNo ? 65536 : 32768;
+	for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
+		set.insert(i);
+}
+
+TEST(AMTTest, SetUnsynchWriteTest) {
+	srand (time(NULL));
+	amt::SetCustomAssertHandler<0>(&SetUnsynchWriteTest_CustomAssertHandler);
+	amt::set<int> set;
+	std::thread thread1(&SetUnsynchWriteTest_WriterThread, 0, std::ref(set));
+	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set));
+	thread1.join();
+	thread2.join();	
+	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, true);
 }
 
