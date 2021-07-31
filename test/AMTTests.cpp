@@ -537,6 +537,21 @@ TEST(AMTTest, CharNumericOverflowTest_Div) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
+TEST(AMTTest, CharNumericOverflowTest_DivFloat) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 1;	
+	try
+	{
+		ch /= -0.005; // overflow; char min is -128
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
 TEST(AMTTest, CharNumericOverflowTest_DivZero) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
