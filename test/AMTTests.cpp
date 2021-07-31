@@ -386,7 +386,8 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 		EXPECT_EQ((std::uint8_t) o, 126);
 		
 		ch /= 10;
-		ch -= 6;
+		ch -= 6 + 128;
+		ch = 0;
 		++ ch;
 		ch++;
 		ch = ch * 1.5;
@@ -557,13 +558,13 @@ TEST(AMTTest, CharNumericOverflowTest_DivZero) {
 TEST(AMTTest, UCharNumericOverflowTest_AllOK) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t uch = 1;
+	amt::uint8_t uch = 1;
 	try
 	{	
 		uch *= 5;
 		uch += 55;
 		
-		amt::int8_t o = uch * 4.2;
+		amt::uint8_t o = uch * 4.2;
 		EXPECT_EQ((std::uint8_t) o, 252);
 		
 		uch /= 10;
