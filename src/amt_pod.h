@@ -400,20 +400,22 @@ namespace amt
 			m_val -= t;
 			return *this;
 		}
-		inline AMTScalarType& operator *= (const T& t)
+		template <typename U>
+		inline AMTScalarType& operator *= (const U& u)
 		{
 			CRegisterReadingThread r1(*this);
-			VerifyOverflow_Mul(m_val, t);
-			m_val *= t;
+			VerifyOverflow_Mul(m_val, u);
+			m_val *= u;
 			return *this;
 		}
-		inline AMTScalarType& operator /= (const T& t)
+		template <typename U>
+		inline AMTScalarType& operator /= (const U& u)
 		{
 			CRegisterReadingThread r1(*this);
-			VerifyOverflow_Div(m_val, t);
-			m_val /= t;
+			VerifyOverflow_Div(m_val, u);
+			m_val /= u;
 			return *this;
-		}
+		}		
 		inline AMTScalarType& operator |= (const T& t)
 		{
 			CRegisterReadingThread r1(*this);
