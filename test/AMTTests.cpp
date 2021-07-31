@@ -215,18 +215,8 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 // Group of test for invalid iterators
 // ----------------------------------------------------------------------------
 
-bool SetIteratorValidity_AssertionFailed = false;
-
-void SetIteratorValidity_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if(strstr(szDesc, "IsIteratorValid()") != nullptr || strstr(szDesc, "m_pSet") != nullptr || strstr(szDesc, "set") != nullptr) // make sure this is the assertion we expect		
-			SetIteratorValidity_AssertionFailed = true;
-}
-
 TEST(AMTTest, SetCheckIteratorValidityTest) {
-	SetIteratorValidity_AssertionFailed = false;
-	//amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
 	auto it = set.begin();
@@ -235,14 +225,13 @@ TEST(AMTTest, SetCheckIteratorValidityTest) {
 	}
 	catch(...)
 	{
-		SetIteratorValidity_AssertionFailed = true;
+		assertionFailed = true;
 	}
-	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_2) {
-	SetIteratorValidity_AssertionFailed = false;
-	//amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
 	auto it = set.begin();
@@ -252,14 +241,13 @@ TEST(AMTTest, SetCheckIteratorValidityTest_2) {
 	}
 	catch(...)
 	{
-		SetIteratorValidity_AssertionFailed = true;
+		assertionFailed = true;
 	}
-	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_3) {
-	SetIteratorValidity_AssertionFailed = false;
-	//amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
 	auto it = set.begin();
@@ -271,15 +259,14 @@ TEST(AMTTest, SetCheckIteratorValidityTest_3) {
 	}
 	catch(...)
 	{
-		SetIteratorValidity_AssertionFailed = true;
+		assertionFailed = true;
 	}
 	
-	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, SetCheckIteratorValidityTest_4) {
-	SetIteratorValidity_AssertionFailed = false;
-	//amt::SetCustomAssertHandler<0>(& SetIteratorValidity_CustomAssertHandler);
+	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
 	amt::set<int> set2;
@@ -291,7 +278,7 @@ TEST(AMTTest, SetCheckIteratorValidityTest_4) {
 	}
 	catch(...)
 	{
-		SetIteratorValidity_AssertionFailed = true;
+		assertionFailed = true;
 	}
-	EXPECT_EQ(SetIteratorValidity_AssertionFailed, true);
+	EXPECT_EQ(assertionFailed, true);
 }
