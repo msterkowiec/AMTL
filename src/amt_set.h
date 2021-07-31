@@ -161,7 +161,7 @@ namespace amt
 			};
 
 			// These helper structures are to work around situations when if constexpr is not available yet:
-			template<char IS_REVERSE_ITER = false>
+			template<char IS_REVERSE_ITER, typename = void>
 			struct SAssertNotBegin
 			{
 				template<typename ITER_TYPE>
@@ -170,8 +170,8 @@ namespace amt
 					AMT_CASSERT(it != ((Base*)&set)->begin());
 				}
 			};
-			template<>
-			struct SAssertNotBegin<true>
+			template<typename V>
+			struct SAssertNotBegin<true, V>
 			{
 				template<typename ITER_TYPE>
 				static inline void RunCheck(const ITER_TYPE& it, const set& set)
@@ -179,8 +179,8 @@ namespace amt
 					AMT_CASSERT(it != ((Base*)&set)->rbegin());
 				}
 			};
-			template<>
-			struct SAssertNotBegin<2>
+			template<typename V>
+			struct SAssertNotBegin<2, V>
 			{
 				template<typename ITER_TYPE>
 				static inline void RunCheck(const ITER_TYPE& it, const set& set)
@@ -188,7 +188,7 @@ namespace amt
 					AMT_CASSERT(it != ((Base*)&set)->crbegin());
 				}
 			};
-			template<char IS_REVERSE_ITER = false>
+			template<char IS_REVERSE_ITER, typename = void>
 			struct SAssertNotEnd
 			{
 				template<typename ITER_TYPE>
@@ -197,8 +197,8 @@ namespace amt
 					AMT_CASSERT(it != ((Base*)&set)->end());
 				}
 			};
-			template<>
-			struct SAssertNotEnd<true>
+			template<typename V>
+			struct SAssertNotEnd<true, V>
 			{
 				template<typename ITER_TYPE>
 				static inline void RunCheck(const ITER_TYPE& it, const set& set)
@@ -206,8 +206,8 @@ namespace amt
 					AMT_CASSERT(it != ((Base*)&set)->rend());
 				}
 			};
-			template<>
-			struct SAssertNotEnd<2>
+			template<typename V>
+			struct SAssertNotEnd<2, V>
 			{
 				template<typename ITER_TYPE>
 				static inline void RunCheck(const ITER_TYPE& it, const set& set)
