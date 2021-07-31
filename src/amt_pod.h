@@ -386,20 +386,22 @@ namespace amt
 		}
 
 	public:
-		inline AMTScalarType& operator += (const T& t)
+		template <typename U>
+		inline AMTScalarType& operator += (const U& u)
 		{
 			CRegisterReadingThread r1(*this);
-			VerifyOverflow_Add(m_val, t);
-			m_val += t;
+			VerifyOverflow_Add(m_val, u);
+			m_val += u;
 			return *this;
 		}
-		inline AMTScalarType& operator -= (const T& t)
+		template <typename U>
+		inline AMTScalarType& operator -= (const U& u)
 		{
 			CRegisterReadingThread r1(*this);
-			VerifyOverflow_Subtract(m_val, t);
-			m_val -= t;
+			VerifyOverflow_Subtract(m_val, u);
+			m_val -= u;
 			return *this;
-		}
+		}		
 		template <typename U>
 		inline AMTScalarType& operator *= (const U& u)
 		{
