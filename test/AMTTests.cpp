@@ -32,8 +32,9 @@ void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 			IntUnsynchWriteTest_AssertionFailed = true;
 }
 
-void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val)
+void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val, std::atomic<bool>& canStartThread)
 {
+	while(!canStartThread); // make sure threads start at the same time
 	for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
 		if (threadNo)
 			++ val;
@@ -46,8 +47,10 @@ TEST(AMTTest, IntUnsynchWriteTest) {
 	srand (time(NULL));
 	amt::SetCustomAssertHandler<0>(&IntUnsynchWriteTest_CustomAssertHandler);
 	amt::int32_t val;
-	std::thread thread1(&IntUnsynchWriteTest_WriterThread, 0, std::ref(val));
-	std::thread thread2(&IntUnsynchWriteTest_WriterThread, 1, std::ref(val));
+	std::atomic<bool> canStartThread(false);
+	std::thread thread1(&IntUnsynchWriteTest_WriterThread, 0, std::ref(val), std::ref(canStartThread));
+	std::thread thread2(&IntUnsynchWriteTest_WriterThread, 1, std::ref(val), std::ref(canStartThread));
+	canStartThread = true;
 	thread1.join();
 	thread2.join();	
 	EXPECT_EQ(IntUnsynchWriteTest_AssertionFailed, true);
@@ -214,6 +217,7 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 // =================================================================================================
 // Group of test for invalid iterators
 // ----------------------------------------------------------------------------
+// Tests of iterators of amt::set
 
 TEST(AMTTest, SetCheckIteratorValidityTest) {
 	bool assertionFailed = false;
@@ -275,6 +279,77 @@ TEST(AMTTest, SetCheckIteratorValidityTest_4) {
 	try
 	{
 		isEnd = it == set2.end(); // cannot use it of set vs end() of different object (set2)
+	}
+	catch(...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+// ----------------------------------------------------------------------------
+// Tests of iterators of amt::map
+
+TEST(AMTTest, MapCheckIteratorValidityTest) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::map<int, int> map;
+	auto it = map.begin();
+	try{
+		++ it; // cannot increment on end
+	}
+	catch(...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, MapCheckIteratorValidityTest_2) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::map<int, int> map;
+	auto it = map.begin();
+	try
+	{
+		-- it; // cannot decrement on begin
+	}
+	catch(...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, MapCheckIteratorValidityTest_3) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::map<int, int> set;
+	auto it = map.begin();
+	map[1] = 1; // invalidates it
+	bool isEnd = false;
+	try
+	{
+		isEnd = it == map.end();
+	}
+	catch(...)
+	{
+		assertionFailed = true;
+	}
+	
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, MapCheckIteratorValidityTest_4) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::map<int, int> amp;
+	amt::map<int, int> map2;
+	auto it = map.begin();
+	bool isEnd = false;
+	try
+	{
+		isEnd = it == map2.end(); // cannot use it of set vs end() of different object (set2)
 	}
 	catch(...)
 	{
