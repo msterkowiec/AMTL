@@ -168,8 +168,9 @@ void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 			MapUnsynchWriteTest_AssertionFailed = true;
 }
 
-void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map)
+void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
 {
+	while(!canStartThread); // make sure threads start at the same time
 	size_t iStart = threadNo ? 32678 : 0;
 	size_t iEnd = threadNo ? 65536 : 32768;
 	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
@@ -180,8 +181,10 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	srand (time(NULL));
 	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
-	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map));
-	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map));
+	std::atomic<bool> canStartThread(false);
+	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map), std::ref(canStartThread));
+	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
+	canStartThread = true;
 	thread1.join();
 	thread2.join();	
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
@@ -199,8 +202,9 @@ void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 			SetUnsynchWriteTest_AssertionFailed = true;
 }
 
-void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set)
+void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set, std::atomic<bool>& canStartThread)
 {
+	while(!canStartThread); // make sure threads start at the same time
 	size_t iStart = threadNo ? 32678 : 0;
 	size_t iEnd = threadNo ? 65536 : 32768;
 	for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
@@ -211,8 +215,10 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 	srand (time(NULL));
 	amt::SetCustomAssertHandler<0>(&SetUnsynchWriteTest_CustomAssertHandler);
 	amt::set<int> set;
-	std::thread thread1(&SetUnsynchWriteTest_WriterThread, 0, std::ref(set));
-	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set));
+	std::atomic<bool> canStartThread(false);
+	std::thread thread1(&SetUnsynchWriteTest_WriterThread, 0, std::ref(set), std::ref(canStartThread));
+	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set), std::ref(canStartThread));
+	canStartThread = true;
 	thread1.join();
 	thread2.join();	
 	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, true);
@@ -365,6 +371,7 @@ TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 // =================================================================================================
 // Group of test for numeric overflow
 // ----------------------------------------------------------------------------
+// Tests for char (amt::_char or amt::int8_t)
 
 TEST(AMTTest, CharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
@@ -373,6 +380,36 @@ TEST(AMTTest, CharNumericOverflowTest_Add) {
 	try
 	{
 		ch += 28; // overflow; char max is 127
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, CharNumericOverflowTest_Inc) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 127;	
+	try
+	{
+		++ch; // overflow; char max is 127
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, CharNumericOverflowTest_PostInc) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 127;	
+	try
+	{
+		ch++; // overflow; char max is 127
 	}
 	catch(amt::AMTCassertException& e)
 	{
@@ -411,6 +448,36 @@ TEST(AMTTest, CharNumericOverflowTest_Subtract_2) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
+TEST(AMTTest, CharNumericOverflowTest_Dec) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = -128;	
+	try
+	{
+		--ch; // overflow; char min is -128
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, CharNumericOverflowTest_PostDec) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = -128;	
+	try
+	{
+		ch--; // overflow; char min is -128
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
 TEST(AMTTest, CharNumericOverflowTest_Mul) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
@@ -433,6 +500,54 @@ TEST(AMTTest, CharNumericOverflowTest_Div) {
 	try
 	{
 		ch /= -1; // overflow; char max is 127
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+// ------------------------------------------------------
+// Tests for unsigned char (amt::uint8_t)
+
+TEST(AMTTest, CharNumericOverflowTest_Add) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t ch = 254;	
+	try
+	{
+		ch += 2; // numeric overflow; unsigned char max is 255
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, CharNumericOverflowTest_Inc) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t ch = 255;	
+	try
+	{
+		++ch; // numeric overflow; unsigned char max is 255
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, CharNumericOverflowTest_PostInc) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t ch = 255;	
+	try
+	{
+		ch++; // numeric overflow; unsigned char max is 255
 	}
 	catch(amt::AMTCassertException& e)
 	{
