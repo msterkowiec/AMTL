@@ -357,3 +357,22 @@ TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 	}
 	EXPECT_EQ(assertionFailed, true);
 }
+
+// =================================================================================================
+// Group of test for numeric overflow
+// ----------------------------------------------------------------------------
+
+TEST(AMTTest, CharNumericOverflowTest) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = 100;	
+	try
+	{
+		ch += 28; // overflow; char max is 127
+	}
+	catch(amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
