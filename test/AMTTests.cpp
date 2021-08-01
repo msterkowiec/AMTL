@@ -297,6 +297,60 @@ TEST(AMTTest, SetCheckIteratorValidityTest_4) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
+// ---------------------------------------------------------------------
+// Test unsynchronized update of an iterator in different threads
+
+bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
+
+void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+			SetIter_UnsynchUpdateTest_AssertionFailed = true;
+}
+
+void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
+{
+	while (!canStartThread); // make sure threads start at the same time			
+
+	try
+	{
+		if (threadNo)
+		{
+			while (it != set.end())
+				++it;
+		}
+		else
+			while (it != set.begin())
+				--it;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		SetIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+	catch (...)
+	{
+		SetIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+	return;
+}
+
+TEST(AMTTest, SetIter_UnsynchUpdateTest) {
+	amt::SetCustomAssertHandler<0>(&SetIter_UnsynchUpdateTest_CustomAssertHandler);
+	amt::set<int> set;
+	for (int i = 0; i < 65536; ++i)
+		set.insert(i);
+	auto it = set.find(32768);
+	std::atomic<bool> canStartThread(false);
+	std::thread thread1(&SetIter_UnsynchUpdateTest_WriterThread, 0, std::ref(set), std::ref(it), std::ref(canStartThread));
+	std::thread thread2(&SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));
+	canStartThread = true;
+
+	thread1.join();
+	thread2.join();
+	EXPECT_EQ(SetIter_UnsynchWriteTest_AssertionFailed, true);
+}
+
 // ----------------------------------------------------------------------------
 // Tests of iterators of amt::map
 
