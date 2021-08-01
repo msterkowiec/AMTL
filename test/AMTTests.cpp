@@ -422,6 +422,61 @@ TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
+// ---------------------------------------------------------------------
+// Test unsynchronized update of an iterator in different threads
+
+bool MapIter_UnsynchUpdateTest_AssertionFailed = false;
+
+void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!a)
+		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+			MapIter_UnsynchUpdateTest_AssertionFailed = true;
+}
+
+void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
+{
+	while (!canStartThread); // make sure threads start at the same time			
+
+	try
+	{
+		if (threadNo)
+		{
+			while (it != map.end())
+				++it;
+		}
+		else
+			while (it != map.begin())
+				--it;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		MapIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+	catch (...)
+	{
+		MapIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+	return;
+}
+
+TEST(AMTTest, MapIter_UnsynchUpdateTest) {
+	amt::SetCustomAssertHandler<0>(&MapIter_UnsynchUpdateTest_CustomAssertHandler);
+	amt::map<int, int> map;
+	for (int i = 0; i < 65536; ++i)
+		map[i] = i;
+	auto it = map.find(32768);
+	std::atomic<bool> canStartThread(false);
+	std::thread thread1(&MapIter_UnsynchUpdateTest_WriterThread, 0, std::ref(map), std::ref(it), std::ref(canStartThread));
+	std::thread thread2(&MapIter_UnsynchUpdateTest_WriterThread, 1, std::ref(map), std::ref(it), std::ref(canStartThread));
+	canStartThread = true;
+
+	thread1.join();
+	thread2.join();
+	EXPECT_EQ(MapIter_UnsynchUpdateTest_AssertionFailed, true);
+}
+
+
 // =================================================================================================
 // Group of test for numeric overflow
 // ----------------------------------------------------------------------------
