@@ -348,7 +348,7 @@ TEST(AMTTest, SetIter_UnsynchUpdateTest) {
 
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(SetIter_UnsynchWriteTest_AssertionFailed, true);
+	EXPECT_EQ(SetIter_UnsynchUpdateTest_AssertionFailed, true);
 }
 
 // ----------------------------------------------------------------------------
