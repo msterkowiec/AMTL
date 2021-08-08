@@ -10,7 +10,7 @@
 #include "amt_config.h"
 
 // noexcept
-#if defined(_MSC_VER) && __cplusplus < 201402L && _MSC_VER < 1900
+#if defined(_MSC_VER) && __cplusplus < 201402L && !defined(__AMT_WORKAROUND_FOR_CPLUSPLUS__)
 #define __AMT_NOEXCEPT__
 #define __AMT_NOEXCEPT_FALSE__
 #else
