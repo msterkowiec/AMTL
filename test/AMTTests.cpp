@@ -9,6 +9,7 @@
 #include "amt_pod.h"
 #include "amt_map.h"
 #include "amt_set.h"
+#include "amt/amt_rawdatadebugchecker.h"
 
 TEST(AMTTest, BasicTest) {
 
