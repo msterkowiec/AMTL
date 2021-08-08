@@ -479,7 +479,7 @@ TEST(AMTTest, MapIter_UnsynchUpdateTest) {
 
 // ===================================================================================================================
 // Group of tests for TObjectRawDataDebugChecker - a class that asserts that some data stays intact/not overwritten meanwhile
------------------------------------------------------------
+// -----------------------------------------------------------
 	
 TEST(AMTTest, TestObjectRawDataDebugChecker) {
 	amt::SetThrowCustomAssertHandler<0>();
