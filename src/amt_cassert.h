@@ -9,6 +9,7 @@
 
 #include <exception>
 #include "amt_config.h" 
+#include "amt_compat.h" 
 
 #include <assert.h>
 
