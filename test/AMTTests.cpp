@@ -478,7 +478,7 @@ TEST(AMTTest, MapIter_UnsynchUpdateTest) {
 }
 
 // ===================================================================================================================
-// Group of test for TObjectRawDataDebugChecker - a class that asserts that some data stays intact/not overwritten meanwhile
+// Group of tests for TObjectRawDataDebugChecker - a class that asserts that some data stays intact/not overwritten meanwhile
 -----------------------------------------------------------
 	
 TEST(AMTTest, TestObjectRawDataDebugChecker) {
@@ -499,7 +499,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker) {
 	EXPECT_EQ(assertionFailed, true);
 }
 
-TEST(AMTTest, TestObjectRawDataDebugChecker_2 {
+TEST(AMTTest, TestObjectRawDataDebugChecker_2) {
 	amt::SetThrowCustomAssertHandler<0>();
 	bool assertionFailed = false;
 	
@@ -526,7 +526,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_2 {
 	EXPECT_EQ(assertionFailed, true);
 }
 
-TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK {
+TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK) {
 	amt::SetThrowCustomAssertHandler<0>();
 	bool assertionFailed = false;
 	
@@ -554,7 +554,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK {
      
 
 // =================================================================================================
-// Group of test for numeric overflow
+// Group of tests for numeric overflow
 // ----------------------------------------------------------------------------
 // Tests for char (amt::_char or amt::int8_t)
 
