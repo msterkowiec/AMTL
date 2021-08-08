@@ -59,6 +59,9 @@
 // Use this setting to speed up compilation time (forcing inline may cause huge slowdowns)
 #define __AMT_DONT_FORCE_INLINE__ 0
 
+// This setting generally should be off. It is only suitable during unit testing to SetThrowCustomAssertHandler()
+#define __AMT_LET_DESTRUCTORS_THROW__ 1
+
 // Switch it on only for internal debugging of AMT (e.g. internal assertions will be on)
 #define __AMT_DEBUG__ 1
 
