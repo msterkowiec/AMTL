@@ -476,6 +476,81 @@ TEST(AMTTest, MapIter_UnsynchUpdateTest) {
 	EXPECT_EQ(MapIter_UnsynchUpdateTest_AssertionFailed, true);
 }
 
+// ===================================================================================================================
+// Group of test for TObjectRawDataDebugChecker - a class that asserts that some data stays intact/not overwritten meanwhile
+-----------------------------------------------------------
+	
+TEST(AMTTest, TestObjectRawDataDebugChecker) {
+	amt::SetThrowCustomAssertHandler<0>();
+	bool assertionFailed = false;
+	
+	try
+	{
+		char ch = ' ';
+		TObjectRawDataDebugChecker<char> a(&ch);
+		ch = 'C';
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		if (strstr(e.sDesc.c_str(), "DataHasChanged") != nullptr)
+			assertionFailed = true; 
+	}	
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, TestObjectRawDataDebugChecker_2 {
+	amt::SetThrowCustomAssertHandler<0>();
+	bool assertionFailed = false;
+	
+	try
+	{
+		struct MyData
+		{
+			char data[1024];
+			MyData()
+			{
+				memset(data, 0, 1024);
+			}
+		};
+		
+		MyData myData;
+		TObjectRawDataDebugChecker<MyData> a(&myData);
+		myData.data[512] = 'C';
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		if (strstr(e.sDesc.c_str(), "DataHasChanged") != nullptr)
+			assertionFailed = true; 
+	}	
+	EXPECT_EQ(assertionFailed, true);
+}
+
+TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK {
+	amt::SetThrowCustomAssertHandler<0>();
+	bool assertionFailed = false;
+	
+	try
+	{
+		struct MyData
+		{
+			char data[1024];
+			MyData()
+			{
+				memset(data, 0, 1024);
+			}
+		};
+		
+		MyData myData;
+		TObjectRawDataDebugChecker<MyData> a(&myData);
+		// no change in data
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}	
+	EXPECT_EQ(assertionFailed, false);
+}     
+     
 
 // =================================================================================================
 // Group of test for numeric overflow
