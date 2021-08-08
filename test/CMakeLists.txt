@@ -21,6 +21,11 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(${AMT_SOURCE_DIR}/src)
 include(GoogleTest)
 add_executable(AMTTests "AMTTests.cpp")
+
+if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    target_compile_options(AMTTests PUBLIC "/Zc:__cplusplus")
+endif()
+
 target_link_libraries(AMTTests gtest_main)
 
 
