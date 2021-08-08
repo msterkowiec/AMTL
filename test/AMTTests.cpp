@@ -488,7 +488,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker) {
 	try
 	{
 		char ch = ' ';
-		TObjectRawDataDebugChecker<char> a(&ch);
+		amt::TObjectRawDataDebugChecker<char> a(&ch);
 		ch = 'C';
 	}
 	catch (amt::AMTCassertException& e)
@@ -515,7 +515,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_2) {
 		};
 		
 		MyData myData;
-		TObjectRawDataDebugChecker<MyData> a(&myData);
+		amt::TObjectRawDataDebugChecker<MyData> a(&myData);
 		myData.data[512] = 'C';
 	}
 	catch (amt::AMTCassertException& e)
@@ -542,7 +542,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK) {
 		};
 		
 		MyData myData;
-		TObjectRawDataDebugChecker<MyData> a(&myData);
+		amt::TObjectRawDataDebugChecker<MyData> a(&myData);
 		// no change in data
 	}
 	catch (amt::AMTCassertException& e)
