@@ -31,7 +31,7 @@ public:
 		byteToExclude = (size_t)-1;
 		numByteOrderCanDifferAtPos = 0;
 	}
-	~TObjectRawDataDebugChecker()
+	~TObjectRawDataDebugChecker() __AMT_CAN_THROW__
 	{
 		for (unsigned char i = 0; i < numByteOrderCanDifferAtPos; ++i)
 		{
