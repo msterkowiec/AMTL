@@ -115,7 +115,7 @@ namespace amt
 			{
 				m_vec.RegisterReadingThread();
 			}
-			inline ~CRegisterReadingThread()
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 			{
 				m_vec.UnregisterReadingThread();
 			}
@@ -129,7 +129,7 @@ namespace amt
 			{
 				m_vec.RegisterPartiallyReadingThread();
 			}
-			inline ~CRegisterPartiallyReadingThread()
+			inline ~CRegisterPartiallyReadingThread() __AMT_CAN_THROW__
 			{
 				m_vec.UnregisterPartiallyReadingThread();
 			}
@@ -143,7 +143,7 @@ namespace amt
 			{
 				m_vec.RegisterWritingThread();
 			}
-			inline ~CRegisterWritingThread()
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 			{
 				m_vec.UnregisterWritingThread();
 			}
@@ -157,7 +157,7 @@ namespace amt
 			{
 				m_vec.RegisterPartiallyWritingThread();
 			}
-			inline ~CRegisterPartiallyWritingThread()
+			inline ~CRegisterPartiallyWritingThread() __AMT_CAN_THROW__
 			{
 				m_vec.UnregisterPartiallyWritingThread();
 			}
@@ -183,7 +183,7 @@ namespace amt
 			CRegisterWritingThread r2(*this);
 			*((Base*)this) = std::move(*((Base*)&o));
 		}
-		inline ~vector()
+		inline ~vector() __AMT_CAN_THROW__
 		{
 			CRegisterWritingThread r(*this);
 			AMT_CASSERT(m_nPendingReadRequests == 0);
