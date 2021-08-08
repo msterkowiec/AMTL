@@ -69,7 +69,7 @@ namespace amt
 			{
 				m_set.RegisterReadingThread();
 			}
-			inline ~CRegisterReadingThread()
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 			{
 				m_set.UnregisterReadingThread();
 			}
@@ -83,7 +83,7 @@ namespace amt
 			{
 				m_set.RegisterWritingThread();
 			}
-			inline ~CRegisterWritingThread()
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 			{
 				m_set.UnregisterWritingThread();
 			}
@@ -140,7 +140,7 @@ namespace amt
 				{
 					m_it.RegisterReadingThread();
 				}
-				inline ~CRegisterReadingThread()
+				inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 				{
 					m_it.UnregisterReadingThread();
 				}
@@ -154,7 +154,7 @@ namespace amt
 				{
 					m_it.RegisterWritingThread();
 				}
-				inline ~CRegisterWritingThread()
+				inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 				{
 					m_it.UnregisterWritingThread();
 				}
@@ -295,7 +295,7 @@ namespace amt
 				AMT_CASSERT(it1.m_pSet == it2.m_pSet);
 				return *((ITER*)&it1) != *((ITER*)&it2);
 			}
-			__AMT_FORCEINLINE__ ~IteratorBase()
+			__AMT_FORCEINLINE__ ~IteratorBase() __AMT_CAN_THROW__
 			{
 				CRegisterWritingThread r(*this); // not necessarily wrapped up in #if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				AMT_CASSERT(m_nPendingReadRequests == 0);
@@ -439,7 +439,7 @@ namespace amt
 			++o.m_nCountOperInvalidateIter;
 			return *this;
 		}
-		inline ~set()
+		inline ~set() __AMT_CAN_THROW__
 		{
 			CRegisterWritingThread r(*this);
 			++ m_nCountOperInvalidateIter;
