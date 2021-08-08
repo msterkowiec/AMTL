@@ -71,7 +71,7 @@ namespace amt
 			{
 				m_map.RegisterReadingThread();
 			}
-			inline ~CRegisterReadingThread()
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 			{
 				m_map.UnregisterReadingThread();
 			}
@@ -85,7 +85,7 @@ namespace amt
 			{
 				m_map.RegisterWritingThread();
 			}
-			inline ~CRegisterWritingThread()
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 			{
 				m_map.UnregisterWritingThread();
 			}
@@ -142,7 +142,7 @@ namespace amt
 				{
 					m_it.RegisterReadingThread();
 				}
-				inline ~CRegisterReadingThread()
+				inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 				{
 					m_it.UnregisterReadingThread();
 				}
@@ -156,7 +156,7 @@ namespace amt
 				{
 					m_it.RegisterWritingThread();
 				}
-				inline ~CRegisterWritingThread()
+				inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 				{
 					m_it.UnregisterWritingThread();
 				}
@@ -297,7 +297,7 @@ namespace amt
 				AMT_CASSERT(it1.m_pMap == it2.m_pMap);
 				return *((ITER*)&it1) != *((ITER*)&it2);
 			}
-			__AMT_FORCEINLINE__ ~IteratorBase()
+			__AMT_FORCEINLINE__ ~IteratorBase() __AMT_CAN_THROW__
 			{
 				CRegisterWritingThread r(*this); // not necessarily wrapped up in #if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				AMT_CASSERT(m_nPendingReadRequests == 0);
@@ -423,7 +423,7 @@ namespace amt
 			CRegisterWritingThread r2(*this);
 			*((Base*)this) = std::move(*((Base*)&o));
 		}
-		inline ~map()
+		inline ~map() __AMT_CAN_THROW__
 		{
 			CRegisterWritingThread r(*this);
 			++ m_nCountOperInvalidateIter;
