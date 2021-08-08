@@ -5,8 +5,6 @@
 #include <atomic>
 #include <cstdlib>
 #include <time.h> 
-
-//deefine __AMT_WORKAROUND_FOR_CPLUSPLUS__
 #include "amt_vector.h"
 #include "amt_pod.h"
 #include "amt_map.h"
