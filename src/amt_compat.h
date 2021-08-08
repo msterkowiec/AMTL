@@ -12,8 +12,16 @@
 // noexcept
 #if defined(_MSC_VER) && __cplusplus < 201402L
 #define __AMT_NOEXCEPT__
+#define __AMT_NOEXCEPT_FALSE__
 #else
 #define __AMT_NOEXCEPT__ noexcept
+#define __AMT_NOEXCEPT_FALSE__ noexcept(false)
+#endif
+
+#if __AMT_LET_DESTRUCTORS_THROW__
+#define __AMT_CAN_THROW__ __AMT_NOEXCEPT_FALSE__
+#else
+#define __AMT_CAN_THROW__
 #endif
 
 // __forceinline
