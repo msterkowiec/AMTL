@@ -15,7 +15,7 @@ Assertive MultiThreading Library (AMT) is intended to have no impact on actual r
 Its main purpose is to provide types for special builds (debug or special release with asserts) that can detect errors in code.
 
 AMT provides equivalents of standard types (like std::map, std::vector, std::int8_t etc.) within amt namespace.
-In release build these types are typedef'ed back to std, so effectively there is no change in release mode/
+In release build these types are typedef'ed back to std, so effectively there is no change in release mode.
 
 # Features
 
@@ -26,17 +26,21 @@ Cases of improper usages that currently can be detected:
 
 # Usage
 
-All user of AMTL should do to use it is: 
+All a user of AMTL should do to use it is:
 * change in the application under tests the types from namespace std to amt for as many variables/objects as possible (e.g. even replace all std::map, std::vector, std::intXX_t, std::uintXX_t to amt::)
-* take a look at amt_config.h and edit it, if needed - there's a macro __AMT_RELEASE_WITH_ASSERTS__: 
-  - __AMT_RELEASE_WITH_ASSERTS__ should be off (0) in release builds (in such case AMTL has no effect),
-  - __AMT_RELEASE_WITH_ASSERTS__ should be on (1) for test release builds with asserts - here's where features of AMTL can help detect issues
+* take a look at amt_config.h and edit it, if needed - there's a macro __AMTL_ASSERTS_ARE_ON__: 
+  - __AMTL_ASSERTS_ARE_ON__ should be off (0) in "real" release builds (in such case AMTL has no effect, i.e. amt:: types resolve to std:: types),
+  - __AMTL_ASSERTS_ARE_ON__ should be on (1) for test builds with asserts - here's where features of AMTL can help detect issues (release builds with asserts are quite good since they allow to overcome slowness of asserts)
 
 Thus, when using AMTL it is recommended to use the following four various configurations in various stages of development and testing:
 - debug,
 - release with asserts without optimizations - good for debugging issues
 - release with asserts with optimizations - good for regression test suits, slightly worse for debugging due to many symbols optimized out and many calls inlined
 - actual release (without asserts and with optimizations)
+
+# C++ version
+AMTL is meant to be applicable to existing code to create special builds with asserts - that's why it is written to be compilable with older versions of C++ (but at least C++11).
+Yet older versions (C++98/03) are not supported and, as for now, there is no plan to include such support.
 
 ---------------------------------------------------
 
@@ -45,10 +49,12 @@ Currently AMTL may be considered a working POC.
 # What is done:
 - amt::map, amt::set
 - amt::vector - without iterators and some methods missing (emplace, reserve)
-- initial version of control of multithreaded access to trivial types (AMTScalarType)
+- verification of multithreaded access to trivial types (AMTScalarType) e.g. amt::int8_t
 - numeric overflow (partially)
 
 # To-do, at least:
+- amt::bool + check floating point types
+- versions of containers' methods with hint
 - customize cassert; e.g. be able to pass ptr to cassert function or force throw instead of displaying assert msg (may be suitable for tests)
 - amt::string
 - iterators of vector; also missing reserve, emplace
@@ -58,7 +64,7 @@ Currently AMTL may be considered a working POC.
 - vector<bool>
 - make sure that all the traits of types from amt namespace are exactly the same as the traits of their equivalents from std namespace
 - polish AMTScalarType and AMTPointerType
-- last but not least: a) prepare test suite b) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
+- last but not least: a) prepare test suite and b) examples c) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
 
 # Known issues
 AMTL is a fresh project (its idea sprang in the middle of April 2021), so many things are still missing and many may have been unnoticed, anyway here is the list of possible issues spotted so far:
@@ -73,7 +79,7 @@ AMTL is a fresh project (its idea sprang in the middle of April 2021), so many t
   amt::int8_t c = ((std::int8_t)a) - b;
   or better something like this, though for sure it would be cumbersome as hell:
   amt::int8_t c = ((std::make_signed<decltype(a)>::type)a) - b;
-  That's why the following macros are available: AMT_CAST_TO_SIGNED(x) and AMT_CAST_TO_UNSIGNED(x) - what's important, they are currently defaulted just to "x" if AMTL feature is off (if amt_config.h leaves __AMT_RELEASE_WITH_ASSERTS__ undefined)
+  That's why the following macros are available: AMT_CAST_TO_SIGNED(x) and AMT_CAST_TO_UNSIGNED(x) - what's important, they are currently defaulted just to "x" if AMTL feature is off (if amt_config.h leaves __AMTL_ASSERTS_ARE_ON__ undefined)
 
 # Origin
 
