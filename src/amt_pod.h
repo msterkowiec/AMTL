@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -14,7 +14,7 @@
 #include "amt_cassert.h"
 #include "amt_types.h"
 
-#if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
+#if defined(__AMTL_ASSERTS_ARE_ON__)
 #if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 #include "amtinternal_hashmap.h"
 #endif
@@ -22,7 +22,7 @@
 
 namespace amt
 {
-	#if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
+	#if defined(__AMTL_ASSERTS_ARE_ON__)
 
 	// This is really tempting to move read/write counters to some global hash_map and enjoy having sizeof(amt::uint8_t)==1 instead of 3
 	// This is the case of __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ - the code will work with all the memcpy/memmove and persistency but will be significantly slower
@@ -30,10 +30,16 @@ namespace amt
 	template<typename T> 
 	class AMTScalarType
 	{
+		template<typename U>
+		friend class AMTScalarType;
+
 		static_assert(std::is_scalar<T>::value, "Template parameter of AMTScalarType has to be a scalar type");
-		typedef typename std::make_unsigned<T>::type unsigned_T;
-		typedef typename std::make_signed<T>::type signed_T;
-		typedef typename std::conditional<std::is_signed<T>::value, typename std::make_unsigned<T>::type, typename std::make_signed<T>::type>::type opposite_signedness_T;
+		typedef typename std::conditional<std::is_floating_point<T>::value, T, typename amt::make_unsigned<T>::type>::type unsigned_T;
+		typedef typename std::conditional<std::is_floating_point<T>::value, T, typename amt::make_signed<T>::type>::type  signed_T;
+		typedef typename std::conditional<!std::is_floating_point<T>::value && std::is_signed<T>::value, typename amt::make_unsigned<T>::type, typename amt::make_signed<T>::type>::type opposite_signedness_T;
+
+	public:
+		typedef T UnderlyingType;
 
 	private:
 		T m_val;		
@@ -133,6 +139,9 @@ namespace amt
 
 		class CRegisterReadingThread
 		{
+			template<typename U>
+			friend class AMTScalarType;
+
 			const AMTScalarType& m_var;
 
 		public:
@@ -144,7 +153,7 @@ namespace amt
 			{
 				m_var.RegisterReadingThread();
 			}
-			inline ~CRegisterReadingThread()
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 			{
 				m_var.UnregisterReadingThread();
 			}
@@ -163,7 +172,7 @@ namespace amt
 			{
 				m_var.RegisterWritingThread();
 			}
-			inline ~CRegisterWritingThread()
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 			{
 				m_var.UnregisterWritingThread();
 			}
@@ -173,14 +182,18 @@ namespace amt
 	public:
 		inline AMTScalarType()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
+			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
 		inline AMTScalarType(const AMTScalarType& o)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(o);
+			#endif
 			m_val = o.m_val;
 		}
 		/*inline AMTScalarType(const AMTScalarType<opposite_signedness_T>& o)
@@ -193,10 +206,39 @@ namespace amt
 		}*/
 		inline AMTScalarType(T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType(U u) 
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(u);
+			#endif
+			m_val = u;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType(AMTScalarType<U>& u) 
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			AMTScalarType<U>::CRegisterReadingThread r2(u);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(u.m_val); //(AMTScalarType<U>::UnderlyingType)u);
+			#endif
+			m_val = u.m_val; // (AMTScalarType<U>::UnderlyingType)u;
+		}
+
+
 		/*inline AMTScalarType(opposite_signedness_T t)
 		{
 			Init();
@@ -204,75 +246,124 @@ namespace amt
 			// to-do: check if conversion to type with opposite signedness is ok!!
 			m_val = t;
 		}*/
-		inline ~AMTScalarType()
+		inline ~AMTScalarType() __AMT_CAN_THROW__
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Uninit();
+			#endif
 		}
 		#if !__AMT_CHECK_NUMERIC_OVERFLOW__
 		inline operator bool() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val != 0;
 		}
 		inline operator bool() const volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val != 0;
 		}
 		#endif
 		inline AMTScalarType& operator = (const T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 			return *this;
 		}
 		inline volatile AMTScalarType& operator = (const T t) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 			return *this;
 		}
 		inline AMTScalarType& operator = (const AMTScalarType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val = var.m_val;
 			return *this;
 		}
 		inline volatile AMTScalarType& operator = (const AMTScalarType& var) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val = var.m_val;
+			return *this;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType& operator =(U u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(u);
+			#endif
+			m_val = u;
+			return *this;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType& operator =(AMTScalarType<U>& u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			CRegisterReadingThread r2(u);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(u.m_val);// (AMTScalarType<U>::UnderlyingType)u);
+			#endif
+			m_val = u.m_val; // (AMTScalarType<U>::UnderlyingType) u;
 			return *this;
 		}
 		/*inline AMTScalarType& operator |= (const AMTScalarType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val |= var.m_val;
 			return *this;
 		}
 		inline AMTScalarType& operator &= (const AMTScalarType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val &= var.m_val;
 			return *this;
 		}*/
 		/*inline operator T()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}*/
 		unsigned_T MakeUnsigned() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return (unsigned_T)m_val;
 		}
 		signed_T MakeSigned() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return (signed_T)m_val;
 		}
 		#if __AMT_CHECK_NUMERIC_OVERFLOW__
@@ -389,64 +480,109 @@ namespace amt
 		template <typename U>
 		inline AMTScalarType& operator += (const U& u)
 		{
-			CRegisterReadingThread r1(*this);
+			// TODO: Add CRegisterReadingThreadConditional r2(u) if U is AMTScalarType (is_specialization<U,AMTScalarType>)
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(m_val, u);
+			#endif
 			m_val += u;
 			return *this;
 		}
 		template <typename U>
 		inline AMTScalarType& operator -= (const U& u)
 		{
-			CRegisterReadingThread r1(*this);
+			// TODO: Add CRegisterReadingThreadConditional r2(u) if U is AMTScalarType (is_specialization<U,AMTScalarType>)
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(m_val, u);
+			#endif
 			m_val -= u;
 			return *this;
-		}		
+		}
 		template <typename U>
 		inline AMTScalarType& operator *= (const U& u)
 		{
-			CRegisterReadingThread r1(*this);
+			// TODO: Add CRegisterReadingThreadConditional r2(u) if U is AMTScalarType (is_specialization<U,AMTScalarType>)
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(m_val, u);
+			#endif
 			m_val *= u;
 			return *this;
 		}
 		template <typename U>
 		inline AMTScalarType& operator /= (const U& u)
 		{
-			CRegisterReadingThread r1(*this);
+			// TODO: Add CRegisterReadingThreadConditional r2(u) if U is AMTScalarType (is_specialization<U,AMTScalarType>)
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(m_val, u);
+			#endif
 			m_val /= u;
 			return *this;
-		}		
+		}
+		template<typename U>
+		inline AMTScalarType& operator %= (const U& u)
+		{
+			// TODO: Add CRegisterReadingThreadConditional r2(u) if U is AMTScalarType (is_specialization<U,AMTScalarType>)
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			AMT_CASSERT(u != 0);
+			#endif
+			m_val %= u;
+			return *this;
+		}
 		inline AMTScalarType& operator |= (const T& t)
 		{
-			CRegisterReadingThread r1(*this);
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			CRegisterReadingThread r2(t);
+			#endif
 			m_val |= t;
 			return *this;
 		}
 		inline AMTScalarType& operator &= (const T& t)
 		{
-			CRegisterReadingThread r1(*this);
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			CRegisterReadingThread r2(t);
+			#endif
 			m_val &= t;
 			return *this;
 		}
 		#endif
 		inline operator T() const volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}
 		/*template<class = typename std::enable_if<std::is_signed<T>::value>::type>
 		operator unsigned_T() const volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			// to-do: add value verification here!!!
 			return m_val;
 		}
 		template<class = typename std::enable_if<std::is_unsigned<T>::value>::type>
 		operator signed_T() const volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			// to-do: add value verification here!!!
 			return m_val;
 		}*/
@@ -477,8 +613,9 @@ namespace amt
 		}*/
 		inline AMTScalarTypePtr<T> operator &() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
-			//return this;
+			#endif
 			AMTScalarTypePtr<T> ptr((AMTScalarType<T>*)this);
 			return ptr;
 		}
@@ -486,7 +623,9 @@ namespace amt
 
 		inline volatile AMTScalarType& operator ++ () volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			AMT_CASSERT(m_val != (std::numeric_limits<T>::max)());
 			#endif
@@ -495,7 +634,9 @@ namespace amt
 		}
 		inline volatile AMTScalarType& operator -- () volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			AMT_CASSERT(m_val != (std::numeric_limits<T>::min)());
 			#endif
@@ -504,7 +645,9 @@ namespace amt
 		}
 		inline AMTScalarType operator ++ (int) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			AMT_CASSERT(m_val != (std::numeric_limits<T>::max)());
 			#endif
@@ -514,7 +657,9 @@ namespace amt
 		}
 		inline AMTScalarType operator -- (int) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			AMT_CASSERT(m_val != (std::numeric_limits<T>::min)());
 			#endif
@@ -525,27 +670,35 @@ namespace amt
 
 		/*inline AMTScalarType& operator += (const AMTScalarType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val += var.m_val;
 			return *this;
 		}*/
 		/*inline AMTScalarType& operator += (T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val += t;
 			return *this;
 		}*/
 		/*inline AMTScalarType& operator -= (const AMTScalarType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val -= var.m_val;
 			return *this;
 		}*/
 		/*inline AMTScalarType& operator -= (T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val -= t;
 			return *this;
 		}*/
@@ -556,25 +709,37 @@ namespace amt
 		// Addition:
 		/*inline friend AMTScalarType operator + (const AMTScalarType& var1, const AMTScalarType& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(var1.m_val, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(var1.m_val + var2.m_val);
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType operator + (const AMTScalarType& var1, U u)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(var1.m_val, u);
+			#endif
 			AMTScalarType<T> ret(var1.m_val + u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType operator + (U u, const AMTScalarType& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(u, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(u + var2.m_val);
 			return ret;
 		}
@@ -582,49 +747,73 @@ namespace amt
 		// Subtraction:
 		/*inline friend AMTScalarType<T> operator - (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(var1.m_val, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(var1.m_val - var2.m_val);
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend T operator - (const AMTScalarType<T>& var1, U u)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(var1.m_val, u);
+			#endif
 			return var1.m_val - u;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend U operator - (U u, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(u, var2.m_val);
+			#endif
 			return u - var2.m_val;
 		}
 
 		// Multiplication:
 		/*inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(var1.m_val, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(var1.m_val * var2.m_val);
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, U u)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(var1.m_val, u);
+			#endif
 			AMTScalarType<T> ret(var1.m_val * u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator * (U u, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(u, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(u * var2.m_val);
 			return ret;
 		}
@@ -632,25 +821,61 @@ namespace amt
 		// Division:
 		/*inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
 			CRegisterReadingThread r2(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(var1.m_val, var2.m_val);
+			#endif
 			AMTScalarType<T> ret(var1.m_val / var2.m_val);
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, U u)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(var1.m_val, u);
+			#endif
 			AMTScalarType<T> ret(var1.m_val / u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator / (U u, const AMTScalarType<T>& var2)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(u, var2.m_val);
+			#endif
+			AMTScalarType<T> ret(u / var2.m_val);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline friend AMTScalarType<T> operator % (const AMTScalarType<T>& var1, U u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r1(var1);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			AMT_CASSERT(u != 0);
+			#endif
+			AMTScalarType<T> ret(var1.m_val / u);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline friend AMTScalarType<T> operator % (U u, const AMTScalarType<T>& var2)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(var2);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			AMT_CASSERT(var2.m_val != 0);
+			#endif
 			AMTScalarType<T> ret(u / var2.m_val);
 			return ret;
 		}
@@ -671,6 +896,41 @@ namespace amt
 		}*/
 
 		#endif
+
+		private:
+			template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+			void CheckAssignmentOverflow(U u)
+			{
+				if (std::is_floating_point<U>::value)
+					if (std::is_floating_point<T>::value)
+					{
+						if (sizeof(T) < sizeof(U))
+						{
+							AMT_CASSERT(u >= -(std::numeric_limits<T>::max)() && u <= (std::numeric_limits<T>::max)());
+							AMT_CASSERT(u >= -std::numeric_limits<T>::epsilon() && u <= std::numeric_limits<T>::epsilon()); // otherwise we get significant loss on value quality
+						}
+					}
+					else
+					{
+						AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+					}
+				else
+					if (!std::is_floating_point<T>::value)
+					{
+						if (std::is_unsigned<T>::value == std::is_unsigned<U>::value)
+						{
+							if (sizeof(T) < sizeof(U))
+							{
+								AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+							}
+						}
+						else
+						{
+							AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+						}
+					}
+			}
+
 	};
 	
 
@@ -787,7 +1047,7 @@ namespace amt
 			{
 				m_var.RegisterReadingThread();
 			}
-			inline ~CRegisterReadingThread()
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 			{
 				m_var.UnregisterReadingThread();
 			}
@@ -806,7 +1066,7 @@ namespace amt
 			{
 				m_var.RegisterWritingThread();
 			}
-			inline ~CRegisterWritingThread()
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
 			{
 				m_var.UnregisterWritingThread();
 			}
@@ -819,46 +1079,62 @@ namespace amt
 		//}
 		inline T operator ->()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}
 		inline const T operator ->() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}		
 		inline TypePointedTo& operator *()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return *m_val;
 		}
 		inline const TypePointedTo& operator *() const
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return *m_val;
 		}
 
 		inline AMTPointerType()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
+			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
 		inline AMTPointerType(const AMTPointerType& o)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(o);
+			#endif
 			m_val = o.m_val;
 		}
 		inline AMTPointerType(T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 		}
-		inline ~AMTPointerType()
+		inline ~AMTPointerType() __AMT_CAN_THROW__
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Uninit();
+			#endif
 		}
 		/*inline operator bool() const
 		{
@@ -873,87 +1149,115 @@ namespace amt
 
 		inline AMTPointerType& operator = (const T t)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 			return *this;
 		}
 		inline volatile AMTPointerType& operator = (const T t) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			m_val = t;
 			return *this;
 		}
 		inline AMTPointerType& operator = (const AMTPointerType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val = var.m_val;
 			return *this;
 		}
 		inline volatile AMTPointerType& operator = (const AMTPointerType& var) volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val = var.m_val;
 			return *this;
 		}
 		inline AMTPointerType& operator |= (const AMTPointerType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val |= var.m_val;
 			return *this;
 		}
 		inline AMTPointerType& operator &= (const AMTPointerType& var)
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			CRegisterReadingThread r2(var);
+			#endif
 			m_val &= var.m_val;
 			return *this;
 		}
 		inline operator T&()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}
 		inline operator const T() const volatile
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return m_val;
 		}
 		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline operator U()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return (U) m_val;
 		}		
 		inline T* operator &()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
+			#endif
 			return &m_val;
 		}
 		inline AMTPointerType& operator ++ ()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			++m_val;
 			return *this;
 		}
 		inline AMTPointerType& operator -- ()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			--m_val;
 			return *this;
 		}
 		inline AMTPointerType operator ++ (int) // postfix
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			AMTPointerType ret(m_val);
 			++m_val;
 			return ret;
 		}
 		inline AMTPointerType operator -- (int) // postfix
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
+			#endif
 			AMTPointerType ret(m_val);
 			--m_val;
 			return ret;
@@ -995,6 +1299,7 @@ namespace amt
 	};
 	
 	using _char = AMTScalarType<char>;
+	using _wchar = AMTScalarType<wchar_t>;
 	using int8_t = AMTScalarType<std::int8_t>;
 	using uint8_t = AMTScalarType<std::uint8_t>;
 	using int16_t = AMTScalarType<std::int16_t>;
@@ -1055,7 +1360,7 @@ namespace amt
 	#define AMT_CAST_TO_SIGNED(x) (std::is_scalar<decltype(x)>::value ? amt::AmtNumToSigned<std::is_scalar<decltype(x)>::value>::Cast(x) : amt::AmtCastToSigned<std::is_scalar<decltype(x)>::value>::Cast(x))
 	// to-do: #define AMT_CAST_TO_UNSIGNED(x) 
 
-	#else // #if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
+	#else // #if defined(__AMTL_ASSERTS_ARE_ON__)
 
 	template<typename T>
 	using AMTScalarType = T;
@@ -1086,7 +1391,7 @@ namespace amt
 
 	// ---------------
 	// Set of types that guarantee the same size as their original equivalents from std, regardless of current value of setting __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ 
-	#if (defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)) && __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ != 0
+	#if defined(__AMTL_ASSERTS_ARE_ON__) && __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ != 0
 	using _CHAR = amt::_char;
 	using INT8_t = amt::int8_t;
 	using INT16_t = amt::int16_t;
