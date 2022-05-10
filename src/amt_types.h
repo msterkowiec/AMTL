@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -31,6 +31,35 @@ namespace amt
 		const static bool value = IsRegRevIter<Container, T>::value
 			|| IsConstRevIter<Container, T>::value;
 	};
+
+	template <class T, template <class...> class Template>
+	struct is_specialization : std::false_type {};
+
+	template <template <class...> class Template, class... Args>
+	struct is_specialization<Template<Args...>, Template> : std::true_type{};
+
+	template<typename T, typename Enable = void>
+	struct make_signed {
+		typedef typename std::make_signed<T>::type type;
+	};
+
+	template<typename T>
+	struct make_signed<T,
+		typename std::enable_if<std::is_floating_point<T>::value>::type> {
+		typedef T type;
+	};
+
+	template<typename T, typename Enable = void>
+	struct make_unsigned {
+		typedef typename std::make_unsigned<T>::type type;
+	};
+
+	template<typename T>
+	struct make_unsigned<T,
+		typename std::enable_if<std::is_floating_point<T>::value>::type> {
+		typedef T type;
+	};
+
 
 }
 
