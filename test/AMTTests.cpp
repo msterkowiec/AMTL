@@ -1,22 +1,73 @@
+// Make sure this line is commented out before committing to github
+// #define __AMT_TEST_WITHOUT_GTEST__
+
+#ifdef __AMT_TEST_WITHOUT_GTEST__
+#define TEST(TestSuiteName, TestName) void TestSuiteName##TestName()
+#define RUNTEST(TestSuiteName, TestName) TestSuiteName##TestName()
+#define EXPECT_EQ(a,b) AMT_CASSERT((a)==(b))
+#define EXPECT_NE(a,b) AMT_CASSERT((a)!=(b))
+#define EXPECT_GE(a,b) AMT_CASSERT((a)>=(b))
+#else
 #include <gtest/gtest.h>
+#endif
 
 #include <thread>
 #include <mutex>
 #include <atomic>
 #include <cstdlib>
+#include <algorithm>
 #include <time.h> 
+
+// Override these macros for sake of tests before inclusion of AMTL headers:
+#define __AMTL_ASSERTS_ARE_ON__
+#define __AMT_CHECK_MULTITHREADED_ISSUES__ 1
+#define __AMT_CHECK_ITERATORS_VALIDITY__ 1
+#define __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__ 1
+#define __AMT_CHECK_NUMERIC_OVERFLOW__ 1
+#define __AMT_LET_DESTRUCTORS_THROW__ 1
+#define __AMT_DEBUG__ 1
+
 #include "amt_vector.h"
 #include "amt_pod.h"
 #include "amt_map.h"
 #include "amt_set.h"
 #include "amt_rawdatadebugchecker.h"
 
-TEST(AMTTest, BasicTest) {
+TEST(AMTTest, BasicVectorTest) {
 
 	amt::vector<int> vec;
 	EXPECT_EQ(vec.size(), 0);
+	EXPECT_EQ(vec.capacity(), 0);
+	vec.reserve(32);
+	EXPECT_EQ(vec.size(), 0);
+	EXPECT_GE(vec.capacity(), 32);
 	vec.emplace_back(10);
 	EXPECT_EQ(vec.size(), 1);
+}
+
+TEST(AMTTest, BasicMapTest) {
+
+	amt::map<int, int> map;
+	EXPECT_EQ(map.size(), 0);
+	EXPECT_EQ(map.find(0), map.end());
+	map[0] = 0;
+	EXPECT_EQ(map.size(), 1);
+	map[1] = 1;
+	EXPECT_EQ(map.size(), 2);
+	map[1] = 2;
+	EXPECT_EQ(map.size(), 2);
+	EXPECT_EQ(map.empty(), false);
+	auto it = map.find(0);	
+	EXPECT_NE(it, map.end());
+	EXPECT_EQ(it->first, 0);
+	EXPECT_EQ(it->second, 0);
+
+	it->second = 3;
+	EXPECT_EQ(map[0], 3);
+
+	amt::map<int, int>::const_iterator cit(it);
+	EXPECT_EQ(cit->first, 0);
+	EXPECT_EQ(cit->second, 3);
 }
 
 // ======================================================================
@@ -157,6 +208,70 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
 }
 
+struct TestPodStruct
+{
+	int i;
+	double db;
+};
+
+TEST(AMTTest, VectorInitializationTest) {
+
+	amt::vector<double> vecDbl{ 1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0 };
+	EXPECT_EQ(vecDbl.size(), 8);
+	EXPECT_EQ(vecDbl[vecDbl.size() - 1], 21.0);
+
+	amt::vector<int> vecInt{ 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+	EXPECT_EQ(vecInt.size(), 9);
+	EXPECT_EQ(vecInt[vecInt.size() - 1], 34);
+
+	amt::vector<amt::AMTScalarType<double>> vecDbl2{ 1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0, 34.0, 55.0 };
+	EXPECT_EQ(vecDbl2.size(), 10);
+	EXPECT_EQ(vecDbl2[vecDbl2.size() - 1], 55.0);
+
+	amt::vector<amt::AMTScalarType<int>> vecInt2{ 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+	EXPECT_EQ(vecInt2.size(), 11);
+	EXPECT_EQ(vecInt2[vecInt2.size() - 1], 89);
+
+	amt::vector<double> vecZerosDbl(64);
+	amt::vector<amt::AMTScalarType<double>> vecZerosDbl2(64);
+	amt::vector<int> vecZerosInt(64);
+	amt::vector<amt::AMTScalarType<int>> vecZerosInt2(64);
+
+	EXPECT_EQ(vecZerosDbl.size(), 64);
+	EXPECT_EQ(vecZerosDbl2.size(), 64);
+	EXPECT_EQ(vecZerosInt.size(), 64);
+	EXPECT_EQ(vecZerosInt2.size(), 64);
+	EXPECT_EQ(std::count_if(vecZerosDbl.begin(), vecZerosDbl.end(), [](double db){return db != 0.0; }), 0);
+	EXPECT_EQ(std::count_if(vecZerosDbl2.begin(), vecZerosDbl2.end(), [](double db){return db != 0.0; }), 0);
+	EXPECT_EQ(std::count_if(vecZerosInt.begin(), vecZerosInt.end(), [](int i){return i != 0; }), 0);
+	EXPECT_EQ(std::count_if(vecZerosInt2.begin(), vecZerosInt2.end(), [](int i){return i != 0; }), 0);
+
+	amt::vector<double> otherVecDbl(vecZerosDbl.begin(), vecZerosDbl.end());
+	amt::vector<amt::AMTScalarType<double>> otherVecDbl2(vecZerosDbl2.begin(), vecZerosDbl2.end());
+	amt::vector<int> otherVecInt(vecZerosInt.begin(), vecZerosInt.end());
+	amt::vector<amt::AMTScalarType<int>> otherVecInt2(vecZerosInt2.begin(), vecZerosInt2.end());
+
+	EXPECT_EQ(otherVecDbl.size(), 64);
+	EXPECT_EQ(otherVecDbl2.size(), 64);
+	EXPECT_EQ(otherVecInt.size(), 64);
+	EXPECT_EQ(otherVecInt2.size(), 64);
+	EXPECT_EQ(std::count_if(otherVecDbl.begin(), otherVecDbl.end(), [](double db){return db != 0.0; }), 0);
+	EXPECT_EQ(std::count_if(otherVecDbl2.begin(), otherVecDbl2.end(), [](double db){return db != 0.0; }), 0);
+	EXPECT_EQ(std::count_if(otherVecInt.begin(), otherVecInt.end(), [](int i){return i != 0; }), 0);
+	EXPECT_EQ(std::count_if(otherVecInt2.begin(), otherVecInt2.end(), [](int i){return i != 0; }), 0);
+
+	std::vector<TestPodStruct> vecPod(64);
+	amt::vector<TestPodStruct> amtVecPod(64);
+	//EXPECT_EQ(vecPod, amtVecPod);
+	EXPECT_EQ(vecPod.size(), amtVecPod.size());
+	for (size_t i = 0; i < vecPod.size(); ++i)
+	{
+		EXPECT_EQ(vecPod[i].i, amtVecPod[i].i);
+		EXPECT_EQ(vecPod[i].db, amtVecPod[i].db);
+	}
+
+}
+
 // ----------------------------------------------------------------------
 // Test map for unsynchronized access when writing. Expected assertion failure.
 
@@ -191,8 +306,31 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
 }
 
+TEST(AMTTest, MapInitializationTest){
+	amt::map<int, std::string> map{ { 1, "1" }, { 2, "2" } };
+	EXPECT_EQ(map.size(), 2);
+	EXPECT_EQ(map[1], "1");
+	EXPECT_EQ((std::is_same<decltype(map)::mapped_type, std::string>::value), true);
+	
+	amt::map<int, std::string> map2(map.begin(), map.end());
+	EXPECT_EQ(map2[2], "2");
+	EXPECT_EQ(map2.size(), 2);
+}
+
 // ----------------------------------------------------------------------
 // Test set for unsynchronized access when writing. Expected assertion failure.
+
+TEST(AMTTest, SetInitializationTest)
+{
+	amt::set<std::string> set{ "1" , "2", "22" };
+	EXPECT_EQ(set.size(), 3);
+	EXPECT_EQ(*set.begin(), "1");
+	EXPECT_EQ(*set.rbegin(), "22");
+	EXPECT_EQ((std::is_same<decltype(set)::value_type, std::string>::value), true);
+
+	amt::set<std::string> set2(set.begin(), set.end());
+	EXPECT_EQ(set2.size(), 3);
+}
 
 bool SetUnsynchWriteTest_AssertionFailed = false;
 
@@ -946,6 +1084,16 @@ TEST(AMTTest, UCharNumericOverflowTest_Div) {
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, true);
+	assertionFailed = false; // reset this flag
+	try
+	{
+		uch = uch / -1;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
 }
 
 TEST(AMTTest, UCharNumericOverflowTest_DivFloat) {
@@ -977,3 +1125,178 @@ TEST(AMTTest, UCharNumericOverflowTest_DivZero) {
 	}
 	EXPECT_EQ(assertionFailed, true);
 }
+
+TEST(AMTTest, UCharRestFromDivision) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::uint8_t uch = 10;
+	try
+	{
+		uch %= 4;
+		EXPECT_EQ(uch, 2);
+		uch %= 0;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+	assertionFailed = false; // reset this flag
+	try
+	{
+		uch = uch % 0;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+
+}
+
+// ------------------------------------------------------
+// Tests for double (amt::_double)
+
+TEST(AMTTest, DoubleNumericOverflowTest_AllOK) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::_double db = 1000000.0;
+	try
+	{
+		db *= 5.0;
+		db += 55.0;
+
+		double o = db * 4.2;
+		EXPECT_EQ(o, 5000055 * 4.2);
+
+		o /= 10;
+		EXPECT_EQ(o, 5000055 * 4.2 / 10.0);
+		o -= 6;
+		EXPECT_EQ(o, 5000055 * 4.2 / 10.0 - 6);
+		++o;
+		EXPECT_EQ(o, 5000055 * 4.2 / 10.0 - 6 + 1);
+		o++;
+		EXPECT_EQ(o, 5000055 * 4.2 / 10.0 - 6 + 2);
+		o = o * 1.5;
+		EXPECT_EQ(o, (5000055 * 4.2 / 10.0 - 6 + 2) * 1.5);
+		o *= 1.7;
+		EXPECT_EQ(o, (5000055 * 4.2 / 10.0 - 6 + 2) * 1.5 * 1.7);		
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, false);
+}
+
+TEST(AMTTest, DoubleCorrectArithmeticsTest)
+{
+	/*double db = 5.25;
+	amt::_double adb = db;
+	amt::int32_t ai = 2;
+
+	auto res = 2 * db;
+	auto amt_res = ai * adb;
+	EXPECT_EQ(res, amt_res);
+	*/
+
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+
+	amt::int32_t i(2.5);
+	amt::int32_t i2(0);
+	amt::uint32_t ui(0);
+	amt::uint16_t ush(0);
+	amt::int16_t sh(0);
+	amt::_double db(1);
+
+	//amt::_double db2(1.1);	
+	//auto plus = 2U + db2;
+	//EXPECT_EQ(plus, 3.1);
+	//EXPECT_EQ(2 * db2, 2.2);
+	//EXPECT_EQ(2 / db2, 2 / 1.1);
+
+	try
+	{
+		amt::int32_t i4(3000000000.0);
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+
+	assertionFailed = false; // reset
+	ui = 100000;
+	try
+	{
+		ush = ui;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);
+}
+
+
+#ifdef __AMT_TEST_WITHOUT_GTEST__
+int main()
+{
+	RUNTEST(AMTTest, BasicVectorTest);
+	RUNTEST(AMTTest, BasicMapTest);
+	RUNTEST(AMTTest, IntUnsynchWriteTest);
+	RUNTEST(AMTTest, VectorSynchWriteTest);
+	RUNTEST(AMTTest, VectorUnsynchWriteTest);
+	RUNTEST(AMTTest, VectorInitializationTest);
+	RUNTEST(AMTTest, MapUnsynchWriteTest);
+	RUNTEST(AMTTest, MapInitializationTest);
+	RUNTEST(AMTTest, SetInitializationTest);
+	RUNTEST(AMTTest, SetUnsynchWriteTest);
+	RUNTEST(AMTTest, SetCheckIteratorValidityTest);
+	RUNTEST(AMTTest, SetCheckIteratorValidityTest_2);
+	RUNTEST(AMTTest, SetCheckIteratorValidityTest_3); 
+	RUNTEST(AMTTest, SetCheckIteratorValidityTest_4);
+	RUNTEST(AMTTest, SetIter_UnsynchUpdateTest);
+	RUNTEST(AMTTest, MapCheckIteratorValidityTest);
+	RUNTEST(AMTTest, MapCheckIteratorValidityTest_2);
+	RUNTEST(AMTTest, MapCheckIteratorValidityTest_3);
+	RUNTEST(AMTTest, MapCheckIteratorValidityTest_4);
+	RUNTEST(AMTTest, MapIter_UnsynchUpdateTest);
+	RUNTEST(AMTTest, TestObjectRawDataDebugChecker);
+	RUNTEST(AMTTest, TestObjectRawDataDebugChecker_2);
+	RUNTEST(AMTTest, TestObjectRawDataDebugChecker_AllOK);
+	RUNTEST(AMTTest, CharNumericOverflowTest_AllOK);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Add);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Inc);
+	RUNTEST(AMTTest, CharNumericOverflowTest_PostInc);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Subtract_1);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Subtract_2);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Dec);
+	RUNTEST(AMTTest, CharNumericOverflowTest_PostDec);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Mul);
+	RUNTEST(AMTTest, CharNumericOverflowTest_Div);
+	RUNTEST(AMTTest, CharNumericOverflowTest_DivFloat);
+	RUNTEST(AMTTest, CharNumericOverflowTest_DivZero);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_AllOK);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Add);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Inc);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_PostInc);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Sub);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Dec);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_PostDec);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Mul_fine);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Mul);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_MulFloat);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_MulNeg);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_Div);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_DivFloat);
+	RUNTEST(AMTTest, UCharNumericOverflowTest_DivZero);
+
+	RUNTEST(AMTTest, UCharRestFromDivision);
+	RUNTEST(AMTTest, DoubleNumericOverflowTest_AllOK);
+	RUNTEST(AMTTest, DoubleCorrectArithmeticsTest);
+
+	return 1;
+}
+#endif
