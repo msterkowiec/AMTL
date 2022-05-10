@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -11,9 +11,10 @@
 
 // --------------------------------------------------------------
 // Helper class to trace unwanted changes in object's raw data:
+
 namespace amt
 {
-	#if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
+	#if defined(__AMTL_ASSERTS_ARE_ON__)
 	template<typename T>
 	class TObjectRawDataDebugChecker
 	{
@@ -124,15 +125,15 @@ namespace amt
 			arByteOrderCanDifferAtPos[numByteOrderCanDifferAtPos++] = idx;
 		}
 	};
-	#else
+#else
 	template<typename T>
 	class TObjectRawDataDebugChecker
 	{
 	public:
-		__forceinline TObjectRawDataDebugChecker(T*){} // object to be optimized out in release
+		__forceinline TObjectRawDataDebugChecker(T*) {} // object to be optimized out in release
 		__forceinline void ExcludeByte(size_t) {}
-		__forceinline void ByteOrderCanDifferAtPos(size_t){}
+		__forceinline void ByteOrderCanDifferAtPos(size_t) {}
 	};
-	#endif
+#endif
 
 } // namespace amt
