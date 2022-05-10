@@ -95,7 +95,7 @@ namespace amt
 		template<class ITER>
 		class IteratorBase : public ITER
 		{
-			template<class ITER>
+			template<class IT>
 			friend class IteratorBase;
 
 			std::int64_t m_nCountOperInvalidateIter; // the counter that container had, while creating iterator
