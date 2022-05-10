@@ -219,7 +219,7 @@ namespace amt
 			CRegisterWritingThread r2(*this);
 			#endif
 			//((Base*)this)->resize(size, T(0));
-			ResizeWithInitHelper<ValueType, AllocatorType, std::is_scalar<T>::value>::resize(size, *((Base*)this)); // this trick is needed when wrapping up is on (__AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__)
+			ResizeWithInitHelper<ValueType, AllocatorType, std::is_scalar<T>::value || amt::is_specialization<T, amt::AMTScalarType>::value>::resize(size, *((Base*)this)); // this trick is needed when wrapping up is on (__AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__)
 		}
 		inline vector(size_t size, const T& val)
 		{
@@ -348,7 +348,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this); // maybe to be verified later (PartiallyWriting under some circumstances?)
 			#endif
-			ResizeWithInitHelper<ValueType, AllocatorType, std::is_scalar<T>::value>::resize(n, *((Base*)this)); // this trick is needed when wrapping up is on (__AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__)
+			ResizeWithInitHelper<ValueType, AllocatorType, std::is_scalar<T>::value || amt::is_specialization<T, amt::AMTScalarType>::value>::resize(n, *((Base*)this)); // this trick is needed when wrapping up is on (__AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__)
 			//((Base*)this)->resize(n, T(0));
 		}
 		__AMT_FORCEINLINE__ void resize(size_t n, const ValueType& val)
