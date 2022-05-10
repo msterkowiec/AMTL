@@ -1,23 +1,25 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
 #pragma once
 
 // 
-// __AMT_RELEASE_WITH_ASSERTS__
+// __AMTL_ASSERTS_ARE_ON__
 //
 // Main configurable setting of Assertive MultiThreading Library
-// Comment it out for release builds without additional checks
+// Comment it out for builds without additional checks
 //
 // ====================================
-#define __AMT_RELEASE_WITH_ASSERTS__
+#ifndef __AMTL_ASSERTS_ARE_ON__
+#define __AMTL_ASSERTS_ARE_ON__
+#endif
 // ====================================
 
-#if defined(_DEBUG) || defined(__AMT_RELEASE_WITH_ASSERTS__)
+#if defined(__AMTL_ASSERTS_ARE_ON__)
 
 // 
 // __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ 
@@ -41,28 +43,48 @@
 
 //
 // __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__
-// Recommended setting: off (0)
+// Strongly recommended setting: off (0)
 // 
-// This setting can be on(1) or off(0).
-// Setting it on will make containers automatically apply a wrapper on scalar types: for example amt::map<int,int> will underneath have std::map<int,amt::int32_t> (or, more prcisely, AMTScalarType<int>)
-// Such change may make some compilation and/or run-time issues, particularly if persistance, memmove/memcpy/memset involved or interpretation of the area as contiguous is used.
-// This last case is particularly difficult to detect when interpretation is for reading only (otherwise destructor can detect it by overwritten bytes of counters) :
-// Example: amt::vector<HANDLE> vecThreadHandles.... WaitForMultipleObjects(nThreads, &vecThreadHandles[0], TRUE, INFINITE);
-// Such case would reveal in a very nasty and hard to detect manner. That's why it is not recommended to use __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 1 in the first step,
-// particularly if application is large and ALL vectors in application were moved from std to amt
-#define __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 1
+// This legacy setting can be on(1) or off(0) but 0(off) is strongly recommended.
+// Automatic wrapping was tempting at a time but proved to cause many issues - e.g. with ambiguous casts.
+// Here is the original description/rationale:
+//	// Setting it on will make containers automatically apply a wrapper on scalar types: for example amt::map<int,int> will underneath have std::map<int,amt::int32_t> (or, more prcisely, AMTScalarType<int>)
+//	// Such change may make some compilation and/or run-time issues, particularly if persistance, memmove/memcpy/memset involved or interpretation of the area as contiguous is used.
+//	// This last case is particularly difficult to detect when interpretation is for reading only (otherwise destructor can detect it by overwritten bytes of counters) :
+//	// Example: amt::vector<HANDLE> vecThreadHandles.... WaitForMultipleObjects(nThreads, &vecThreadHandles[0], TRUE, INFINITE);
+//	// Such case would reveal in a very nasty and hard to detect manner. That's why it is not recommended to use __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 1 in the first step,
+//	// particularly if application is large and ALL vectors in application were moved from std to amt
+// The case mentioned above will not happen with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 1 
 
+#define __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 0
+
+// ------------------------------------------------------
+// Define which functionalities to use:
+#ifndef  __AMT_CHECK_MULTITHREADED_ISSUES__
+#define __AMT_CHECK_MULTITHREADED_ISSUES__ 1
+#endif
+#ifndef __AMT_CHECK_ITERATORS_VALIDITY__
 #define __AMT_CHECK_ITERATORS_VALIDITY__ 1
+#endif
+#ifndef __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 #define __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__ 1
+#endif
+#ifndef __AMT_CHECK_NUMERIC_OVERFLOW__
 #define __AMT_CHECK_NUMERIC_OVERFLOW__ 1
+#endif
+// ------------------------------------------------------
 
 // Use this setting to speed up compilation time (forcing inline may cause huge slowdowns)
 #define __AMT_DONT_FORCE_INLINE__ 0
 
 // This setting generally should be off. It is only suitable during unit testing to SetThrowCustomAssertHandler()
-#define __AMT_LET_DESTRUCTORS_THROW__ 1
+#ifndef __AMT_LET_DESTRUCTORS_THROW__
+#define __AMT_LET_DESTRUCTORS_THROW__ 0
+#endif
 
 // Switch it on only for internal debugging of AMT (e.g. internal assertions will be on)
-#define __AMT_DEBUG__ 1
+#ifndef __AMT_DEBUG__
+#define __AMT_DEBUG__ 0
+#endif
 
 #endif
