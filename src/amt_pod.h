@@ -230,7 +230,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
-			AMTScalarType<U>::CRegisterReadingThread r2(u);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(u);
 			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			CheckAssignmentOverflow(u.m_val); //(AMTScalarType<U>::UnderlyingType)u);
