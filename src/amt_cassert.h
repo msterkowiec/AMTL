@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -13,7 +13,7 @@
 
 #include <assert.h>
 
-#if defined(_DEBUG) || defined (__AMT_RELEASE_WITH_ASSERTS__)
+#ifdef __AMTL_ASSERTS_ARE_ON__
 
 #include <set>
 
@@ -22,7 +22,7 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 #ifdef _WIN32
 #define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
 #else
-	#ifdef _DEBUG
+	#ifndef NDEBUG
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
 	#else
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, #a))
@@ -125,4 +125,5 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 #else
 #define AMT_CASSERT(a)
 #endif
+
 
