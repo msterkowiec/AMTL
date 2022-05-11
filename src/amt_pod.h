@@ -315,11 +315,24 @@ namespace amt
 			return *this;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline AMTScalarType& operator =(AMTScalarType<U>& u)
+		inline AMTScalarType& operator =(const AMTScalarType<U>& u)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(u);
+			CRegisterReadingThread r2((AMTScalarType<U>&)u);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(u.m_val);// (AMTScalarType<U>::UnderlyingType)u);
+			#endif
+			m_val = u.m_val; // (AMTScalarType<U>::UnderlyingType) u;
+			return *this;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType& operator =(AMTScalarType<U>&& u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			typename AMTScalarType<U>::CRegisterWritingThread r2(u);
 			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			CheckAssignmentOverflow(u.m_val);// (AMTScalarType<U>::UnderlyingType)u);
@@ -720,19 +733,22 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType operator + (const AMTScalarType& var1, U u)
+		inline friend auto operator + (const AMTScalarType& var1, U u) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
+			//typedef std::conditional_t<std::is_floating_point_v<U>, std_conditional_t<!std::is_floating_point_v<T> || sizeof(U)>sizeof(T), U, T>, T > ResType;
+
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
 			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(var1.m_val, u);
 			#endif
-			AMTScalarType<T> ret(var1.m_val + u);
+
+			AMTScalarType< AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val + u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType operator + (U u, const AMTScalarType& var2)
+		inline friend auto operator + (U u, const AMTScalarType& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -740,7 +756,8 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Add(u, var2.m_val);
 			#endif
-			AMTScalarType<T> ret(u + var2.m_val);
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u + var2.m_val);
 			return ret;
 		}
 
@@ -758,7 +775,7 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend T operator - (const AMTScalarType<T>& var1, U u)
+		inline friend auto operator - (const AMTScalarType<T>& var1, U u)  -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
@@ -766,10 +783,12 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(var1.m_val, u);
 			#endif
-			return var1.m_val - u;
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> res = var1.m_val - u;
+			return res;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend U operator - (U u, const AMTScalarType<T>& var2)
+		inline friend auto operator - (U u, const AMTScalarType<T>& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -777,7 +796,9 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Subtract(u, var2.m_val);
 			#endif
-			return u - var2.m_val;
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> res = u - var2.m_val;
+			return res;
 		}
 
 		// Multiplication:
@@ -794,7 +815,7 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, U u)
+		inline friend auto operator * (const AMTScalarType<T>& var1, U u) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
@@ -802,11 +823,11 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(var1.m_val, u);
 			#endif
-			AMTScalarType<T> ret(var1.m_val * u);
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val * u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator * (U u, const AMTScalarType<T>& var2)
+		inline friend auto operator * (U u, const AMTScalarType<T>& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -814,7 +835,8 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(u, var2.m_val);
 			#endif
-			AMTScalarType<T> ret(u * var2.m_val);
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u * var2.m_val);
 			return ret;
 		}
 
@@ -832,7 +854,7 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, U u)
+		inline friend auto operator / (const AMTScalarType<T>& var1, U u) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
@@ -840,11 +862,12 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(var1.m_val, u);
 			#endif
-			AMTScalarType<T> ret(var1.m_val / u);
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val / u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator / (U u, const AMTScalarType<T>& var2)
+		inline friend auto operator / (U u, const AMTScalarType<T>& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -852,9 +875,11 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Div(u, var2.m_val);
 			#endif
-			AMTScalarType<T> ret(u / var2.m_val);
+
+			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u / var2.m_val);
 			return ret;
 		}
+
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator % (const AMTScalarType<T>& var1, U u)
 		{
