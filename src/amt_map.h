@@ -414,7 +414,7 @@ namespace amt
 				return it;
 			}		
 			
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			std::pair<const Key, ValueType>* operator ->()
 			#else
 			auto operator ->()
@@ -425,13 +425,13 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (std::pair<const Key, ValueType>*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
 			}
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			std::pair<const Key, ValueType>* operator ->() const
 			#else
 			auto operator ->() const
@@ -442,14 +442,14 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (std::pair<const Key, ValueType>*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
 			}
 
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			std::pair<const Key, ValueType>& operator *()
 			#else
 			auto& operator *()
@@ -460,14 +460,14 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (std::pair<const Key, ValueType>&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
 				#endif
 			}
 
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			const std::pair<Key, ValueType>& operator *() const
 			#else
 			auto& operator *() const
@@ -478,7 +478,7 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (std::pair<const Key, ValueType>&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
