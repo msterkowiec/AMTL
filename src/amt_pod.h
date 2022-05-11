@@ -1545,4 +1545,9 @@ namespace amt
 	using RAW_PTR = T*;
 	//...
 	#endif
+} // namespace amt
+
+namespace std {
+	template<typename T> 
+	class numeric_limits<amt::AMTScalarType<T>> : public std::numeric_limits<T>{};
 }
