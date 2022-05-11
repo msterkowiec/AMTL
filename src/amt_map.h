@@ -269,27 +269,55 @@ namespace amt
 			}
 			__AMT_FORCEINLINE__ IteratorBase& operator = (const IteratorBase& o)
 			{
-				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterWritingThread r(*this);
-				CRegisterReadingThread r2(o);
-				#endif
-				o.AssertIsValid();
-				m_pMap = o.m_pMap;
-				*((ITER*)this) = *((ITER*)&o);
-				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
-				return *this;
+				if (this != &o)
+				{ 
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					CRegisterReadingThread r2(o);
+					#endif
+					o.AssertIsValid();
+					m_pMap = o.m_pMap;
+					*((ITER*)this) = *((ITER*)&o);
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
+				else
+				{
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					#endif
+					o.AssertIsValid();
+					m_pMap = o.m_pMap;
+					*((ITER*)this) = *((ITER*)&o);
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
 			}
 			__AMT_FORCEINLINE__ IteratorBase& operator = (IteratorBase&& o)
 			{
-				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterWritingThread r(*this);
-				CRegisterWritingThread r2(o);
-				#endif
-				o.AssertIsValid();
-				m_pMap = o.m_pMap;
-				*((ITER*)this) = std::move(*((ITER*)&o));
-				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
-				return *this;
+				if (this != &o)
+				{ 
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					CRegisterWritingThread r2(o);
+					#endif
+					o.AssertIsValid();
+					m_pMap = o.m_pMap;
+					*((ITER*)this) = std::move(*((ITER*)&o));
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
+				else
+				{
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					#endif
+					o.AssertIsValid();
+					m_pMap = o.m_pMap;
+					*((ITER*)this) = std::move(*((ITER*)&o));
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
 			}
 			__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
 			{
@@ -579,24 +607,50 @@ namespace amt
 		}
 		__AMT_FORCEINLINE__ map& operator = (const map& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			++ m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
-			return *this;
+			if (this != &o)
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterReadingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				++ m_nCountOperInvalidateIter;
+				*((Base*)this) = *((Base*)&o);
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				#endif
+				++ m_nCountOperInvalidateIter;
+				*((Base*)this) = *((Base*)&o);
+				return *this;
+
+			}
 		}
 		__AMT_FORCEINLINE__ map& operator = (map&& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterWritingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
-			*((Base*)this) = std::move(*((Base*)&o));
-			++o.m_nCountOperInvalidateIter;
-			return *this;
+			if (this != &o)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
+				*((Base*)this) = std::move(*((Base*)&o));
+				++o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				#endif
+				++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
+				*((Base*)this) = std::move(*((Base*)&o));
+				++o.m_nCountOperInvalidateIter;
+				return *this;
+			}
 		}
 
 		__AMT_FORCEINLINE__ friend bool operator == (const map& m1, const map& m2)
