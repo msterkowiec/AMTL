@@ -5,8 +5,8 @@
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
-[![CMake](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml)
 [![CMake-MSVC](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml/badge.svg)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml)
+[![CMake](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml)
 
 
 # Purpose
