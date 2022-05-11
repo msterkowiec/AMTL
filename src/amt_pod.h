@@ -772,7 +772,7 @@ namespace amt
 			#if defined(_MSC_VER)
 			typedef AMTScalarType< AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
 			#else
-			AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
 			#endif
 				
 			ResType	ret(var1.m_val + u);
@@ -794,7 +794,7 @@ namespace amt
 			#if defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
 			#else
-			AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
 			#endif
 
 			ResType ret(u + var2.m_val);
