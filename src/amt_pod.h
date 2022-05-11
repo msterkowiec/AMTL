@@ -769,7 +769,13 @@ namespace amt
 			VerifyOverflow_Add(var1.m_val, u);
 			#endif
 
-			AMTScalarType< AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val + u);
+			#if defined(_MSC_VER)
+			typedef AMTScalarType< AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+				
+			ResType	ret(var1.m_val + u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -785,7 +791,13 @@ namespace amt
 			VerifyOverflow_Add(u, var2.m_val);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u + var2.m_val);
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType ret(u + var2.m_val);
 			return ret;
 		}
 
@@ -815,7 +827,13 @@ namespace amt
 			VerifyOverflow_Subtract(var1.m_val, u);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> res = var1.m_val - u;
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType res = var1.m_val - u;
 			return res;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -831,7 +849,13 @@ namespace amt
 			VerifyOverflow_Subtract(u, var2.m_val);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> res = u - var2.m_val;
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType res = u - var2.m_val;
 			return res;
 		}
 
@@ -857,7 +881,14 @@ namespace amt
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			VerifyOverflow_Mul(var1.m_val, u);
 			#endif
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val * u);
+
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType ret(var1.m_val * u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -870,7 +901,13 @@ namespace amt
 			VerifyOverflow_Mul(u, var2.m_val);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u * var2.m_val);
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else	
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType ret(u * var2.m_val);
 			return ret;
 		}
 
@@ -897,7 +934,13 @@ namespace amt
 			VerifyOverflow_Div(var1.m_val, u);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(var1.m_val / u);
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;			
+			#else
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType	ret(var1.m_val / u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -910,7 +953,13 @@ namespace amt
 			VerifyOverflow_Div(u, var2.m_val);
 			#endif
 
-			AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ret(u / var2.m_val);
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			#endif
+
+			ResType ret(u / var2.m_val);
 			return ret;
 		}
 
