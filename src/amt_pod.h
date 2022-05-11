@@ -755,7 +755,10 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator + (const AMTScalarType& var1, U u) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		inline friend auto operator + (const AMTScalarType& var1, U u) 
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		#endif
 		{
 			//typedef std::conditional_t<std::is_floating_point_v<U>, std_conditional_t<!std::is_floating_point_v<T> || sizeof(U)>sizeof(T), U, T>, T > ResType;
 
@@ -770,7 +773,10 @@ namespace amt
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator + (U u, const AMTScalarType& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		inline friend auto operator + (U u, const AMTScalarType& var2) 
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -797,7 +803,10 @@ namespace amt
 			return ret;
 		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator - (const AMTScalarType<T>& var1, U u)  -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		inline friend auto operator - (const AMTScalarType<T>& var1, U u) 
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
@@ -810,7 +819,10 @@ namespace amt
 			return res;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator - (U u, const AMTScalarType<T>& var2) -> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		inline friend auto operator - (U u, const AMTScalarType<T>& var2) 
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
