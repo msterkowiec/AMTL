@@ -107,10 +107,10 @@ namespace amt
 
 #ifdef __AMTL_ASSERTS_ARE_ON__
 #define AMTL_SELECT_FLOATING_POINT_TYPE(T,U) typename std::conditional<\
-													std::is_floating_point<typename U>::value, \
+													std::is_floating_point<U>::value, \
 													typename std::conditional<\
 																!std::is_floating_point<T>::value || (sizeof(U) > sizeof(T)), \
-																typename U, \
+																U, \
 																T\
 																	>::type, \
 													T\
