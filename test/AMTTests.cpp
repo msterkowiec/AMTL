@@ -1286,6 +1286,31 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 	EXPECT_EQ(assertionFailed, true);
 }
 
+TEST(AMTTest, NumericLimitsTest)
+{
+	EXPECT_EQ((std::numeric_limits<amt::uint8_t>::max)(), 255);
+	EXPECT_EQ((std::numeric_limits<amt::uint8_t>::min)(), 0);
+
+	EXPECT_EQ(std::numeric_limits<amt::uint8_t>::is_signed, false);
+	EXPECT_EQ(std::numeric_limits<amt::int64_t>::is_signed, true);
+
+	EXPECT_EQ(std::numeric_limits<amt::uint8_t>::is_integer, true);
+	EXPECT_EQ(std::numeric_limits<amt::int64_t>::is_integer, true);
+	EXPECT_EQ(std::numeric_limits<amt::_double>::is_integer, false);
+	EXPECT_EQ(std::numeric_limits<amt::_float>::is_integer, false);
+
+	EXPECT_EQ(std::numeric_limits<amt::uint8_t>::is_exact, true);
+	EXPECT_EQ(std::numeric_limits<amt::_double>::is_exact, false);
+	EXPECT_EQ(std::numeric_limits<amt::_float>::is_exact, false);
+
+	EXPECT_EQ(std::numeric_limits<amt::uint8_t>::has_infinity, false);
+	EXPECT_EQ(std::numeric_limits<amt::_double>::has_infinity, true);
+	EXPECT_EQ(std::numeric_limits<amt::_float>::has_infinity, true);
+
+	EXPECT_EQ(std::numeric_limits<amt::uint8_t>::digits, 8);
+	EXPECT_EQ(std::numeric_limits<amt::int8_t>::digits, 7);
+
+}
 
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
@@ -1341,10 +1366,10 @@ int main()
 	RUNTEST(AMTTest, UCharNumericOverflowTest_Div);
 	RUNTEST(AMTTest, UCharNumericOverflowTest_DivFloat);
 	RUNTEST(AMTTest, UCharNumericOverflowTest_DivZero);
-
 	RUNTEST(AMTTest, UCharRestFromDivision);
 	RUNTEST(AMTTest, DoubleNumericOverflowTest_AllOK);
 	RUNTEST(AMTTest, DoubleCorrectArithmeticsTest);
+	RUNTEST(AMTTest, NumericLimitsTest);
 
 	return 1;
 }
