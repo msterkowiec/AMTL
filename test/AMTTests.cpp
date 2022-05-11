@@ -39,6 +39,8 @@ TEST(AMTTest, BasicTest){
 	int64_t i;
 	i = ati;
 	ai = ati;
+	EXPECT_EQ(ati, ai);	
+	ai = ai;
 	EXPECT_EQ(ati, ai);
 }
 
@@ -52,6 +54,8 @@ TEST(AMTTest, BasicVectorTest) {
 	EXPECT_GE(vec.capacity(), 32);
 	vec.emplace_back(10);
 	EXPECT_EQ(vec.size(), 1);
+	vec = vec;
+	EXPECT_EQ(vec.size(), 1);
 }
 
 TEST(AMTTest, BasicMapTest) {
@@ -60,6 +64,8 @@ TEST(AMTTest, BasicMapTest) {
 	EXPECT_EQ(map.size(), 0);
 	EXPECT_EQ(map.find(0), map.end());
 	map[0] = 0;
+	EXPECT_EQ(map.size(), 1);
+	map = map;
 	EXPECT_EQ(map.size(), 1);
 	map[1] = 1;
 	EXPECT_EQ(map.size(), 2);
@@ -77,6 +83,22 @@ TEST(AMTTest, BasicMapTest) {
 	amt::map<int, int>::const_iterator cit(it);
 	EXPECT_EQ(cit->first, 0);
 	EXPECT_EQ(cit->second, 3);
+}
+
+TEST(AMTTest, BasicSetTest) {
+
+	amt::set<int> set;
+	EXPECT_EQ(set.size(), 0);
+	EXPECT_EQ(set.find(0), set.end());
+	set.insert(0);
+	EXPECT_EQ(set.size(), 1);
+	set = set;
+	EXPECT_EQ(set.size(), 1);
+	set.insert(1);
+	EXPECT_EQ(set.size(), 2);
+	auto it = set.find(0);
+	EXPECT_NE(it, set.end());
+	EXPECT_EQ(*it, 0);
 }
 
 // ======================================================================
@@ -724,6 +746,9 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 		
 		amt::int8_t o = ch * 2.1;
 		EXPECT_EQ((std::uint8_t) o, 126);
+
+		amt::int8_t o2(ch * 2.1);
+		EXPECT_EQ((std::uint8_t) o2, 126);
 		
 		ch /= 10;
 		ch -= 6 + 128;
@@ -1268,6 +1293,7 @@ int main()
 	RUNTEST(AMTTest, BasicTest);
 	RUNTEST(AMTTest, BasicVectorTest);
 	RUNTEST(AMTTest, BasicMapTest);
+	RUNTEST(AMTTest, BasicSetTest);
 	RUNTEST(AMTTest, IntUnsynchWriteTest);
 	RUNTEST(AMTTest, VectorSynchWriteTest);
 	RUNTEST(AMTTest, VectorUnsynchWriteTest);
