@@ -251,27 +251,55 @@ namespace amt
 			}
 			__AMT_FORCEINLINE__ IteratorBase& operator = (const IteratorBase& o)
 			{
-				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterWritingThread r(*this);
-				CRegisterReadingThread r2(o);
-				#endif
-				o.AssertIsValid();
-				m_pSet = o.m_pSet;
-				*((ITER*)this) = *((ITER*)&o);
-				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
-				return *this;
+				if (this != &o)
+				{ 
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					CRegisterReadingThread r2(o);
+					#endif
+					o.AssertIsValid();
+					m_pSet = o.m_pSet;
+					*((ITER*)this) = *((ITER*)&o);
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
+				else
+				{
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					#endif
+					o.AssertIsValid();
+					m_pSet = o.m_pSet;
+					*((ITER*)this) = *((ITER*)&o);
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
 			}
 			__AMT_FORCEINLINE__ IteratorBase& operator = (IteratorBase&& o)
 			{
-				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterWritingThread r(*this);
-				CRegisterWritingThread r2(o);
-				#endif
-				o.AssertIsValid();
-				m_pSet = o.m_pSet;
-				*((ITER*)this) = std::move(*((ITER*)&o));
-				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
-				return *this;
+				if (this != &o)
+				{ 
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					CRegisterWritingThread r2(o);
+					#endif
+					o.AssertIsValid();
+					m_pSet = o.m_pSet;
+					*((ITER*)this) = std::move(*((ITER*)&o));
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
+				else
+				{
+					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+					CRegisterWritingThread r(*this);
+					#endif
+					o.AssertIsValid();
+					m_pSet = o.m_pSet;
+					*((ITER*)this) = std::move(*((ITER*)&o));
+					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+					return *this;
+				}
 			}
 			__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
 			{
@@ -368,7 +396,7 @@ namespace amt
 				return it;
 			}		
 			
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			const T* operator ->()
 			#else
 			const auto operator ->()
@@ -379,14 +407,14 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
 			}
 
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			const T& operator *()
 			#else
 			const auto& operator *()
@@ -397,7 +425,7 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
@@ -459,24 +487,49 @@ namespace amt
 		}
 		inline set& operator = (const set& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
-			return *this;			
+			if (this != &o)
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterReadingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				++m_nCountOperInvalidateIter;
+				*((Base*)this) = *((Base*)&o);
+				return *this;			
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				#endif
+				++m_nCountOperInvalidateIter;
+				*((Base*)this) = *((Base*)&o);
+				return *this;		
+			}
 		}
 		inline set& operator = (set&& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterWritingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
-			*((Base*)this) = std::move(*((Base*)&o));
-			++o.m_nCountOperInvalidateIter;
-			return *this;
+			if (this != &o)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
+				*((Base*)this) = std::move(*((Base*)&o));
+				++o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				#endif
+				++m_nCountOperInvalidateIter; // is this needed? (will be overwritten within a split second...)
+				*((Base*)this) = std::move(*((Base*)&o));
+				++o.m_nCountOperInvalidateIter;
+				return *this;
+			}
 		}
 		inline ~set() __AMT_CAN_THROW__
 		{
@@ -852,4 +905,3 @@ namespace amt
 #endif
 
 }
-

@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -10,7 +10,7 @@
 #include "amt_config.h"
 
 // noexcept; note that with MSVC the line below requires compilation with option /Zc:__cplusplus to make value of macro __cplusplus correct
-#if defined(_MSC_VER) && __cplusplus < 201402L
+#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 #define __AMT_NOEXCEPT__
 #define __AMT_NOEXCEPT_FALSE__
 #else

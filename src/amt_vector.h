@@ -525,21 +525,43 @@ namespace amt
 
 		__AMT_FORCEINLINE__ vector& operator = (const vector& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			*((Base*)this) = *((Base*)&o);
-			return *this;
+			if (&o != this)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterReadingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				*((Base*)this) = *((Base*)&o);
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__				
+				CRegisterWritingThread r(*this);
+				#endif
+				*((Base*)this) = *((Base*)&o);
+				return *this;
+			}
 		}
 		__AMT_FORCEINLINE__ vector& operator = (vector&& o)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterWritingThread r(o);
-			CRegisterWritingThread r2(*this);
-			#endif
-			*((Base*)this) = std::move(*((Base*)&o));
-			return *this;
+			if (&o != this)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(o);
+				CRegisterWritingThread r2(*this);
+				#endif
+				*((Base*)this) = std::move(*((Base*)&o));
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r2(*this);
+				#endif
+				*((Base*)this) = std::move(*((Base*)&o));
+				return *this;
+			}
 		}
 
 		__AMT_FORCEINLINE__ friend bool operator < (const vector& v1, const vector& v2)

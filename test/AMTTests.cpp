@@ -33,6 +33,17 @@
 #include "amt_set.h"
 #include "amt_rawdatadebugchecker.h"
 
+TEST(AMTTest, BasicTest){
+	std::atomic<int64_t> ati(5);
+	amt::int64_t ai;
+	int64_t i;
+	i = ati;
+	ai = ati;
+	EXPECT_EQ(ati, ai);	
+	ai = ai;
+	EXPECT_EQ(ati, ai);
+}
+
 TEST(AMTTest, BasicVectorTest) {
 
 	amt::vector<int> vec;
@@ -43,6 +54,8 @@ TEST(AMTTest, BasicVectorTest) {
 	EXPECT_GE(vec.capacity(), 32);
 	vec.emplace_back(10);
 	EXPECT_EQ(vec.size(), 1);
+	vec = vec;
+	EXPECT_EQ(vec.size(), 1);
 }
 
 TEST(AMTTest, BasicMapTest) {
@@ -51,6 +64,8 @@ TEST(AMTTest, BasicMapTest) {
 	EXPECT_EQ(map.size(), 0);
 	EXPECT_EQ(map.find(0), map.end());
 	map[0] = 0;
+	EXPECT_EQ(map.size(), 1);
+	map = map;
 	EXPECT_EQ(map.size(), 1);
 	map[1] = 1;
 	EXPECT_EQ(map.size(), 2);
@@ -68,6 +83,22 @@ TEST(AMTTest, BasicMapTest) {
 	amt::map<int, int>::const_iterator cit(it);
 	EXPECT_EQ(cit->first, 0);
 	EXPECT_EQ(cit->second, 3);
+}
+
+TEST(AMTTest, BasicSetTest) {
+
+	amt::set<int> set;
+	EXPECT_EQ(set.size(), 0);
+	EXPECT_EQ(set.find(0), set.end());
+	set.insert(0);
+	EXPECT_EQ(set.size(), 1);
+	set = set;
+	EXPECT_EQ(set.size(), 1);
+	set.insert(1);
+	EXPECT_EQ(set.size(), 2);
+	auto it = set.find(0);
+	EXPECT_NE(it, set.end());
+	EXPECT_EQ(*it, 0);
 }
 
 // ======================================================================
@@ -170,8 +201,14 @@ bool VectorUnsynchWriteTest_AssertionFailed = false;
 void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
 	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
+	{
+		if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
 			VectorUnsynchWriteTest_AssertionFailed = true;
+
+		#if defined(__AMT_TEST_WITHOUT_GTEST__) && defined(_WIN32)
+		//MessageBoxA(nullptr, "Assertion failed", "Assertion failed", MB_OK);
+		#endif
+	}
 }
 
 void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
@@ -215,6 +252,8 @@ struct TestPodStruct
 };
 
 TEST(AMTTest, VectorInitializationTest) {
+	
+	amt::SetCustomAssertHandler<0>(nullptr);
 
 	amt::vector<double> vecDbl{ 1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0 };
 	EXPECT_EQ(vecDbl.size(), 8);
@@ -707,6 +746,9 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 		
 		amt::int8_t o = ch * 2.1;
 		EXPECT_EQ((std::uint8_t) o, 126);
+
+		amt::int8_t o2(ch * 2.1);
+		EXPECT_EQ((std::uint8_t) o2, 126);
 		
 		ch /= 10;
 		ch -= 6 + 128;
@@ -1210,11 +1252,16 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 	amt::int16_t sh(0);
 	amt::_double db(1);
 
-	//amt::_double db2(1.1);	
-	//auto plus = 2U + db2;
-	//EXPECT_EQ(plus, 3.1);
-	//EXPECT_EQ(2 * db2, 2.2);
-	//EXPECT_EQ(2 / db2, 2 / 1.1);
+	amt::int32_t two(2);
+	amt::_double adb2(1.1);	
+	double db2(adb2);
+	auto plus = 2 + (2 + db2) * (2 - db2) + db2;
+	auto aplus = two + (two + adb2) * (two - adb2) + adb2;
+	EXPECT_EQ(aplus, plus);
+
+	auto times = 2 / (2 * db2) / (2 * db2) / db2;
+	auto atimes = two / (two * adb2) / (two * adb2) / adb2;
+	EXPECT_EQ(atimes, times);
 
 	try
 	{
@@ -1243,8 +1290,10 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
 {
+	RUNTEST(AMTTest, BasicTest);
 	RUNTEST(AMTTest, BasicVectorTest);
 	RUNTEST(AMTTest, BasicMapTest);
+	RUNTEST(AMTTest, BasicSetTest);
 	RUNTEST(AMTTest, IntUnsynchWriteTest);
 	RUNTEST(AMTTest, VectorSynchWriteTest);
 	RUNTEST(AMTTest, VectorUnsynchWriteTest);
