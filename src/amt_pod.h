@@ -286,21 +286,43 @@ namespace amt
 		}
 		inline AMTScalarType& operator = (const AMTScalarType& var)
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
-			#endif
-			m_val = var.m_val;
-			return *this;
+			if (&var != this)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__						 
+				CRegisterWritingThread r(*this);
+				CRegisterReadingThread r2(var);
+				#endif
+				m_val = var.m_val;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__						 
+				CRegisterWritingThread r(*this);
+				#endif
+				m_val = var.m_val;
+				return *this;
+			}
 		}
 		inline volatile AMTScalarType& operator = (const AMTScalarType& var) volatile
 		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
-			#endif
-			m_val = var.m_val;
-			return *this;
+			if (&var != this)
+			{ 
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				CRegisterReadingThread r2(var);
+				#endif
+				m_val = var.m_val;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				CRegisterWritingThread r(*this);
+				#endif
+				m_val = var.m_val;
+				return *this;
+			}
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline AMTScalarType& operator =(U u)
