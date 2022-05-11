@@ -396,7 +396,7 @@ namespace amt
 				return it;
 			}		
 			
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			const T* operator ->()
 			#else
 			const auto operator ->()
@@ -407,14 +407,14 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
 			}
 
-			#if defined(_MSC_VER) && __cplusplus < 201402L
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 			const T& operator *()
 			#else
 			const auto& operator *()
@@ -425,7 +425,7 @@ namespace amt
 				#endif
 				AssertIsValid();
 				AssertNotEnd();
-				#if defined(_MSC_VER) && __cplusplus < 201402L
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
@@ -905,4 +905,3 @@ namespace amt
 #endif
 
 }
-
