@@ -105,13 +105,14 @@ namespace amt
 #define __AMT_CHANGE_MAP_ALLOCATOR_IF_NEEDED__(Key, T, dontWrap, Allocator) Allocator
 #endif
 
-
-//#define __AMT_TRY_WRAP_TYPE__(T) typename std::conditional<																						\
-	//										std::is_trivial<T>::value,																				\
-	//										typename std::conditional<																				\
-	//												std::is_scalar<T>::value,																		\
-	//												typename std::conditional<std::is_pointer<T>::value, AMTPointerType<T>, AMTScalarType<T>>::type,\
-	//												AMTTrivialType<T>																				\
-	//											>::type,																							\
-	//										T																										\
-	//									 >::type 
+#ifdef __AMTL_ASSERTS_ARE_ON__
+#define AMTL_SELECT_FLOATING_POINT_TYPE(T,U) typename std::conditional<\
+													std::is_floating_point<typename U>::value, \
+													typename std::conditional<\
+																!std::is_floating_point<T>::value || (sizeof(U) > sizeof(T)), \
+																typename U, \
+																T\
+																	>::type, \
+													T\
+																	  >::type
+#endif
