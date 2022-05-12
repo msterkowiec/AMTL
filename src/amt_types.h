@@ -63,7 +63,7 @@ namespace amt
 	template<typename U, bool isAMTScalarType = false>
 	struct UnwrappedType
 	{
-		typedef typename U type;
+		typedef U type;
 	};
 	template<typename U>
 	struct UnwrappedType<U, true>
