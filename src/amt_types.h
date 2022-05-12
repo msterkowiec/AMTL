@@ -60,6 +60,16 @@ namespace amt
 		typedef T type;
 	};
 
+	template<typename U, bool isAMTScalarType = false>
+	struct UnwrappedType
+	{
+		typedef typename U type;
+	};
+	template<typename U>
+	struct UnwrappedType<U, true>
+	{
+		typedef typename U::UnderlyingType type;
+	};
 
 }
 
