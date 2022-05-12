@@ -742,6 +742,15 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 	try
 	{	
 		ch *= 5;
+		auto backup(ch);
+		ch |= ch;
+		ch &= ch;
+		ch += ch;
+		ch *= ch;
+		ch /= ch;
+		ch %= ch;
+		ch -= ch;
+		ch = backup;
 		ch += 55;
 		
 		amt::int8_t o = ch * 2.1;
@@ -759,6 +768,7 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 		ch *= 1.7;
 		
 		EXPECT_EQ((std::uint8_t) ch, 5);
+		ch = 6 % ch;
 	}
 	catch(amt::AMTCassertException& e)
 	{
@@ -1314,7 +1324,7 @@ TEST(AMTTest, NumericLimitsTest)
 
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
-{
+{	
 	RUNTEST(AMTTest, BasicTest);
 	RUNTEST(AMTTest, BasicVectorTest);
 	RUNTEST(AMTTest, BasicMapTest);
