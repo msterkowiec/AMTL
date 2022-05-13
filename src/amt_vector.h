@@ -165,6 +165,7 @@ namespace amt
 
 	public:
 		typedef typename Base::iterator iterator;
+		typedef typename Base::const_iterator const_iterator;
 
 		inline vector() : Base()
 		{
