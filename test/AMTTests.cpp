@@ -1322,6 +1322,40 @@ TEST(AMTTest, NumericLimitsTest)
 
 }
 
+TEST(AMTTest, EmplaceTest)
+{
+	struct Struct
+	{
+		std::vector<int> vec_;
+		Struct(std::vector<int>&& vec) : vec_(vec) {};
+		size_t size() const { return vec_.size(); }
+		bool operator < (const Struct& o) const
+		{
+			return size() < o.size();
+		}
+	};
+
+	amt::vector<Struct> vec;
+	vec.emplace_back(std::vector<int>{ 1 });
+	EXPECT_EQ(vec.size(), 1);
+	EXPECT_EQ(vec[0].size(), 1);
+
+	auto it = vec.emplace(vec.begin(), std::vector<int>{1, 2});
+	EXPECT_NE(it, vec.end());
+	EXPECT_EQ(it->size(), 2);
+
+	amt::map<int, Struct> map;
+	map.emplace(1, std::vector<int>{1, 2, 3});
+	auto mit = map.find(1);
+	EXPECT_EQ(mit->second.size(), 3);
+
+	amt::set<Struct> set;
+	set.emplace(std::vector<int>{1, 2, 3, 4});
+	auto sit = set.begin();
+	EXPECT_EQ(sit->size(), 4);
+
+}
+
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
 {	
@@ -1380,6 +1414,7 @@ int main()
 	RUNTEST(AMTTest, DoubleNumericOverflowTest_AllOK);
 	RUNTEST(AMTTest, DoubleCorrectArithmeticsTest);
 	RUNTEST(AMTTest, NumericLimitsTest);
+	RUNTEST(AMTTest, EmplaceTest);
 
 	return 1;
 }

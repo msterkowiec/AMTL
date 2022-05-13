@@ -165,6 +165,7 @@ namespace amt
 
 	public:
 		typedef typename Base::iterator iterator;
+		typedef typename Base::const_iterator const_iterator;
 
 		inline vector() : Base()
 		{
@@ -447,14 +448,14 @@ namespace amt
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
 				CRegisterPartiallyWritingThread r(*this);
 				#endif
-				return ((Base*)this)->emplace_back(args...);
+				return ((Base*)this)->emplace_back(std::forward<Args>(args)...);
 			}
 			else
 			{
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
 				CRegisterWritingThread r(*this);
 				#endif
-				return ((Base*)this)->emplace_back(args...);
+				return ((Base*)this)->emplace_back(std::forward<Args>(args)...);
 			}
 		}
 		#else
@@ -466,17 +467,25 @@ namespace amt
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
 				CRegisterPartiallyWritingThread r(*this);
 				#endif
-				 ((Base*)this)->emplace_back(args...);
+				((Base*)this)->emplace_back(std::forward<Args>(args)...);
 			}
 			else
 			{
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
 				CRegisterWritingThread r(*this);
 				#endif
-				((Base*)this)->emplace_back(args...);
+				((Base*)this)->emplace_back(std::forward<Args>(args)...);
 			}
 		}
 		#endif
+		template< class... Args >
+		__AMT_FORCEINLINE__ iterator emplace(const_iterator pos, Args&&... args)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			return ((Base*)this)->emplace(pos, std::forward<Args>(args)...);
+		}
 		__AMT_FORCEINLINE__ void swap(vector& o)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
