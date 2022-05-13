@@ -771,7 +771,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
-			auto resBase = ((Base*)this)->emplace(args...);		
+			auto resBase = ((Base*)this)->emplace(std::forward<Args>(args)...);		
 			if (resBase.second)
 				++m_nCountOperInvalidateIter;
 			std::pair<iterator, bool> res(iterator(resBase.first, this), resBase.second);
@@ -784,7 +784,7 @@ namespace amt
 			CRegisterWritingThread r(*this);
 			#endif
 			position.AssertIsValid();
-			auto resBase = ((Base*)this)->emplace_hint(position, args...);
+			auto resBase = ((Base*)this)->emplace_hint(position, std::forward<Args>(args)...);
 			iterator res(resBase, this);
 			return res;
 		}
