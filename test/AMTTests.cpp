@@ -42,6 +42,10 @@ TEST(AMTTest, BasicTest){
 	EXPECT_EQ(ati, ai);	
 	ai = ai;
 	EXPECT_EQ(ati, ai);
+	
+	amt::int16_t sh = 1;
+	amt::uint16_t ush = 2;
+	ush = sh;	
 }
 
 TEST(AMTTest, BasicVectorTest) {
