@@ -341,7 +341,7 @@ namespace amt
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2((AMTScalarType<U>&)u);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(u);
 			#endif
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
 			CheckAssignmentOverflow(u.m_val);// (AMTScalarType<U>::UnderlyingType)u);
@@ -1559,6 +1559,7 @@ namespace amt
 	using AMTPointerType = T;
 
 	using _char = char;
+	using _wchar = wchar_t;
 	using int8_t = std::int8_t;
 	using uint8_t = std::uint8_t;
 	using int16_t = std::int16_t;
@@ -1621,4 +1622,3 @@ namespace std {
 	template<typename T> 
 	class numeric_limits<amt::AMTScalarType<T>> : public std::numeric_limits<T>{};
 }
-
