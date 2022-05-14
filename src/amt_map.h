@@ -323,10 +323,10 @@ namespace amt
 			__AMT_FORCEINLINE__ bool operator == (const IteratorBase<OTHER_ITER>& it2) const
 			{
 				static_assert(std::is_same<ITER,OTHER_ITER>::value || 
-					(std::is_same<ITER, Base::const_iterator>::value && std::is_same<OTHER_ITER, Base::iterator>::value) ||
-					(std::is_same<ITER, Base::iterator>::value && std::is_same<OTHER_ITER, Base::const_iterator>::value) ||
-					(std::is_same<ITER, Base::const_reverse_iterator>::value && std::is_same<OTHER_ITER, Base::reverse_iterator>::value) ||
-					(std::is_same<ITER, Base::reverse_iterator>::value && std::is_same<OTHER_ITER, Base::const_reverse_iterator>::value)
+					(std::is_same<ITER, typename Base::const_iterator>::value && std::is_same<OTHER_ITER, typename Base::iterator>::value) ||
+					(std::is_same<ITER, typename Base::iterator>::value && std::is_same<OTHER_ITER, typename Base::const_iterator>::value) ||
+					(std::is_same<ITER, typename Base::const_reverse_iterator>::value && std::is_same<OTHER_ITER, typename Base::reverse_iterator>::value) ||
+					(std::is_same<ITER, typename Base::reverse_iterator>::value && std::is_same<OTHER_ITER, typename Base::const_reverse_iterator>::value)
 							  , "Invalid comparison of iterators");
 				
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
