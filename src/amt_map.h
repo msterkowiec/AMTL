@@ -222,7 +222,7 @@ namespace amt
 			};			
 
 		public:
-			template<class OTHER_ITER> //, class = typename std::enable_if<std::is_same<ITER, typename Base::iterator>::value>> 
+			template<class OTHER_ITER>
 			__AMT_FORCEINLINE__ IteratorBase(IteratorBase<OTHER_ITER> o)
 			{
 				static_assert((std::is_same<ITER, typename Base::const_iterator>::value && std::is_same<OTHER_ITER, typename Base::iterator>::value) || 
@@ -319,27 +319,29 @@ namespace amt
 					return *this;
 				}
 			}
-			__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
+			template<class OTHER_ITER>
+			__AMT_FORCEINLINE__ bool operator == (const IteratorBase<OTHER_ITER>& it2) const
 			{
+				static_assert(std::is_same<ITER,OTHER_ITER>::value || 
+					(std::is_same<ITER, Base::const_iterator>::value && std::is_same<OTHER_ITER, Base::iterator>::value) ||
+					(std::is_same<ITER, Base::iterator>::value && std::is_same<OTHER_ITER, Base::const_iterator>::value) ||
+					(std::is_same<ITER, Base::const_reverse_iterator>::value && std::is_same<OTHER_ITER, Base::reverse_iterator>::value) ||
+					(std::is_same<ITER, Base::reverse_iterator>::value && std::is_same<OTHER_ITER, Base::const_reverse_iterator>::value)
+							  , "Invalid comparison of iterators");
+				
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterReadingThread r(it1);
-				CRegisterReadingThread r2(it2);
+				CRegisterReadingThread r(*this);
+				typename IteratorBase<OTHER_ITER>::CRegisterReadingThread r2(it2);
 				#endif
-				it1.AssertIsValid();
+				AssertIsValid();
 				it2.AssertIsValid();
-				AMT_CASSERT(it1.m_pMap == it2.m_pMap);
-				return *((ITER*)&it1) == *((ITER*)&it2);
+				AMT_CASSERT(m_pMap == it2.m_pMap);
+				return *((ITER*)this) == *((ITER*)&it2);
 			}
-			__AMT_FORCEINLINE__ friend bool operator != (const IteratorBase& it1, const IteratorBase& it2)
+			template<class OTHER_ITER>
+			__AMT_FORCEINLINE__ bool operator != (const IteratorBase<OTHER_ITER>& it2) const
 			{
-				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
-				CRegisterReadingThread r(it1);
-				CRegisterReadingThread r2(it2);
-				#endif
-				it1.AssertIsValid();
-				it2.AssertIsValid();
-				AMT_CASSERT(it1.m_pMap == it2.m_pMap);
-				return *((ITER*)&it1) != *((ITER*)&it2);
+				return !(*this == it2);
 			}
 			__AMT_FORCEINLINE__ ~IteratorBase() __AMT_CAN_THROW__
 			{
@@ -992,4 +994,3 @@ namespace amt
 #endif
 
 }
-
