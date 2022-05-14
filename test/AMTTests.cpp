@@ -280,7 +280,7 @@ TEST(AMTTest, VectorInitializationTest) {
 	EXPECT_EQ(vecZerosDbl2.size(), 64);
 	EXPECT_EQ(vecZerosInt.size(), 64);
 	EXPECT_EQ(vecZerosInt2.size(), 64);
-	EXPECT_EQ(std::count_if(vecZerosDbl.begin(), vecZerosDbl.end(), [](double db){return db != 0.0; }), 0);
+	EXPECT_EQ(std::count_if(vecZerosDbl.begin(), vecZerosDbl.end(), [](double db) {return db != 0.0; }), 0);
 	EXPECT_EQ(std::count_if(vecZerosDbl2.begin(), vecZerosDbl2.end(), [](double db){return db != 0.0; }), 0);
 	EXPECT_EQ(std::count_if(vecZerosInt.begin(), vecZerosInt.end(), [](int i){return i != 0; }), 0);
 	EXPECT_EQ(std::count_if(vecZerosInt2.begin(), vecZerosInt2.end(), [](int i){return i != 0; }), 0);
@@ -411,7 +411,15 @@ TEST(AMTTest, SetCheckIteratorValidityTest) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
+
+	amt::set<int>::const_iterator cit = set.begin();
+	if (cit == set.end()); //these are just the checks.. 
+	EXPECT_EQ(cit, set.end()); //...that this code compiles
+
 	auto it = set.begin();
+	it = it;
+	EXPECT_EQ(it, it);
+
 	try{
 		++ it; // cannot increment on end
 	}
@@ -535,8 +543,15 @@ TEST(AMTTest, SetIter_UnsynchUpdateTest) {
 TEST(AMTTest, MapCheckIteratorValidityTest) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::map<int, int> map;
+
+	amt::map<int, int> map;	
+	amt::map<int, int>::const_iterator cit = map.begin();
+	if (cit == map.end()); //these are just the checks.. 
+	EXPECT_EQ(cit, map.end()); //...that this code compiles	
+
 	auto it = map.begin();
+	it = it;
+	EXPECT_EQ(it, it);
 	try{
 		++ it; // cannot increment on end
 	}
