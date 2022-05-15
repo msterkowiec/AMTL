@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -11,7 +11,7 @@
 // __AMTL_ASSERTS_ARE_ON__
 //
 // Main configurable setting of Assertive MultiThreading Library
-// Comment it out for builds without additional checks
+// Comment it out for builds without additional checks (ifndef added to make this setting overridable before inclusion, e.g. for tests)
 //
 // ====================================
 #ifndef __AMTL_ASSERTS_ARE_ON__
@@ -85,6 +85,11 @@
 // Switch it on only for internal debugging of AMT (e.g. internal assertions will be on)
 #ifndef __AMT_DEBUG__
 #define __AMT_DEBUG__ 0
+#endif
+
+// AMTL asserts in its own way, but sometimes (e.g. during tests) it's better if it is a standard C++ asserion
+#ifndef __AMTL_USE_STANDARD_ASSERT__
+#define __AMTL_USE_STANDARD_ASSERT__ 0
 #endif
 
 #endif
