@@ -22,8 +22,8 @@ include_directories(${AMT_SOURCE_DIR}/src)
 include(GoogleTest)
 add_executable(AMTTests "AMTTests.cpp")
 
-if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
-    target_compile_options(AMTTests PUBLIC "/Zc:__cplusplus /bigobj")
+if (MSVC)
+    add_compile_options(/bigobj /Zc:__cplusplus)
 endif()
 
 target_link_libraries(AMTTests gtest_main)
