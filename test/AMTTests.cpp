@@ -16,6 +16,8 @@
 #include <atomic>
 #include <cstdlib>
 #include <algorithm>
+#include <vector>
+#include <random>
 #include <time.h> 
 
 // Override these macros for sake of tests before inclusion of AMTL headers:
@@ -230,6 +232,215 @@ TEST(AMTTest, LongLongDivTest) {
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res2), decltype(ares2)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res3), decltype(ares3)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res4), decltype(ares4)>()), true);
+}
+
+std::mt19937 mt;
+
+// TODO: add a boolean parameter "generateMoreEdgeCases"
+template<typename T>
+T GetRandomFloat()
+{
+	static const T fMin = -(std::numeric_limits<T>::max)();
+	static const T fMax = (std::numeric_limits<T>::max)();
+	T f = ((T)mt()) / (std::mt19937::max)();
+	return fMin + f * (fMax - fMin);
+}
+
+template<typename T>
+T GetRandomInteger()
+{	
+	if __AMT_IF_CONSTEXPR__(std::is_signed<T>::value)
+	{
+		if __AMT_IF_CONSTEXPR__(sizeof(T) > 4)
+		{				
+			return (((T)mt()) << 32) + mt();
+		}
+		else
+		{
+			if (mt() % 2)
+				return (T)mt();
+			else
+				return (T)(-mt());
+		}
+	}
+	else
+	{
+		if __AMT_IF_CONSTEXPR__(sizeof(T) > 4)
+		{
+			return (((T)mt()) << 32) + mt();
+		}
+		else
+		{
+			return (T) mt();
+		}
+	}	
+}
+
+template<typename T, bool isFloatingPoint = false>
+struct GetRandomHelper
+{
+	static T get() { return GetRandomInteger<T>(); }
+};
+template<typename T>
+struct GetRandomHelper<T,true>
+{
+	static T get() { return GetRandomFloat<T>(); }
+};
+
+template<typename T>
+T GetRandom()
+{
+	return GetRandomHelper<T, std::is_floating_point<T>::value>::get();
+}
+
+// TODO: Test on const numbers also
+template<typename T, typename U>
+void TestScalarOperators()
+{
+	T t = GetRandom<T>();
+	U u(GetRandom<U>());
+
+	amt::AMTScalarType<T> tt(t);
+	amt::AMTScalarType<U> uu(u);
+
+	// Addition:
+	auto sum = t + u;
+	auto revsum = u + t;
+	
+	auto amtSum = tt + uu;
+	auto amtRevSum = uu + tt;
+	auto amtSum2 = tt + u;
+	auto amtRevSum2 = u + tt;
+	auto amtSum3 = t + uu;
+	auto amtRevSum3 = uu + t;
+	
+	EXPECT_EQ(sum, amtSum);
+	EXPECT_EQ(sum, amtSum2);
+	EXPECT_EQ(sum, amtSum3);
+	EXPECT_EQ(revsum, amtSum);
+	EXPECT_EQ(revsum, amtSum2);
+	EXPECT_EQ(revsum, amtSum3);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum3)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsum), decltype(amtRevSum)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsum), decltype(amtRevSum2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsum), decltype(amtRevSum3)>()), true);
+
+	// Subtraction:
+	auto sub = t - u;
+	auto revsub = u - t;
+
+	auto amtlSub = tt - uu;
+	auto amtlRevSub = uu - tt;
+	auto amtlSub2 = tt - u;
+	auto amtlRevSub2 = u - tt;
+	auto amtlSub3 = t - uu;
+	auto amtlRevSub3 = uu - t;
+
+	EXPECT_EQ(sub, amtlSub);
+	EXPECT_EQ(sub, amtlSub2);
+	EXPECT_EQ(sub, amtlSub3);
+	EXPECT_EQ(revsub, amtlSub);
+	EXPECT_EQ(revsub, amtlSub2);
+	EXPECT_EQ(revsub, amtlSub3);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub3)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsub), decltype(amtlRevSub)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsub), decltype(amtlRevSub2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revsub), decltype(amtlRevSub3)>()), true);
+
+	// Multiplication:
+	auto mul = t * u;
+	auto revmul = u * t;
+
+	auto amtlMul = tt * uu;
+	auto amtlRevMul = uu * tt;
+	auto amtlMul2 = tt * u;
+	auto amtlRevMul2 = u * tt;
+	auto amtlMul3 = t * uu;
+	auto amtlRevMul3 = uu * t;
+
+	EXPECT_EQ(mul, amtlMul);
+	EXPECT_EQ(mul, amtlMul2);
+	EXPECT_EQ(mul, amtlMul3);
+	EXPECT_EQ(revmul, amtlMul);
+	EXPECT_EQ(revmul, amtlMul2);
+	EXPECT_EQ(revmul, amtlMul3);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul3)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revmul), decltype(amtlRevMul)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revmul), decltype(amtlRevMul2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(revmul), decltype(amtlRevMul3)>()), true);
+
+	// Division:
+	if ((t != 0 && u != 0) || std::is_floating_point<T>::value || std::is_floating_point<U>::value)
+	{
+		auto div = t / u;
+		auto revdiv = u / t;
+
+		auto amtlDiv = tt / uu;
+		auto amtlRevDiv = uu / tt;
+		auto amtlDiv2 = tt / u;
+		auto amtlRevDiv2 = u / tt;
+		auto amtlDiv3 = t / uu;
+		auto amtlRevDiv3 = uu / t;
+
+		EXPECT_EQ(div, amtlDiv);
+		EXPECT_EQ(div, amtlDiv2);
+		EXPECT_EQ(div, amtlDiv3);
+		EXPECT_EQ(revdiv, amtlDiv);
+		EXPECT_EQ(revdiv, amtlDiv2);
+		EXPECT_EQ(revdiv, amtlDiv3);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv3)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revdiv), decltype(amtlRevDiv)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revdiv), decltype(amtlRevDiv2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revdiv), decltype(amtlRevDiv3)>()), true);
+	}
+}
+
+template<typename T>
+void TestScalarOperators()
+{
+	for (size_t i = 0; i < 1024; ++i)
+	{
+		TestScalarOperators<T, char>();
+		TestScalarOperators<T, unsigned char>();
+		TestScalarOperators<T, short>();
+		TestScalarOperators<T, unsigned short>();
+		TestScalarOperators<T, int>();
+		TestScalarOperators<T, unsigned int>();
+		TestScalarOperators<T, long>(); // let's run also on this "polimorphic" type alias
+		TestScalarOperators<T, unsigned long>();
+		TestScalarOperators<T, long long>();
+		TestScalarOperators<T, unsigned long long>();
+		TestScalarOperators<T, float>();
+		TestScalarOperators<T, double>();
+		TestScalarOperators<T, long double>();
+	}
+}
+
+TEST(AMTTest, ScalarOperatorsStressTest)
+{
+	// TODO: maybe seed Mersenne Twister...
+	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
+	TestScalarOperators<char>();
+	TestScalarOperators<unsigned char>();
+	TestScalarOperators<short>();
+	TestScalarOperators<unsigned short>();
+	TestScalarOperators<int>();
+	TestScalarOperators<unsigned int>();
+	TestScalarOperators<long>(); // let's run also on this "polimorphic" type alias
+	TestScalarOperators<unsigned long>();
+	TestScalarOperators<long long>();
+	TestScalarOperators<unsigned long long>();
+	TestScalarOperators<float>();
+	TestScalarOperators<double>();
+	TestScalarOperators<long double>();
 }
 
 TEST(AMTTest, BasicVectorTest) {
@@ -1569,6 +1780,7 @@ int main()
 	RUNTEST(AMTTest, LongLongAdditionTest);
 	RUNTEST(AMTTest, LongLongSubtractionTest);
 	RUNTEST(AMTTest, LongLongDivTest);
+	RUNTEST(AMTTest, ScalarOperatorsStressTest);
 	RUNTEST(AMTTest, BasicVectorTest);
 	RUNTEST(AMTTest, BasicMapTest);
 	RUNTEST(AMTTest, BasicSetTest);
