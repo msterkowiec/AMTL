@@ -77,6 +77,15 @@ TEST(AMTTest, BasicTest){
 	amt::uint16_t ush = 2;
 	ush = sh;
 
+	{
+		amt::uint32_t ui = 1;
+		amt::uint16_t ush = 2;
+		amt::uint16_t ush2 = 5;
+		if (ui + ush != ush2);
+	}
+}
+
+TEST(AMTTest, BasicArithmeticsTest){
 	unsigned char x = 10;
 	amt::uint8_t xx = 10;
 	unsigned char y = 90;
@@ -94,13 +103,6 @@ TEST(AMTTest, BasicTest){
 	amt::int32_t c = 0;
 	c += (a - b) / 2;
 	EXPECT_EQ(c, -1);
-
-	{
-		amt::uint32_t ui = 1;
-		amt::uint16_t ush = 2;
-		amt::uint16_t ush2 = 5;
-		//if (ui + ush != ush2);
-	}
 }
 
 TEST(AMTTest, LongLongTest){
@@ -1558,6 +1560,7 @@ TEST(AMTTest, EmplaceTest)
 int main()
 {	
 	RUNTEST(AMTTest, BasicTest);
+	RUNTEST(AMTTest, BasicArithmeticsTest);
 	RUNTEST(AMTTest, LongLongTest);
 	RUNTEST(AMTTest, LongLongOverflowTest);
 	RUNTEST(AMTTest, LongLongAdditionTest);
