@@ -307,19 +307,39 @@ void TestScalarOperators()
 	auto sum = t + u;
 	auto revsum = u + t;
 	
+	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
 	auto amtSum = tt + uu;
 	auto amtRevSum = uu + tt;
 	auto amtSum2 = tt + u;
 	auto amtRevSum2 = u + tt;
 	auto amtSum3 = t + uu;
 	auto amtRevSum3 = uu + t;
+	amt::SetCustomAssertHandler<0>(nullptr);
 	
-	EXPECT_EQ(sum, amtSum);
-	EXPECT_EQ(sum, amtSum2);
-	EXPECT_EQ(sum, amtSum3);
-	EXPECT_EQ(revsum, amtSum);
-	EXPECT_EQ(revsum, amtSum2);
-	EXPECT_EQ(revsum, amtSum3);
+	if (sum == sum)
+	{
+		EXPECT_EQ(sum, amtSum);
+		EXPECT_EQ(sum, amtSum2);
+		EXPECT_EQ(sum, amtSum3);
+	}
+	else
+	{
+		EXPECT_NE(amtSum, amtSum);
+		EXPECT_NE(amtSum2, amtSum2);
+		EXPECT_NE(amtSum3, amtSum3);
+	}
+	if (revsum == revsum)
+	{
+		EXPECT_EQ(revsum, amtRevSum);
+		EXPECT_EQ(revsum, amtRevSum2);
+		EXPECT_EQ(revsum, amtRevSum3);
+	}
+	else
+	{
+		EXPECT_NE(amtRevSum, amtRevSum);
+		EXPECT_NE(amtRevSum2, amtRevSum2);
+		EXPECT_NE(amtRevSum3, amtRevSum3);
+	}
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum2)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sum), decltype(amtSum3)>()), true);
@@ -331,19 +351,39 @@ void TestScalarOperators()
 	auto sub = t - u;
 	auto revsub = u - t;
 
+	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
 	auto amtlSub = tt - uu;
 	auto amtlRevSub = uu - tt;
 	auto amtlSub2 = tt - u;
 	auto amtlRevSub2 = u - tt;
 	auto amtlSub3 = t - uu;
 	auto amtlRevSub3 = uu - t;
+	amt::SetCustomAssertHandler<0>(nullptr);
 
-	EXPECT_EQ(sub, amtlSub);
-	EXPECT_EQ(sub, amtlSub2);
-	EXPECT_EQ(sub, amtlSub3);
-	EXPECT_EQ(revsub, amtlSub);
-	EXPECT_EQ(revsub, amtlSub2);
-	EXPECT_EQ(revsub, amtlSub3);
+	if (sub == sub)
+	{
+		EXPECT_EQ(sub, amtlSub);
+		EXPECT_EQ(sub, amtlSub2);
+		EXPECT_EQ(sub, amtlSub3);
+	}
+	else
+	{
+		EXPECT_NE(amtlSub, amtlSub);
+		EXPECT_NE(amtlSub2, amtlSub2);
+		EXPECT_NE(amtlSub3, amtlSub3);
+	}
+	if (revsub == revsub)
+	{
+		EXPECT_EQ(revsub, amtlRevSub);
+		EXPECT_EQ(revsub, amtlRevSub2);
+		EXPECT_EQ(revsub, amtlRevSub3);
+	}
+	else
+	{
+		EXPECT_NE(amtlRevSub, amtlRevSub);
+		EXPECT_NE(amtlRevSub2, amtlRevSub2);
+		EXPECT_NE(amtlRevSub3, amtlRevSub3);
+	}
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub2)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(sub), decltype(amtlSub3)>()), true);
@@ -355,19 +395,39 @@ void TestScalarOperators()
 	auto mul = t * u;
 	auto revmul = u * t;
 
+	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
 	auto amtlMul = tt * uu;
 	auto amtlRevMul = uu * tt;
 	auto amtlMul2 = tt * u;
 	auto amtlRevMul2 = u * tt;
 	auto amtlMul3 = t * uu;
 	auto amtlRevMul3 = uu * t;
+	amt::SetCustomAssertHandler<0>(nullptr);
 
-	EXPECT_EQ(mul, amtlMul);
-	EXPECT_EQ(mul, amtlMul2);
-	EXPECT_EQ(mul, amtlMul3);
-	EXPECT_EQ(revmul, amtlMul);
-	EXPECT_EQ(revmul, amtlMul2);
-	EXPECT_EQ(revmul, amtlMul3);
+	if (mul == mul)
+	{
+		EXPECT_EQ(mul, amtlMul);
+		EXPECT_EQ(mul, amtlMul2);
+		EXPECT_EQ(mul, amtlMul3);
+	}
+	else
+	{
+		EXPECT_NE(amtlMul, amtlMul);
+		EXPECT_NE(amtlMul2, amtlMul2);
+		EXPECT_NE(amtlMul3, amtlMul3);
+	}
+	if (revmul == revmul)
+	{
+		EXPECT_EQ(revmul, amtlRevMul);
+		EXPECT_EQ(revmul, amtlRevMul2);
+		EXPECT_EQ(revmul, amtlRevMul3);
+	}
+	else
+	{
+		EXPECT_NE(amtlRevMul, amtlRevMul);
+		EXPECT_NE(amtlRevMul2, amtlRevMul2);
+		EXPECT_NE(amtlRevMul3, amtlRevMul3);
+	}
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul2)>()), true);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(mul), decltype(amtlMul3)>()), true);
@@ -381,19 +441,39 @@ void TestScalarOperators()
 		auto div = t / u;
 		auto revdiv = u / t;
 
+		amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
 		auto amtlDiv = tt / uu;
 		auto amtlRevDiv = uu / tt;
 		auto amtlDiv2 = tt / u;
 		auto amtlRevDiv2 = u / tt;
 		auto amtlDiv3 = t / uu;
 		auto amtlRevDiv3 = uu / t;
+		amt::SetCustomAssertHandler<0>(nullptr);
 
-		EXPECT_EQ(div, amtlDiv);
-		EXPECT_EQ(div, amtlDiv2);
-		EXPECT_EQ(div, amtlDiv3);
-		EXPECT_EQ(revdiv, amtlDiv);
-		EXPECT_EQ(revdiv, amtlDiv2);
-		EXPECT_EQ(revdiv, amtlDiv3);
+		if (div == div)
+		{
+			EXPECT_EQ(div, amtlDiv);
+			EXPECT_EQ(div, amtlDiv2);
+			EXPECT_EQ(div, amtlDiv3);
+		}
+		else
+		{
+			EXPECT_NE(amtlDiv, amtlDiv);
+			EXPECT_NE(amtlDiv2, amtlDiv2);
+			EXPECT_NE(amtlDiv3, amtlDiv3);
+		}
+		if (revdiv == revdiv)
+		{
+			EXPECT_EQ(revdiv, amtlRevDiv);
+			EXPECT_EQ(revdiv, amtlRevDiv2);
+			EXPECT_EQ(revdiv, amtlRevDiv3);
+		}
+		else
+		{
+			EXPECT_NE(amtlRevDiv, amtlRevDiv);
+			EXPECT_NE(amtlRevDiv2, amtlRevDiv2);
+			EXPECT_NE(amtlRevDiv3, amtlRevDiv3);
+		}
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv)>()), true);
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv2)>()), true);
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(div), decltype(amtlDiv3)>()), true);
@@ -426,8 +506,7 @@ void TestScalarOperators()
 
 TEST(AMTTest, ScalarOperatorsStressTest)
 {
-	// TODO: maybe seed Mersenne Twister...
-	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
+	// TODO: maybe seed Mersenne Twister...	
 	TestScalarOperators<char>();
 	TestScalarOperators<unsigned char>();
 	TestScalarOperators<short>();
