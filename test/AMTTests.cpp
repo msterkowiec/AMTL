@@ -109,39 +109,14 @@ TEST(AMTTest, BasicTest){
 	EXPECT_EQ(c, -1);
 
 	{
-		// Div test:
-		unsigned char uch = 100;
-		unsigned char uch2 = 4;
-		unsigned long long ull = 3;
-		long long ll = 6;
-		short sh = 7;
-		auto res = uch / uch2;
-		auto res2 = uch / ull;
-		auto res3 = uch / ll;
-		auto res4 = uch / sh;
-
-		amt::uint8_t auch = 100;
-		amt::uint8_t auch2 = 4;
-		amt::uint64_t aull = 3;
-		amt::int64_t all = 6;
-		amt::int16_t ash = 7;
-
-		auto ares = auch / auch2;
-		auto ares2 = auch / aull;
-		auto ares3 = auch / all;
-		auto ares4 = auch / ash;
-
-		EXPECT_EQ(res, ares);
-		EXPECT_EQ(res2, ares2);
-		EXPECT_EQ(res3, ares3);
-		EXPECT_EQ(res4, ares4);
-
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res2), decltype(ares2)>()), true);
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res3), decltype(ares3)>()), true);
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res4), decltype(ares4)>()), true);
+		amt::uint32_t ui = 1;
+		amt::uint16_t ush = 2;
+		amt::uint16_t ush2 = 5;
+		if (ui + ush != ush2);
 	}
+}
 
+TEST(AMTTest, LongLongOverflowTest){
 	amt::uint64_t ll = 65536ULL * 65536 * 65536;
 	auto ullmul = ll * 65535;
 	amt::SetThrowCustomAssertHandler<0>();
@@ -154,70 +129,100 @@ TEST(AMTTest, BasicTest){
 		exceptionCaught = true;
 	}
 	EXPECT_EQ(exceptionCaught, true);
+}
 
-	// Long long addition:
+TEST(AMTTest, LongLongAdditionTest) {
+
+	unsigned long long ull = 10;
+	long long ll = 0xFFFFFFFFFFFFFFULL;
+	long long ll2 = -11;
+	auto res = ull + ll;
+	auto res2 = ull + ll2;
+
+	amt::uint64_t aull = 10;
+	amt::int64_t all = ll;
+	amt::int64_t all2 = -11;
+
+	auto ares = aull + all;
+
+	amt::SetThrowCustomAssertHandler<0>();
+	bool exceptionCaught = false;
+	try
 	{
-		unsigned long long ull = 10;
-		long long ll = 0xFFFFFFFFFFFFFFULL;
-		long long ll2 = -11;
-		auto res = ull + ll;
-		auto res2 = ull + ll2;
-
-		amt::uint64_t aull = 10;
-		amt::int64_t all = ll;
-		amt::int64_t all2 = -11;
-
-		auto ares = aull + all;
-
-		exceptionCaught = false;
-		try
-		{
-			auto ares2 = aull + all2;
-		}
-		catch (...)
-		{
-			exceptionCaught = true;
-		}
-		EXPECT_EQ(exceptionCaught, true);
-		EXPECT_EQ(res, ares);
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
-
+		auto ares2 = aull + all2;
 	}
-
-	// Long long subtraction:
+	catch (...)
 	{
-		unsigned long long ull = 10;
-		long long ll = -0xFFFFFFFFFFFFFFULL;
-		long long ll2 = 11;
-		auto res = ull - ll;
-		auto res2 = ull - ll2;
-
-		amt::uint64_t aull = ull;
-		amt::int64_t all = ll;
-		amt::int64_t all2 = ll2;
-
-		auto ares = aull - all;
-
-		exceptionCaught = false;
-		try
-		{
-			auto ares2 = aull - all2;
-		}
-		catch (...)
-		{
-			exceptionCaught = true;
-		}
-		EXPECT_EQ(exceptionCaught, true);
-		EXPECT_EQ(res, ares);
-		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
+		exceptionCaught = true;
 	}
+	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(res, ares);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
+	
+}
 
+TEST(AMTTest, LongLongSubtractionTest) {
+
+	unsigned long long ull = 10;
+	long long ll = -0xFFFFFFFFFFFFFFULL;
+	long long ll2 = 11;
+	auto res = ull - ll;
+	auto res2 = ull - ll2;
+
+	amt::uint64_t aull = ull;
+	amt::int64_t all = ll;
+	amt::int64_t all2 = ll2;
+
+	auto ares = aull - all;
+
+	amt::SetThrowCustomAssertHandler<0>();
+	bool exceptionCaught = false;
+	try
 	{
-		amt::uint32_t ui = 1;
-		amt::uint16_t ush = 2;
-		amt::uint16_t ush2 = 5;
-		if (ui + ush != ush2);
+		auto ares2 = aull - all2;
 	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(res, ares);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
+	
+}
+
+TEST(AMTTest, LongLongDivTest) {
+
+	unsigned char uch = 100;
+	unsigned char uch2 = 4;
+	unsigned long long ull = 3;
+	long long ll = 6;
+	short sh = 7;
+	auto res = uch / uch2;
+	auto res2 = uch / ull;
+	auto res3 = uch / ll;
+	auto res4 = uch / sh;
+
+	amt::uint8_t auch = 100;
+	amt::uint8_t auch2 = 4;
+	amt::uint64_t aull = 3;
+	amt::int64_t all = 6;
+	amt::int16_t ash = 7;
+
+	auto ares = auch / auch2;
+	auto ares2 = auch / aull;
+	auto ares3 = auch / all;
+	auto ares4 = auch / ash;
+
+	EXPECT_EQ(res, ares);
+	EXPECT_EQ(res2, ares2);
+	EXPECT_EQ(res3, ares3);
+	EXPECT_EQ(res4, ares4);
+
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res2), decltype(ares2)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res3), decltype(ares3)>()), true);
+	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res4), decltype(ares4)>()), true);
 }
 
 TEST(AMTTest, BasicVectorTest) {
@@ -1551,6 +1556,10 @@ TEST(AMTTest, EmplaceTest)
 int main()
 {	
 	RUNTEST(AMTTest, BasicTest);
+	RUNTEST(AMTTest, LongLongOverflowTest);
+	RUNTEST(AMTTest, LongLongAdditionTest);
+	RUNTEST(AMTTest, LongLongSubtractionTest);
+	RUNTEST(AMTTest, LongLongDivTest);
 	RUNTEST(AMTTest, BasicVectorTest);
 	RUNTEST(AMTTest, BasicMapTest);
 	RUNTEST(AMTTest, BasicSetTest);
