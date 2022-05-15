@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <math.h>
 #include <type_traits>
 #include "amt_cassert.h"
 #include "amt_types.h"
@@ -1047,7 +1048,7 @@ namespace amt
 			#if defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else	
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
 			#endif
 
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
