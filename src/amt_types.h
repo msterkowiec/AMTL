@@ -70,7 +70,7 @@ namespace amt
 	{
 		typedef typename U::UnderlyingType type;
 	};
-
+	
 }
 
 #if __AMT_DEBUG__
@@ -125,4 +125,25 @@ namespace amt
 																	>::type, \
 													T\
 																	  >::type
+
+#define AMTL_TYPE_IS_LONGLONG(T) ((sizeof(T) > 4) && (std::is_integral<T>::value))
+
+#define AMTL_LONG_LONG_OR_INT(T,U) typename std::conditional<AMTL_TYPE_IS_LONGLONG(T),T,typename std::conditional<AMTL_TYPE_IS_LONGLONG(U),U,int>::type>::type
+
+#define AMTL_RESULTANT_TYPE(T,U) typename std::conditional<\
+													std::is_floating_point<U>::value, \
+													typename std::conditional<\
+																!std::is_floating_point<T>::value || (sizeof(U) > sizeof(T)), \
+																U, \
+																T\
+																	>::type, \
+													typename std::conditional<\
+																std::is_floating_point<T>::value, \
+																T,\
+																AMTL_LONG_LONG_OR_INT(T,U)\
+													                >::type \
+																	  >::type
+
+#define AMT_SIGNUM(a) (((a)>0)-((a)<0))
+
 #endif
