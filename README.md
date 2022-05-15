@@ -39,8 +39,10 @@ Thus, when using AMTL it is recommended to use the following four various config
 - actual release (without asserts and with optimizations)
 
 # C++ version
+Tested with C++11 and C++17
 AMTL is meant to be applicable to existing code to create special builds with asserts - that's why it is written to be compilable with older versions of C++ (but at least C++11).
 Yet older versions (C++98/03) are not supported and, as for now, there is no plan to include such support.
+Not tested yet with C++20/23 (probably quite much effort needed to make AMTL suitable for C++20 code)
 
 ---------------------------------------------------
 
@@ -68,19 +70,10 @@ Currently AMTL may be considered a working POC.
 
 # Known issues
 AMTL is a fresh project (its idea sprang in the middle of April 2021), so many things are still missing and many may have been unnoticed, anyway here is the list of possible issues spotted so far:
-- it may be not enough to replace amt types with amt "assertive" types to compile successfully - adding manually some casts may be inevitable - e.g. when implicit cast that changes signedness is used in the existing code (anyway such problems with compilation may indicate points in code that require attention - and as such it may be treated as additional value of AMTL not an issue : )
-  This is due to the fact that C++ doesn't allow to have more than one suitable operator for conversion, no possibility to have "last_resort" operator, though it seems it would be nice to have it for such wrapper classes like in AMTL
 - compilation times in release (with optimizations) sometimes tends to be... almost infinite with VS :) Replacing some __AMT_FORCEINLINE__ with just "inline" may solve the issue (see macro __AMT_DONT_FORCE_INLINE__ in amt_config.h)
-- AMTL may raise false alarms/false positives; particularly annoying is the following case with subtraction of two unsigned numeric types:
-  amt::uint8_t a = 1;
-  amt::uint8_t b = 2;
-  amt::int8_t c = a - b; // Here AMTL raises assertion failure, because a - b gives overflow on the type of left operand (which is unsigned), although this is 100% safe with C++ numeric types
-  Probably better than abandon usage of AMTL is to explicitly express intention, e.g. in the following way:
-  amt::int8_t c = ((std::int8_t)a) - b;
-  or better something like this, though for sure it would be cumbersome as hell:
-  amt::int8_t c = ((std::make_signed<decltype(a)>::type)a) - b;
-  That's why the following macros are available: AMT_CAST_TO_SIGNED(x) and AMT_CAST_TO_UNSIGNED(x) - what's important, they are currently defaulted just to "x" if AMTL feature is off (if amt_config.h leaves __AMTL_ASSERTS_ARE_ON__ undefined)
-
+- some explicit casts may be needed particularly in case of conditional operator ? (if one of the options is an AMTL scalar, e.g. amt::int32t, and the other is not wrapped up, e.g. just an int)
+- if some piece of code already contains some implicit casts, adding another level of complexity (AMTL wrappers) may break build with AMTL (C++ will not accept two implicit casts); in such case the code should be simplified in some way (BTW: once, with MSVC2019, I even came accross "Internal compiler error" with explanation to try to simplify the code around the place when this error occurred - anyway it shows that AMTL wrappers may sometimes introduce additional level of complexity that may even be too much for compilers - and that simply writing code without too many implicit casts may make it easier and let avoid reading strange compilation error messages : )
+  
 # Origin
 
 It may be worth adding a few words about project origin. As said, its idea sprang in the middle of April 2021 - during bug fixing of a piece of software that solves chess moremovers (it's been developed "after hours" for quite many years and treated as very well tested - large test suite, "robust", "reliable" etc. etc.)
