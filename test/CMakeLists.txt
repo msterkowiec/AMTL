@@ -20,11 +20,12 @@ enable_testing()
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(${AMT_SOURCE_DIR}/src)
 include(GoogleTest)
-add_executable(AMTTests "AMTTests.cpp")
 
 if (MSVC)
-    add_compile_options(/bigobj /Zc:__cplusplus)
-endif()
+  add_definitions(/bigobj)
+endif ()
+
+add_executable(AMTTests "AMTTests.cpp")
 
 target_link_libraries(AMTTests gtest_main)
 
