@@ -118,6 +118,9 @@ TEST(AMTTest, LongLongTest){
 	amt::SetCustomAssertHandler<0>(nullptr);
 	EXPECT_EQ(AssertionFailedSilently, counter + 1);
 	EXPECT_EQ(zll, zzll);
+
+	yyll = 0;
+	EXPECT_EQ(yyll + 1, 1);
 }
 
 TEST(AMTTest, LongLongOverflowTest){
