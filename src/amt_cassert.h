@@ -36,6 +36,7 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 	#include <wtypes.h>
 	#include <processthreadsapi.h>
 	#include <windows.h>
+	#include <string.h>
 
 	// Default handler for Windows:
 	template<bool>
@@ -141,5 +142,3 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 #else
 #define AMT_CASSERT(a)
 #endif
-
-
