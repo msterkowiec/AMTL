@@ -89,6 +89,21 @@ TEST(AMTTest, BasicTest){
 	auto xmul = (x * yy) / 2;
 	EXPECT_EQ(mul, xmul);
 
+	amt::uint8_t a = 9;
+	amt::uint8_t b = 11;
+	amt::int32_t c = 0;
+	c += (a - b) / 2;
+	EXPECT_EQ(c, -1);
+
+	{
+		amt::uint32_t ui = 1;
+		amt::uint16_t ush = 2;
+		amt::uint16_t ush2 = 5;
+		//if (ui + ush != ush2);
+	}
+}
+
+TEST(AMTTest, LongLongTest){
 	unsigned long long xll = 9;
 	long long yll = 10;
 	auto zll = (xll - yll) / 2;
@@ -101,19 +116,6 @@ TEST(AMTTest, BasicTest){
 	amt::SetCustomAssertHandler<0>(nullptr);
 	EXPECT_EQ(AssertionFailedSilently, counter + 1);
 	EXPECT_EQ(zll, zzll);
-
-	amt::uint8_t a = 9;
-	amt::uint8_t b = 11;
-	amt::int32_t c = 0;
-	c += (a - b) / 2;
-	EXPECT_EQ(c, -1);
-
-	{
-		amt::uint32_t ui = 1;
-		amt::uint16_t ush = 2;
-		amt::uint16_t ush2 = 5;
-		if (ui + ush != ush2);
-	}
 }
 
 TEST(AMTTest, LongLongOverflowTest){
@@ -1556,6 +1558,7 @@ TEST(AMTTest, EmplaceTest)
 int main()
 {	
 	RUNTEST(AMTTest, BasicTest);
+	RUNTEST(AMTTest, LongLongTest);
 	RUNTEST(AMTTest, LongLongOverflowTest);
 	RUNTEST(AMTTest, LongLongAdditionTest);
 	RUNTEST(AMTTest, LongLongSubtractionTest);
