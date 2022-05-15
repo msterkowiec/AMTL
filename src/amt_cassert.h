@@ -22,7 +22,7 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 #ifdef _WIN32
 #define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
 #else
-	#ifndef NDEBUG
+	#if !defined(NDEBUG) 
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
 	#else
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, #a))
@@ -36,6 +36,7 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 	#include <wtypes.h>
 	#include <processthreadsapi.h>
 	#include <windows.h>
+	#include <string.h>
 
 	// Default handler for Windows:
 	template<bool>
@@ -55,12 +56,20 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 				(*s_pCustomAssertHandler)(a, szFileName, lLine, szDesc); // call custom handler
 				return;
 			}
+
+			#if __AMTL_USE_STANDARD_ASSERT__
+			assert(a);
+			#if !defined(_DEBUG)
+			throw std::runtime_error("AMTL assertion failed");
+			#endif
+			#else
 			char msg[BUFLEN];
 			DWORD nCurrentThreadId = GetCurrentThreadId();
 			_snprintf(msg, BUFLEN - 1,  "Assertion failed at line %d in thread id %d in file %s\n%s", lLine, nCurrentThreadId, szFileName, szDesc);
 			msg[BUFLEN - 1] = 0;
 
 			MessageBoxA(NULL, msg, (LPCSTR)"Assertion failed", MB_OK | MB_ICONEXCLAMATION);
+			#endif
 		}
 	}
 	
@@ -84,8 +93,15 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 			return;
 		}
 
+		#if __AMTL_USE_STANDARD_ASSERT__
+		assert(a);
+		#if defined(NDEBUG)
+		throw std::runtime_error("AMTL assertion failed");
+		#endif
+		#else
 		std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ": " << szDesc << " Press <ENTER> to continue.\n";
 		getchar();
+		#endif
 	}
 	#endif
 
@@ -120,10 +136,9 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 		{
 			__custom_assert<1>(false, "amt::SetCustomAssertHandler", -1, (const char*)(CustomAssertHandlerPtr)&ThrowCustomAssertHandler<0>); // dirty trick that allows to keep the module stateless (use static variable inside __custom_assert)
 		}
+
 	}
 
 #else
 #define AMT_CASSERT(a)
 #endif
-
-

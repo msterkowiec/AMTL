@@ -13,9 +13,17 @@
 #if defined(_MSC_VER) && _MSVC_LANG < 201402L
 #define __AMT_NOEXCEPT__
 #define __AMT_NOEXCEPT_FALSE__
+#define __AMT_CONSTEXPR__ const
+#define __AMT_IF_CONSTEXPR__
 #else
 #define __AMT_NOEXCEPT__ noexcept
 #define __AMT_NOEXCEPT_FALSE__ noexcept(false)
+#define __AMT_CONSTEXPR__ constexpr
+//#if __cplusplus >= 201703L || (defined(_MSC_VER) && _MSVC_LANG >= 201703L)
+#define __AMT_IF_CONSTEXPR__ constexpr
+//#else
+//#define __AMT_IF_CONSTEXPR__
+//#endif
 #endif
 
 #if __AMT_LET_DESTRUCTORS_THROW__

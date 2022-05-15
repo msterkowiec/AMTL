@@ -10,9 +10,11 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <math.h>
 #include <type_traits>
 #include "amt_cassert.h"
 #include "amt_types.h"
+#include "amt_compat.h"
 
 #if defined(__AMTL_ASSERTS_ARE_ON__)
 #if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
@@ -403,97 +405,125 @@ namespace amt
 		}
 		#if __AMT_CHECK_NUMERIC_OVERFLOW__
 	private:
-		template<typename U, typename V>
+		template<typename U, typename V, typename ResType>
 		__AMT_FORCEINLINE__ static void VerifyOverflow_Add(U u, V v)
 		{
-			if (!std::is_floating_point<U>::value)
-				if (std::is_floating_point<V>::value)
+			if __AMT_IF_CONSTEXPR__(std::is_floating_point<U>::value || std::is_floating_point<V>::value)
+			{
+				//  TODO
+			}
+			else
+				if __AMT_IF_CONSTEXPR__(sizeof(U) < sizeof(std::int64_t) && sizeof(V) < sizeof(std::int64_t) && sizeof(ResType) < sizeof(std::int64_t))
 				{
-					//  to-do
+					std::int64_t i64 = (std::int64_t) u;
+					i64 += v;
+					AMT_CASSERT(i64 <= (std::numeric_limits<ResType>::max)());
+					AMT_CASSERT(i64 >= (std::numeric_limits<ResType>::min)());
 				}
 				else
-					if (sizeof(U) < sizeof(std::int64_t) && sizeof(V) < sizeof(std::int64_t))
+					if (v != 0)
 					{
-						std::int64_t i64 = (std::int64_t) u;
-						i64 += v;
-						AMT_CASSERT(i64 <= (std::numeric_limits<U>::max)());
-						AMT_CASSERT(i64 >= (std::numeric_limits<U>::min)());
-					}
-					else
-					{
-						//  to-do
+						if (u >= 0 && v > 0)
+							AMT_CASSERT(u + v > u && u + v >= v);
+						else
+							if (u < 0 && v < 0)
+								AMT_CASSERT(u + v < u && u + v <= v);
+							else
+								if (!std::is_signed<ResType>::value)
+									if (u < 0)
+										AMT_CASSERT(labs(u) <= v);
+									else
+										AMT_CASSERT(labs(v) <= u);
 					}
 		}
-		template<typename U, typename V>
+		template<typename U, typename V, typename ResType>
 		__AMT_FORCEINLINE__ static void VerifyOverflow_Subtract(U u, V v)
 		{
-			if (!std::is_floating_point<U>::value)
-				if (std::is_floating_point<V>::value)
+			if __AMT_IF_CONSTEXPR__(std::is_floating_point<U>::value || std::is_floating_point<V>::value)
+			{
+				//  TODO
+			}
+			else
+				if __AMT_IF_CONSTEXPR__(sizeof(ResType) < sizeof(std::int64_t))
 				{
-					//  to-do
-				}
-				else
-					if (sizeof(U) < sizeof(std::int64_t) && sizeof(V) < sizeof(std::int64_t))
-					{
-						std::int64_t i64 = (std::int64_t) u;
-						i64 -= v;
-						AMT_CASSERT(i64 <= (std::numeric_limits<U>::max)());
-						AMT_CASSERT(i64 >= (std::numeric_limits<U>::min)());
-					}
-					else
-					{
-						//  to-do
-					}
-		}
+					#if !defined(_MSC_VER) || _MSVC_LANG >= 201402L
+					static_assert(std::is_integral<ResType>::value, "Expected integral type");
+					#endif
 
-		template<typename U, typename V>
-		__AMT_FORCEINLINE__ static void VerifyOverflow_Mul(U u, V v)
-		{
-			if (!std::is_floating_point<U>::value)
-				if (std::is_floating_point<V>::value)
-				{
-					double tmp = (double) u;
-					tmp *= v;
-					tmp = floor(tmp);
-					AMT_CASSERT(tmp <= (std::numeric_limits<U>::max)()); // e.g. unsigned char 100 * 2.6 overflows
-					AMT_CASSERT(tmp >= (std::numeric_limits<U>::min)());
+					std::int64_t i64 = (std::int64_t) u;
+					i64 -= v;
+					AMT_CASSERT(i64 <= (std::numeric_limits<ResType>::max)());
+					AMT_CASSERT(i64 >= (std::numeric_limits<ResType>::min)());
 				}
 				else
-					if (sizeof(U) < sizeof(std::int64_t) && sizeof(V) < sizeof(std::int64_t))
-					{
-						if (std::is_signed<U>::value)
+					if (v != 0)
+						if (u >= 0 && v < 0)
 						{
-							std::int64_t i64 = (std::int64_t) u;
-							i64 *= v;
-							AMT_CASSERT(i64 <= (std::numeric_limits<U>::max)());
-							AMT_CASSERT(i64 >= (std::numeric_limits<U>::min)());
+							AMT_CASSERT(v != (std::numeric_limits<V>::min)() || sizeof(V) > 4); // e.g. any char - (-128) is always overflow
+							AMT_CASSERT(u - v > u && u - v >= -v);
 						}
 						else
-						{
-							std::uint64_t ui64 = (std::int64_t) u;
-							ui64 *= v;
-							AMT_CASSERT(ui64 <= (std::numeric_limits<U>::max)());
-							AMT_CASSERT(ui64 >= (std::numeric_limits<U>::min)());
-						}
+							if (u < 0 && v > 0)
+								AMT_CASSERT(u + v < u && u + v <= -v);
+							else
+								if (!std::is_signed<ResType>::value)
+									AMT_CASSERT(u >= v);
+		}
+
+		template<typename U, typename V, typename ResType>
+		__AMT_FORCEINLINE__ static void VerifyOverflow_Mul(U u, V v)
+		{
+			if  __AMT_IF_CONSTEXPR__(!std::is_floating_point<ResType>::value)
+				if  __AMT_IF_CONSTEXPR__(sizeof(ResType) < sizeof(std::int64_t))
+				{
+					if (std::is_signed<ResType>::value)
+					{
+						std::int64_t i64 = (std::int64_t) u;
+						i64 *= v;
+						AMT_CASSERT(i64 <= (std::numeric_limits<ResType>::max)());
+						AMT_CASSERT(i64 >= (std::numeric_limits<ResType>::min)());
 					}
 					else
 					{
-						//  to-do
+						std::uint64_t ui64 = (std::int64_t) u;
+						ui64 *= v;
+						AMT_CASSERT(ui64 <= (std::numeric_limits<ResType>::max)());
+						AMT_CASSERT(ui64 >= (std::numeric_limits<ResType>::min)());
 					}
+				}
+				else
+				{					
+					if (u != 0)
+					{
+						ResType res = u * v;
+						AMT_CASSERT(res / u == v);
+						#if !defined(_MSC_VER) || _MSVC_LANG >= 201402L
+						AMT_CASSERT(res % u == 0);
+						#endif
+					}
+				}
+			else
+			{
+				// TODO
+			}
 		}
 
-		template<typename U, typename V>
+		template<typename U, typename V, typename ResType>
 		__AMT_FORCEINLINE__ static void VerifyOverflow_Div(U u, V v)
 		{
 			AMT_CASSERT(v != 0);
 			
-			if (!std::is_floating_point<U>::value)
+			if  __AMT_IF_CONSTEXPR__(std::is_floating_point<ResType>::value)
 			{
-				if (std::is_signed<U>::value)
+				// TODO
+			}
+			else
+			{
+				if  __AMT_IF_CONSTEXPR__(std::is_signed<U>::value)
 					if (v == -1)
 						AMT_CASSERT(u != (std::numeric_limits<U>::min)()); // e.g. for char we cannot divide -128 by -1
-
-				if (std::is_floating_point<V>::value)
+				
+				if  __AMT_IF_CONSTEXPR__(std::is_floating_point<V>::value)
 				{
 					double tmp = (double)u; 
 					tmp /= v;
@@ -501,13 +531,12 @@ namespace amt
 					AMT_CASSERT(tmp <= (std::numeric_limits<U>::max)()); // e.g. unsigned char 100 / 0.3 overflows
 					AMT_CASSERT(tmp >= (std::numeric_limits<U>::min)());
 				}
+
+				if  __AMT_IF_CONSTEXPR__(std::is_unsigned<ResType>::value)
+					AMT_CASSERT(AMT_SIGNUM(v) + AMT_SIGNUM(u) != 0); // opposite signs?
+
 			}
 								
-			if (std::is_unsigned<U>::value)
-				if (std::is_signed<V>::value)
-					if (v < 0)
-						AMT_CASSERT(false); // to be verified!!
-
 					
 		}
 
@@ -528,8 +557,9 @@ namespace amt
 		inline AMTScalarType& operator += (const U& u)
 		{
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Add(m_val, Unwrap(u));
+			VerifyOverflow_Add<T,U,T>(m_val, Unwrap(u));
 			#endif
+
 			if (this != (void*)&u)
 			{				
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -553,7 +583,7 @@ namespace amt
 		inline AMTScalarType& operator -= (const U& u)
 		{
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Subtract(m_val, u);
+			VerifyOverflow_Subtract<T,U,T>(m_val, u);
 			#endif
 			if (this != (void*)&u)
 			{ 				
@@ -578,7 +608,7 @@ namespace amt
 		inline AMTScalarType& operator *= (const U& u)
 		{
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Mul(m_val, u);
+			VerifyOverflow_Mul<T,U,T>(m_val, u);
 			#endif
 			if (this != (void*)&u)
 			{ 				
@@ -603,7 +633,7 @@ namespace amt
 		inline AMTScalarType& operator /= (const U& u)
 		{
 			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Div(m_val, u);
+			VerifyOverflow_Div<T,U,T>(m_val, u);
 			#endif
 			if (this != (void*)&u)
 			{ 				
@@ -812,59 +842,71 @@ namespace amt
 		#if __AMT_CHECK_NUMERIC_OVERFLOW__
 
 		// Addition:
-		/*inline friend AMTScalarType operator + (const AMTScalarType& var1, const AMTScalarType& var2)
-		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			CRegisterReadingThread r2(var2);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Add(var1.m_val, var2.m_val);
-			#endif
-			AMTScalarType<T> ret(var1.m_val + var2.m_val);
-			return ret;
-		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator + (const AMTScalarType& var1, U u) 
+		inline auto operator + (const AMTScalarType<U>& var2) const
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
-			//typedef std::conditional_t<std::is_floating_point_v<U>, std_conditional_t<!std::is_floating_point_v<T> || sizeof(U)>sizeof(T), U, T>, T > ResType;
-
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Add(var1.m_val, u);
+			CRegisterReadingThread r1(*this);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType< AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
 			#endif
-				
-			ResType	ret(var1.m_val + u);
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Add<T, U, AMTL_RESULTANT_TYPE(T,U)>(m_val, var2.m_val);
+			#endif
+
+			ResType ret(m_val + var2.m_val);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline auto operator + (U u) const
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
+		#endif
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r1(*this);
+			#endif
+
+			#if defined(_MSC_VER)
+			typedef AMTScalarType< AMTL_RESULTANT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Add<T, U, AMTL_RESULTANT_TYPE(T, U)>(m_val, u);
+			#endif
+
+			ResType	ret(m_val + u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend auto operator + (U u, const AMTScalarType& var2) 
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(U, T)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
 			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Add(u, var2.m_val);
-			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(U, T)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(U, T) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Add<U, T, AMTL_RESULTANT_TYPE(U, T)>(u, var2.m_val);
 			#endif
 
 			ResType ret(u + var2.m_val);
@@ -872,57 +914,72 @@ namespace amt
 		}
 
 		// Subtraction:
-		/*inline friend AMTScalarType<T> operator - (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
-		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			CRegisterReadingThread r2(var2);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Subtract(var1.m_val, var2.m_val);
-			#endif
-			AMTScalarType<T> ret(var1.m_val - var2.m_val);
-			return ret;
-		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator - (const AMTScalarType<T>& var1, U u) 
+		inline auto operator - (const AMTScalarType<U>& var2) const
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Subtract(var1.m_val, u);
+			CRegisterReadingThread r1(*this);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
 			#endif
 
-			ResType res = var1.m_val - u;
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Subtract<T,U, AMTL_RESULTANT_TYPE(T, U)>(m_val, var2.m_val);
+			#endif
+
+			ResType ret(m_val - var2.m_val);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline auto operator - (U u) const
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
+		#endif
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r1(*this);
+			#endif
+
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Subtract<T,U, AMTL_RESULTANT_TYPE(T, U)>(m_val, u);
+			#endif
+
+			ResType res = m_val - u;
 			return res;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend auto operator - (U u, const AMTScalarType<T>& var2) 
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
 			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Subtract(u, var2.m_val);
-			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Subtract<U,T, AMTL_RESULTANT_TYPE(T, U)>(u, var2.m_val);
 			#endif
 
 			ResType res = u - var2.m_val;
@@ -930,57 +987,72 @@ namespace amt
 		}
 
 		// Multiplication:
-		/*inline friend AMTScalarType<T> operator * (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
-		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			CRegisterReadingThread r2(var2);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Mul(var1.m_val, var2.m_val);
-			#endif
-			AMTScalarType<T> ret(var1.m_val * var2.m_val);
-			return ret;
-		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator * (const AMTScalarType<T>& var1, U u) 
+		inline auto operator * (const AMTScalarType<U>& var2) const
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
+			// TODO: if (this == (void*) &var2)
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Mul(var1.m_val, u);
+			CRegisterReadingThread r1(*this);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
 			#endif
 
-			ResType ret(var1.m_val * u);
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Mul<T, U, AMTL_RESULTANT_TYPE(T, U)>(m_val, var2.m_val);
+			#endif
+
+			ResType ret(m_val * var2.m_val);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline auto operator * (U u) const
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
+		#endif
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r1(*this);
+			#endif
+
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Mul<T, U, AMTL_RESULTANT_TYPE(T, U)>(m_val, u);
+			#endif
+
+			ResType ret(m_val * u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend auto operator * (U u, const AMTScalarType<T>& var2) 
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
 			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Mul(u, var2.m_val);
-			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else	
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Mul<U, T, AMTL_RESULTANT_TYPE(U, T)>(u, var2.m_val);
 			#endif
 
 			ResType ret(u * var2.m_val);
@@ -988,63 +1060,79 @@ namespace amt
 		}
 
 		// Division:
-		/*inline friend AMTScalarType<T> operator / (const AMTScalarType<T>& var1, const AMTScalarType<T>& var2)
-		{
-			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			CRegisterReadingThread r2(var2);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Div(var1.m_val, var2.m_val);
-			#endif
-			AMTScalarType<T> ret(var1.m_val / var2.m_val);
-			return ret;
-		}*/
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend auto operator / (const AMTScalarType<T>& var1, U u) 
+		inline auto operator / (const AMTScalarType<U>& var2) const
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
-			CRegisterReadingThread r1(var1);
-			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Div(var1.m_val, u);
+			CRegisterReadingThread r1(*this);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;			
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
 			#endif
 
-			ResType	ret(var1.m_val / u);
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Div<T, U, AMTL_RESULTANT_TYPE(T, U)>(m_val, var2.m_val);
+			#endif
+
+			ResType ret(m_val / var2.m_val);
+			return ret;
+		}
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline auto operator / (U u) const
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(T, U)>
+		#endif
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r1(*this);
+			#endif
+
+			#if defined(_MSC_VER)
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
+			#else
+			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Div<T, U, AMTL_RESULTANT_TYPE(T, U)>(m_val, u);
+			#endif
+
+			ResType	ret(m_val / u);
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend auto operator / (U u, const AMTScalarType<T>& var2) 
 		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			-> AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)>
+			-> AMTScalarType<AMTL_RESULTANT_TYPE(U, T)>
 		#endif
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
 			#endif
-			#if __AMT_CHECK_NUMERIC_OVERFLOW__
-			VerifyOverflow_Div(u, var2.m_val);
-			#endif
 
 			#if defined(_MSC_VER)
-			typedef AMTScalarType<AMTL_SELECT_FLOATING_POINT_TYPE(T, U)> ResType;
+			typedef AMTScalarType<AMTL_RESULTANT_TYPE(U,T)> ResType;
 			#else
-			typedef AMTL_SELECT_FLOATING_POINT_TYPE(T, U) ResType;
+			typedef AMTL_RESULTANT_TYPE(U,T) ResType;
+			#endif
+
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			VerifyOverflow_Div<U, T, AMTL_RESULTANT_TYPE(U,T)>(u, var2.m_val);
 			#endif
 
 			ResType ret(u / var2.m_val);
 			return ret;
 		}
 
+
+		// Modulo division:
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline friend AMTScalarType<T> operator % (const AMTScalarType<T>& var1, U u)
 		{
@@ -1091,8 +1179,8 @@ namespace amt
 			template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 			void CheckAssignmentOverflow(U u)
 			{
-				if (std::is_floating_point<U>::value)
-					if (std::is_floating_point<T>::value)
+				if __AMT_IF_CONSTEXPR__(std::is_floating_point<U>::value)
+					if __AMT_IF_CONSTEXPR__(std::is_floating_point<T>::value)
 					{
 						if (sizeof(T) < sizeof(U))
 						{
@@ -1105,19 +1193,22 @@ namespace amt
 						AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
 					}
 				else
-					if (!std::is_floating_point<T>::value)
+					if __AMT_IF_CONSTEXPR__(!std::is_floating_point<T>::value)
 					{
-						if (std::is_unsigned<T>::value == std::is_unsigned<U>::value)
+						if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value == std::is_unsigned<U>::value)
 						{
-							if (sizeof(T) < sizeof(U))
+							if __AMT_IF_CONSTEXPR__(sizeof(T) < sizeof(U))
 							{
 								AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
 							}
 						}
 						else
-						{
-							AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
-						}
+							if __AMT_IF_CONSTEXPR__(std::is_unsigned<U>::value)
+							{
+								AMT_CASSERT(u <= (std::numeric_limits<T>::max)());
+							}
+							else
+								AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
 					}
 			}
 
