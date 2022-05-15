@@ -211,6 +211,13 @@ TEST(AMTTest, BasicTest){
 		EXPECT_EQ(res, ares);
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
 	}
+
+	{
+		amt::uint32_t ui = 1;
+		amt::uint16_t ush = 2;
+		amt::uint16_t ush2 = 5;
+		if (ui + ush != ush2);
+	}
 }
 
 TEST(AMTTest, BasicVectorTest) {
