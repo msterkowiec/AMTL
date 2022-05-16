@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -11,7 +11,8 @@
 // __AMTL_ASSERTS_ARE_ON__
 //
 // Main configurable setting of Assertive MultiThreading Library
-// Comment it out for builds without additional checks (ifndef added to make this setting overridable before inclusion, e.g. for tests)
+//
+// *** IMPORTANT *** Comment it out for builds without additional checks (ifndef added to make this setting overridable before inclusion, e.g. for tests)
 //
 // ====================================
 #ifndef __AMTL_ASSERTS_ARE_ON__
@@ -54,7 +55,7 @@
 //	// Example: amt::vector<HANDLE> vecThreadHandles.... WaitForMultipleObjects(nThreads, &vecThreadHandles[0], TRUE, INFINITE);
 //	// Such case would reveal in a very nasty and hard to detect manner. That's why it is not recommended to use __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 1 in the first step,
 //	// particularly if application is large and ALL vectors in application were moved from std to amt
-// The case mentioned above will not happen with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 1 
+// The case mentioned above will not happen with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 1
 
 #define __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 0
 
