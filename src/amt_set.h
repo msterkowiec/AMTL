@@ -244,7 +244,9 @@ namespace amt
 				CRegisterWritingThread r(*this);
 				CRegisterReadingThread r2(o);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				o.AssertIsValid();
+				#endif
 				m_pSet = o.m_pSet;
 				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
 				*((ITER*)this) = *((ITER*)&o);
@@ -257,7 +259,9 @@ namespace amt
 					CRegisterWritingThread r(*this);
 					CRegisterReadingThread r2(o);
 					#endif
+					#if __AMT_CHECK_ITERATORS_VALIDITY__
 					o.AssertIsValid();
+					#endif
 					m_pSet = o.m_pSet;
 					*((ITER*)this) = *((ITER*)&o);
 					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
@@ -268,7 +272,9 @@ namespace amt
 					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 					CRegisterWritingThread r(*this);
 					#endif
+					#if __AMT_CHECK_ITERATORS_VALIDITY__
 					o.AssertIsValid();
+					#endif
 					m_pSet = o.m_pSet;
 					*((ITER*)this) = *((ITER*)&o);
 					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
@@ -283,7 +289,9 @@ namespace amt
 					CRegisterWritingThread r(*this);
 					CRegisterWritingThread r2(o);
 					#endif
+					#if __AMT_CHECK_ITERATORS_VALIDITY__
 					o.AssertIsValid();
+					#endif	
 					m_pSet = o.m_pSet;
 					*((ITER*)this) = std::move(*((ITER*)&o));
 					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
@@ -294,7 +302,9 @@ namespace amt
 					#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 					CRegisterWritingThread r(*this);
 					#endif
-					o.AssertIsValid();
+					#if __AMT_CHECK_ITERATORS_VALIDITY__
+					o.AssertIsValid();										
+					#endif
 					m_pSet = o.m_pSet;
 					*((ITER*)this) = std::move(*((ITER*)&o));
 					m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
@@ -307,9 +317,11 @@ namespace amt
 				CRegisterReadingThread r(it1);
 				CRegisterReadingThread r2(it2);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				it1.AssertIsValid();
-				it2.AssertIsValid();
+				it2.AssertIsValid();				
 				AMT_CASSERT(it1.m_pSet == it2.m_pSet);
+				#endif
 				return *((ITER*)&it1) == *((ITER*)&it2);
 			}
 			__AMT_FORCEINLINE__ friend bool operator != (const IteratorBase& it1, const IteratorBase& it2)
@@ -318,9 +330,11 @@ namespace amt
 				CRegisterReadingThread r(it1);
 				CRegisterReadingThread r2(it2);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				it1.AssertIsValid();
-				it2.AssertIsValid();
+				it2.AssertIsValid();				
 				AMT_CASSERT(it1.m_pSet == it2.m_pSet);
+				#endif
 				return *((ITER*)&it1) != *((ITER*)&it2);
 			}
 			__AMT_FORCEINLINE__ ~IteratorBase() __AMT_CAN_THROW__
@@ -343,7 +357,9 @@ namespace amt
 			{
 				AMT_CASSERT(m_pSet != nullptr);
 				AMT_CASSERT(m_pSet == pSet || pSet == nullptr); // passing set is not mandatory but lets make sure that iterator is not used versus wrong object
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AMT_CASSERT(IsIteratorValid());
+				#endif
 			}
 			__AMT_FORCEINLINE__ void AssertNotBegin() const
 			{			
@@ -358,8 +374,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
+				#endif
 				((ITER*)this)->operator++();
 				return *this;
 			}
@@ -368,8 +386,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotBegin();
+				#endif
 				((ITER*)this)->operator--();
 				return *this;
 			}
@@ -378,8 +398,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
+				#endif
 				auto it = *this;
 				((ITER*)this)->operator++();
 				return it;
@@ -389,8 +411,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotBegin();
+				#endif
 				auto it = *this;
 				((ITER*)this)->operator--();
 				return it;
@@ -405,8 +429,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterReadingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
+				#endif
 				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T*) ((ITER*)this)->operator->();
 				#else
@@ -423,8 +449,10 @@ namespace amt
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterReadingThread r(*this);
 				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
+				#endif
 				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
 				return (const T&) ((ITER*)this)->operator*();
 				#else
@@ -640,7 +668,9 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
 			it.AssertIsValid(this);
+			#endif
 			++m_nCountOperInvalidateIter;
 			((Base*)this)->erase(it);
 		}
@@ -657,8 +687,10 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
 			first.AssertIsValid(this);
 			last.AssertIsValid(this);
+			#endif
 			++m_nCountOperInvalidateIter;
 			((Base*)this)->erase(first, last);
 		}
@@ -691,7 +723,9 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
 			position.AssertIsValid();
+			#endif
 			auto resBase = ((Base*)this)->emplace_hint(position, std::forward<Args>(args)...);
 			iterator res(resBase, this);
 			return res;
@@ -723,7 +757,9 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
 			position.AssertIsValid(this);
+			#endif
 			++m_nCountOperInvalidateIter;
 			auto resBase = ((Base*)this)->insert(position, val);
 			iterator res(resBase, this);
@@ -736,8 +772,10 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
 			first.AssertIsValid(this);
 			last.AssertIsValid(this);
+			#endif
 			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert<InputIterator>(first, last);
 		}
