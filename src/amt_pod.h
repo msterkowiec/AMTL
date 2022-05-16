@@ -1709,7 +1709,9 @@ namespace amt
 	#endif
 } // namespace amt
 
+#if defined(__AMTL_ASSERTS_ARE_ON__)
 namespace std {
 	template<typename T> 
 	class numeric_limits<amt::AMTScalarType<T>> : public std::numeric_limits<T>{};
 }
+#endif
