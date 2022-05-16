@@ -801,6 +801,18 @@ namespace amt
 			std::pair<iterator, bool> res(make_pair(iterator(resBase.first, this), resBase.second));
 			return res;
 		}
+		template< class P >
+		std::pair<iterator, bool> insert(P&& value)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			auto resBase =((Base*)this)->insert(std::move(value));
+			if (resBase.second)
+				++m_nCountOperInvalidateIter;
+			std::pair<iterator, bool> res(make_pair(iterator(resBase.first, this), resBase.second));
+			return res;
+		}
 		iterator insert(iterator position, const ValueType& val)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
