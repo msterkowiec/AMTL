@@ -13,19 +13,32 @@
 
 #include <assert.h>
 
+namespace amt {
+	typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // the parameters are: isAssertionOk, szFileName, lLine, szDesc
+
+	struct AMTCassertException : std::exception
+	{
+		std::string sFileName;
+		long lLine;
+		std::string sDesc;
+
+		AMTCassertException(const char* szFileName, long lLine, const char* szDesc) : sFileName(szFileName), lLine(lLine), sDesc(szDesc)
+		{
+		}
+	};
+}
+
 #ifdef __AMTL_ASSERTS_ARE_ON__
 
 #include <set>
 
-typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // the parameters are: isAssertionOk, szFileName, lLine, szDesc
-
 #ifdef _WIN32
-#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
+#define AMT_CASSERT(a) ((a) ? (void) 1 : amt::__custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
 #else
 	#if !defined(NDEBUG) 
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
 	#else
-	#define AMT_CASSERT(a) ((a) ? (void) 1 : __custom_assert<1>(a, __FILE__, __LINE__, #a))
+	#define AMT_CASSERT(a) ((a) ? (void) 1 : amt::__custom_assert<1>(a, __FILE__, __LINE__, #a))
 	#endif
 #endif
 
@@ -39,6 +52,7 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 	#include <string.h>
 
 	// Default handler for Windows:
+	namespace amt{
 	template<bool>
 	inline void __custom_assert(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{		
@@ -72,11 +86,14 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 			#endif
 		}
 	}
+	} // namespace amt
 	
 	#else
 	#include <iostream>
 	#include <thread>
 	#include <cstdio>
+
+	namespace amt{
     // Default handler for non-Windows systems:
 	template<bool>
 	inline void __custom_assert(bool a, const char* szFileName, long lLine, const char* szDesc)
@@ -103,20 +120,11 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 		getchar();
 		#endif
 	}
+	} // namespace amt
 	#endif
 
 	namespace amt
 	{
-		struct AMTCassertException : std::exception
-		{
-			std::string sFileName;
-			long lLine;
-			std::string sDesc;
-
-			AMTCassertException(const char* szFileName, long lLine, const char* szDesc) : sFileName(szFileName), lLine(lLine), sDesc(szDesc)
-			{
-			}
-		};
 
 		template<bool>
 		void ThrowCustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
@@ -141,4 +149,12 @@ typedef void(*CustomAssertHandlerPtr)(bool, const char*, long, const char*); // 
 
 #else
 #define AMT_CASSERT(a)
+
+namespace amt
+{
+	template<bool>
+	void SetCustomAssertHandler(CustomAssertHandlerPtr funcPtr) {}
+	template<bool>
+	void SetThrowCustomAssertHandler() {}	
+}
 #endif
