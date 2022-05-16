@@ -167,7 +167,33 @@ TEST(AMTTest, LongLongAdditionTest) {
 	EXPECT_EQ(exceptionCaught, true);
 	EXPECT_EQ(res, ares);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
+
+	amt::uint64_t minull = 0;
+	amt::int64_t small_negll = -1LL;
+	exceptionCaught = false;
+	try
+	{
+		auto overflow = minull + small_negll;
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, true);
 	
+	exceptionCaught = false;
+	try
+	{
+		short small_negsh = -1;
+		auto overflow = minull + small_negsh;
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, true);
+
+
 }
 
 TEST(AMTTest, LongLongSubtractionTest) {
@@ -198,6 +224,33 @@ TEST(AMTTest, LongLongSubtractionTest) {
 	EXPECT_EQ(res, ares);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
 	
+	amt::uint64_t maxull = (std::numeric_limits<unsigned long long>::max)();
+	amt::int64_t small_negll = -1LL;
+	exceptionCaught = false;
+	try
+	{
+		auto overflow = maxull - small_negll;
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, true);
+
+	exceptionCaught = false;
+	try
+	{
+		short small_negsh = -1;
+		auto overflow = maxull - small_negsh;
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, true);
+
+	short small_sh = 1;
+	auto no_overflow = maxull - small_sh;
 }
 
 TEST(AMTTest, LongLongDivTest) {
@@ -522,6 +575,15 @@ TEST(AMTTest, ScalarOperatorsStressTest)
 	TestScalarOperators<long double>();
 }
 
+struct SomeStruct
+{
+	std::vector<int> data_;
+	bool operator < (const SomeStruct& o) const
+	{
+		return data_ < o.data_;
+	}
+};
+
 TEST(AMTTest, BasicVectorTest) {
 
 	amt::vector<int> vec;
@@ -556,11 +618,17 @@ TEST(AMTTest, BasicMapTest) {
 	EXPECT_EQ(it->second, 0);
 
 	it->second = 3;
-	EXPECT_EQ(map[0], 3);
+	EXPECT_EQ(map[0], 3);	
 
 	amt::map<int, int>::const_iterator cit(it);
 	EXPECT_EQ(cit->first, 0);
 	EXPECT_EQ(cit->second, 3);
+
+	map.insert(std::make_pair(5, 25));
+
+	amt::map<int, SomeStruct> omap;
+	omap.insert(std::move(std::make_pair(1, SomeStruct())));
+	EXPECT_EQ(omap.size(), 1);
 }
 
 TEST(AMTTest, BasicSetTest) {
@@ -577,6 +645,10 @@ TEST(AMTTest, BasicSetTest) {
 	auto it = set.find(0);
 	EXPECT_NE(it, set.end());
 	EXPECT_EQ(*it, 0);
+
+	amt::set<SomeStruct> oset;
+	oset.insert(SomeStruct());
+	EXPECT_EQ(oset.size(), 1);
 }
 
 // ======================================================================
