@@ -77,6 +77,8 @@ void cassert(bool b)
 #include "amt_set.h"
 #include "amt_rawdatadebugchecker.h"
 
+namespace __AMT_TEST__ {
+
 template<typename U, typename V>
 __AMT_CONSTEXPR__ bool AreNumericTypesEquivalent()
 {
@@ -1975,7 +1977,10 @@ TEST(__AMT_TEST__, EmplaceTest)
 
 }
 
+} // namespace __AMT_TEST__
+
 #ifdef __AMT_TEST_WITHOUT_GTEST__
+using namespace __AMT_TEST__;
 int main()
 {
 	RUNTEST(__AMT_TEST__, BasicTest);
