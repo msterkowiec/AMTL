@@ -441,11 +441,6 @@ namespace amt
 		using reverse_iterator = IteratorBase<typename Base::reverse_iterator>;
 		using const_reverse_iterator = IteratorBase<typename Base::const_reverse_iterator>;
 
-		//typedef typename Base::iterator iterator;
-		//typedef typename Base::const_iterator const_iterator;
-		//typedef typename Base::reverse_iterator reverse_iterator; 
-		//typedef typename Base::const_reverse_iterator const_reverse_iterator;
-
 		inline set() : Base()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -712,6 +707,17 @@ namespace amt
 			std::pair<iterator, bool> res(make_pair(iterator(resBase.first, this), resBase.second));
 			return res;
 		}
+		std::pair<iterator, bool> insert(T&& val)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			auto resBase =((Base*)this)->insert(std::move(val));
+			if (resBase.second)
+				++m_nCountOperInvalidateIter;
+			std::pair<iterator, bool> res(make_pair(iterator(resBase.first, this), resBase.second));
+			return res;
+		}
 		iterator insert(iterator position, const T& val)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -905,4 +911,3 @@ namespace amt
 #endif
 
 }
-
