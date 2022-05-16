@@ -29,8 +29,8 @@ add_executable(
 AMTTests 
 "AMTTests_all_features_ON.cpp" 
 "AMTTests_all_featues_off.cpp"
-"AMTTests_only_main_feature_ON.cpp")
-"AMTTests_only_overflow_check_on.cpp"
+"AMTTests_only_main_feature_ON.cpp"
+"AMTTests_only_overflow_check_on.cpp")
 
 target_link_libraries(AMTTests gtest_main)
 
