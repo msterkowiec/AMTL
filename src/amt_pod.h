@@ -446,7 +446,7 @@ namespace amt
 			else
 				if __AMT_IF_CONSTEXPR__(sizeof(ResType) < sizeof(std::int64_t))
 				{
-					#if !defined(_MSC_VER) || _MSVC_LANG >= 201402L
+					#if __cplusplus >= 201606L || (defined(_MSC_VER) && _MSVC_LANG >= 201606L) // constexpr if available?
 					static_assert(std::is_integral<ResType>::value, "Expected integral type");
 					#endif
 
