@@ -41,8 +41,8 @@
 template<typename U, typename V>
 __AMT_CONSTEXPR__ bool AreNumericTypesEquivalent()
 {
-	typedef amt::UnwrappedType<U, amt::is_specialization<U, amt::AMTScalarType>::value>::type UType;
-	typedef amt::UnwrappedType<V, amt::is_specialization<V, amt::AMTScalarType>::value>::type VType;
+	typedef typename amt::UnwrappedType<U, amt::is_specialization<U, amt::AMTScalarType>::value>::type UType;
+	typedef typename amt::UnwrappedType<V, amt::is_specialization<V, amt::AMTScalarType>::value>::type VType;
 
 	if (sizeof(UType) == sizeof(VType))
 		if (std::is_floating_point<UType>::value == std::is_floating_point<VType>::value)
