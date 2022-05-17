@@ -134,10 +134,10 @@ namespace amt
 
 #define AMTL_SELECT_LONGLONG_TYPE(T, U) typename std::conditional<std::is_same<T,unsigned long long>::value || std::is_same<U,unsigned long long>::value, \
 																  unsigned long long, \
-																  typename std::conditional<(sizeof(unsigned long) > 4) && std::is_same<T,unsigned long>::value || std::is_same<U,unsigned long>::value,unsigned long,long long>::type\
+																  typename std::conditional<(sizeof(unsigned long) > 4) && (std::is_same<T,unsigned long>::value || std::is_same<U,unsigned long>::value),unsigned long,\
+																			typename std::conditional<(sizeof(long) == 4) || std::is_same<T, long long>::value || std::is_same<U, long long>::value,long long, long>::type\
+																				>::type\
 																	>::type
-
-//#define AMTL_SELECT_LONGLONG_TYPE(T, U) typename std::conditional<std::is_same<T,unsigned long long>::value || std::is_same<U,unsigned long long>::value, unsigned long long, long long>::type
 
 #define AMTL_LONG_LONG_OR_INT(T,U) typename std::conditional<AMTL_TYPE_IS_LONGLONG(T),AMTL_SELECT_LONGLONG_TYPE(T, U),typename std::conditional<AMTL_TYPE_IS_LONGLONG(U),U,AMTL_SELECT_INT_TYPE(T, U)>::type>::type
 
