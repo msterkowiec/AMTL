@@ -497,7 +497,7 @@ namespace amt
 					{
 						ResType res = u * v;
 						AMT_CASSERT(res / u == v);
-						#if !defined(_MSC_VER) || _MSVC_LANG >= 201402L
+						#if __cplusplus >= 201606L || (defined(_MSC_VER) && _MSVC_LANG >= 201606L) // if constexpr available?
 						AMT_CASSERT(res % u == 0);
 						#endif
 					}
