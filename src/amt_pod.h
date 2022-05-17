@@ -696,6 +696,33 @@ namespace amt
 			return *this;
 		}
 		#endif
+		template<typename U>
+		inline AMTScalarType& operator <<= (U u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			m_val <<= u;
+			return *this;
+		}
+		template<typename U>
+		inline AMTScalarType& operator >>= (U u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			m_val >>= u;
+			return *this;
+		}
+		template<typename U>
+		inline AMTScalarType& operator ^= (U u)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r1(*this);
+			#endif
+			m_val ^= u;
+			return *this;
+		}		
 		inline operator T() const volatile
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
