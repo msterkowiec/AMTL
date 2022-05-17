@@ -107,6 +107,30 @@ TEST(AMTTest, BasicArithmeticsTest){
 	EXPECT_EQ(c, -1);
 }
 
+TEST(AMTTest, RemainingOperatorsTest) {
+	short sh = 10;
+	amt::int16_t ash(sh);
+
+	sh <<= 3;
+	ash <<= 3;
+	EXPECT_EQ(sh, ash);
+	if (sh)
+	{
+		sh >>= 1;		
+	}
+	if (ash)
+	{
+		ash >>= 1;		
+	}
+	EXPECT_EQ(sh, ash);
+	sh ^= sh;	
+	ash ^= ash;
+	EXPECT_EQ(sh, ash);
+	sh ^= 5ULL;
+	ash ^= 5ULL;
+	EXPECT_EQ(sh, ash);
+}
+
 TEST(AMTTest, LongLongTest){
 	unsigned long long xll = 9;
 	long long yll = 10;
@@ -1926,6 +1950,7 @@ int main()
 {	
 	RUNTEST(AMTTest, BasicTest);
 	RUNTEST(AMTTest, BasicArithmeticsTest);
+	RUNTEST(AMTTest, RemainingOperatorsTest);
 	RUNTEST(AMTTest, LongLongTest);
 	RUNTEST(AMTTest, LongLongOverflowTest);
 	RUNTEST(AMTTest, LongLongAdditionTest);
