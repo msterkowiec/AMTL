@@ -128,7 +128,13 @@ namespace amt
 
 #define AMTL_TYPE_IS_LONGLONG(T) ((sizeof(T) > 4) && (std::is_integral<T>::value))
 
-#define AMTL_LONG_LONG_OR_INT(T,U) typename std::conditional<AMTL_TYPE_IS_LONGLONG(T),T,typename std::conditional<AMTL_TYPE_IS_LONGLONG(U),U,int>::type>::type
+#define AMTL_SELECT_INT_TYPE(T, U) typename std::conditional<std::is_same<T,unsigned int>::value || std::is_same<U,unsigned int>::value, unsigned int,\
+													std::conditional<sizeof(unsigned long) == 4 && std::is_same<T,unsigned long>::value || std::is_same<U,unsigned long>::value,unsigned long, int>::type\
+																							>::type
+
+#define AMTL_SELECT_LONGLONG_TYPE(T, U) typename std::conditional<std::is_same<T,unsigned long long>::value || std::is_same<U,unsigned long long>::value, unsigned long long, long long>::type
+
+#define AMTL_LONG_LONG_OR_INT(T,U) typename std::conditional<AMTL_TYPE_IS_LONGLONG(T),AMTL_SELECT_LONGLONG_TYPE(T, U),typename std::conditional<AMTL_TYPE_IS_LONGLONG(U),U,AMTL_SELECT_INT_TYPE(T, U)>::type>::type
 
 #define AMTL_RESULTANT_TYPE(T,U) typename std::conditional<\
 													std::is_floating_point<U>::value, \
