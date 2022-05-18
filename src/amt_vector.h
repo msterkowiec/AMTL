@@ -169,7 +169,9 @@ namespace amt
 
 		inline vector() : Base()
 		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
+			#endif
 		}
 		inline vector(const vector& o) : Base(o)
 		{
