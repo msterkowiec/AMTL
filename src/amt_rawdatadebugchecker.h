@@ -130,9 +130,9 @@ namespace amt
 	class TObjectRawDataDebugChecker
 	{
 	public:
-		__forceinline TObjectRawDataDebugChecker(T*) {} // object to be optimized out in release
-		__forceinline void ExcludeByte(size_t) {}
-		__forceinline void ByteOrderCanDifferAtPos(size_t) {}
+		__AMT_FORCEINLINE__ TObjectRawDataDebugChecker(T*) {} // object to be optimized out in release
+		__AMT_FORCEINLINE__ void ExcludeByte(size_t) {}
+		__AMT_FORCEINLINE__ void ByteOrderCanDifferAtPos(size_t) {}
 	};
 #endif
 
