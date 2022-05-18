@@ -77,13 +77,11 @@ void cassert(bool b)
 #include "amt_set.h"
 #include "amt_rawdatadebugchecker.h"
 
-namespace __AMT_TEST__ {
-
 template<typename U, typename V>
 __AMT_CONSTEXPR__ bool AreNumericTypesEquivalent()
 {
-	typedef amt::UnwrappedType<U, amt::is_specialization<U, amt::AMTScalarType>::value> UType;
-	typedef amt::UnwrappedType<V, amt::is_specialization<V, amt::AMTScalarType>::value> VType;
+	typedef typename amt::UnwrappedType<U, amt::is_specialization<U, amt::AMTScalarType>::value>::type UType;
+	typedef typename amt::UnwrappedType<V, amt::is_specialization<V, amt::AMTScalarType>::value>::type VType;
 
 	if (sizeof(UType) == sizeof(VType))
 		if (std::is_floating_point<UType>::value == std::is_floating_point<VType>::value)
@@ -96,14 +94,17 @@ __AMT_CONSTEXPR__ bool AreNumericTypesEquivalent()
 	return false;
 }
 
-size_t AssertionFailedSilently = false;
 
-void SilentCustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		++AssertionFailedSilently;
-}
+namespace __AMT_TEST__ {
 
+	size_t AssertionFailedSilently = false;
+
+	void SilentCustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			++AssertionFailedSilently;
+	}
+} // namespace __AMT_TEST__
 
 TEST(__AMT_TEST__, BasicTest){
 
@@ -148,6 +149,30 @@ TEST(__AMT_TEST__, BasicArithmeticsTest){
 	EXPECT_EQ(c, -1);
 }
 
+TEST(__AMT_TEST__, RemainingOperatorsTest) {
+	short sh = 10;
+	amt::int16_t ash(sh);
+
+	sh <<= 3;
+	ash <<= 3;
+	EXPECT_EQ(sh, ash);
+	if (sh)
+	{
+		sh >>= 1;		
+	}
+	if (ash)
+	{
+		ash >>= 1;		
+	}
+	EXPECT_EQ(sh, ash);
+	sh ^= sh;	
+	ash ^= ash;
+	EXPECT_EQ(sh, ash);
+	sh ^= 5ULL;
+	ash ^= 5ULL;
+	EXPECT_EQ(sh, ash);
+}
+
 TEST(__AMT_TEST__, LongLongTest){
 	unsigned long long xll = 9;
 	long long yll = 10;
@@ -155,14 +180,14 @@ TEST(__AMT_TEST__, LongLongTest){
 
 	amt::uint64_t xxll = 9;
 	amt::int64_t yyll = 10;
-	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
-	auto counter = AssertionFailedSilently;
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::SilentCustomAssertHandler);
+	auto counter = __AMT_TEST__::AssertionFailedSilently;
 	auto zzll = (xxll - yyll) / 2;
 	amt::SetCustomAssertHandler<0>(nullptr);
 	#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 	EXPECT_EQ(AssertionFailedSilently, counter + 1);
 	#else
-	EXPECT_EQ(AssertionFailedSilently, counter);
+	EXPECT_EQ(__AMT_TEST__::AssertionFailedSilently, counter);
 	#endif
 	EXPECT_EQ(zll, zzll);
 
@@ -332,7 +357,9 @@ TEST(__AMT_TEST__, LongLongDivTest) {
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res4), decltype(ares4)>()), true);
 }
 
-std::mt19937 mt;
+namespace __AMT_TEST__ {
+	std::mt19937 mt;
+}
 
 // TODO: add a boolean parameter "generateMoreEdgeCases"
 template<typename T>
@@ -340,13 +367,14 @@ T GetRandomFloat()
 {
 	static const T fMin = -(std::numeric_limits<T>::max)();
 	static const T fMax = (std::numeric_limits<T>::max)();
-	T f = ((T)mt()) / (std::mt19937::max)();
+	T f = ((T)__AMT_TEST__::mt()) / (std::mt19937::max)();
 	return fMin + f * (fMax - fMin);
 }
 
 template<typename T>
 T GetRandomInteger()
 {
+	using namespace __AMT_TEST__;
 	if __AMT_IF_CONSTEXPR__(std::is_signed<T>::value)
 	{
 		if __AMT_IF_CONSTEXPR__(sizeof(T) > 4)
@@ -620,14 +648,16 @@ TEST(__AMT_TEST__, ScalarOperatorsStressTest)
 	TestScalarOperators<long double>();
 }
 
-struct SomeStruct
-{
-	std::vector<int> data_;
-	bool operator < (const SomeStruct& o) const
+namespace __AMT_TEST__ {
+	struct SomeStruct
 	{
-		return data_ < o.data_;
-	}
-};
+		std::vector<int> data_;
+		bool operator < (const SomeStruct& o) const
+		{
+			return data_ < o.data_;
+		}
+	};
+}
 
 TEST(__AMT_TEST__, BasicVectorTest) {
 
@@ -671,8 +701,8 @@ TEST(__AMT_TEST__, BasicMapTest) {
 
 	map.insert(std::make_pair(5, 25));
 
-	amt::map<int, SomeStruct> omap;
-	omap.insert(std::move(std::make_pair(1, SomeStruct())));
+	amt::map<int, __AMT_TEST__::SomeStruct> omap;
+	omap.insert(std::move(std::make_pair(1, __AMT_TEST__::SomeStruct())));
 	EXPECT_EQ(omap.size(), 1);
 }
 
@@ -691,8 +721,8 @@ TEST(__AMT_TEST__, BasicSetTest) {
 	EXPECT_NE(it, set.end());
 	EXPECT_EQ(*it, 0);
 
-	amt::set<SomeStruct> oset;
-	oset.insert(SomeStruct());
+	amt::set< __AMT_TEST__::SomeStruct> oset;
+	oset.insert(__AMT_TEST__::SomeStruct());
 	EXPECT_EQ(oset.size(), 1);
 }
 
@@ -701,153 +731,161 @@ TEST(__AMT_TEST__, BasicSetTest) {
 // ----------------------------------------------------------------------
 // Test unsynchronized access to integer
 
-bool IntUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool IntUnsynchWriteTest_AssertionFailed = false;
 
-void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			IntUnsynchWriteTest_AssertionFailed = true;
-}
+	void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				IntUnsynchWriteTest_AssertionFailed = true;
+	}
 
-void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
-		if (threadNo)
-			++val;
-		else
-			--val;
-	return;
+	void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
+			if (threadNo)
+				++val;
+			else
+				--val;
+		return;
+	}
 }
 
 TEST(__AMT_TEST__, IntUnsynchWriteTest) {
 	srand(time(NULL));
-	amt::SetCustomAssertHandler<0>(&IntUnsynchWriteTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::IntUnsynchWriteTest_CustomAssertHandler);
 	amt::int32_t val;
 	std::atomic<bool> canStartThread(false);
-	std::thread thread1(&IntUnsynchWriteTest_WriterThread, 0, std::ref(val), std::ref(canStartThread));
-	std::thread thread2(&IntUnsynchWriteTest_WriterThread, 1, std::ref(val), std::ref(canStartThread));
+	std::thread thread1(&__AMT_TEST__::IntUnsynchWriteTest_WriterThread, 0, std::ref(val), std::ref(canStartThread));
+	std::thread thread2(&__AMT_TEST__::IntUnsynchWriteTest_WriterThread, 1, std::ref(val), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(IntUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	EXPECT_EQ(__AMT_TEST__::IntUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
 // ----------------------------------------------------------------------
 // Test vector for synchronized access when writing. Expected no assertion failure.
 
-bool VectorSynchWriteTest_AssertionFailed = false;
-std::recursive_mutex mtxVectorSynchWriteTest;
+namespace __AMT_TEST__ {
 
-void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
-			VectorSynchWriteTest_AssertionFailed = true;
-}
+	bool VectorSynchWriteTest_AssertionFailed = false;
+	std::recursive_mutex mtxVectorSynchWriteTest;
 
-void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
-{
-	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+	void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-		vec.push_back(i);
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
+				VectorSynchWriteTest_AssertionFailed = true;
 	}
-	return;
-}
-inline size_t GetCurrentSize(const amt::vector<int>& vec)
-{
-	std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-	return vec.size();
-}
-void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
-{
-	size_t size = GetCurrentSize(vec);
-	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+
+	void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 	{
-		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-		if (size)
+		for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 		{
-			size_t idx = rand() % size;
-			++vec[idx];
+			std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+			vec.push_back(i);
 		}
-		size = GetCurrentSize(vec);
+		return;
 	}
-	return;
+	inline size_t GetCurrentSize(const amt::vector<int>& vec)
+	{
+		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+		return vec.size();
+	}
+	void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
+	{
+		size_t size = GetCurrentSize(vec);
+		for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+		{
+			std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+			if (size)
+			{
+				size_t idx = rand() % size;
+				++vec[idx];
+			}
+			size = GetCurrentSize(vec);
+		}
+		return;
+	}
 }
 
 TEST(__AMT_TEST__, VectorSynchWriteTest) {
 	srand(time(NULL));
-	amt::SetCustomAssertHandler<0>(&VectorSynchWriteTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::VectorSynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
-	std::thread thread1(&VectorSynchWriteTest_WriterThread, 0, std::ref(vec));
-	std::thread thread2(&VectorSynchWriteTest_ReaderThread, 1, std::ref(vec));
+	std::thread thread1(&__AMT_TEST__::VectorSynchWriteTest_WriterThread, 0, std::ref(vec));
+	std::thread thread2(&__AMT_TEST__::VectorSynchWriteTest_ReaderThread, 1, std::ref(vec));
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(VectorSynchWriteTest_AssertionFailed, false);
+	EXPECT_EQ(__AMT_TEST__::VectorSynchWriteTest_AssertionFailed, false);
 }
 
 // ----------------------------------------------------------------------
 // Test vector for unsynchronized access when writing. Expected assertion failure.
 
-bool VectorUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool VectorUnsynchWriteTest_AssertionFailed = false;
 
-void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
+	void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
-			VectorUnsynchWriteTest_AssertionFailed = true;
+		if (!a)
+		{
+			if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
+				VectorUnsynchWriteTest_AssertionFailed = true;
 
 #if defined(__AMT_TEST_WITHOUT_GTEST__) && defined(_WIN32)
-		//MessageBoxA(nullptr, "Assertion failed", "Assertion failed", MB_OK);
+			//MessageBoxA(nullptr, "Assertion failed", "Assertion failed", MB_OK);
 #endif
-	}
-}
-
-void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
-		vec.push_back(i);
-	return;
-}
-void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
-	{
-		if (vec.size())
-		{
-			size_t idx = rand() % vec.size();
-			++vec[idx];
 		}
 	}
-	return;
+
+	void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+			vec.push_back(i);
+		return;
+	}
+	void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+		{
+			if (vec.size())
+			{
+				size_t idx = rand() % vec.size();
+				++vec[idx];
+			}
+		}
+		return;
+	}
 }
 
 TEST(__AMT_TEST__, VectorUnsynchWriteTest) {
 	#if AMTL_MAIN_FEATURE_ON
 	srand(time(NULL));
-	amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::VectorUnsynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	std::atomic<bool> canStartThread(false);
-	std::thread thread1(&VectorUnsynchWriteTest_WriterThread, 0, std::ref(vec), std::ref(canStartThread));
-	std::thread thread2(&VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec), std::ref(canStartThread));
+	std::thread thread1(&__AMT_TEST__::VectorUnsynchWriteTest_WriterThread, 0, std::ref(vec), std::ref(canStartThread));
+	std::thread thread2(&__AMT_TEST__::VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
+	EXPECT_EQ(__AMT_TEST__::VectorUnsynchWriteTest_AssertionFailed, true);
 	#endif
 }
 
-
-struct TestPodStruct
-{
-	int i;
-	double db;
-};
+namespace __AMT_TEST__ {
+	struct TestPodStruct
+	{
+		int i;
+		double db;
+	};
+}
 
 TEST(__AMT_TEST__, VectorInitializationTest) {
 
@@ -897,8 +935,8 @@ TEST(__AMT_TEST__, VectorInitializationTest) {
 	EXPECT_EQ(std::count_if(otherVecInt.begin(), otherVecInt.end(), [](int i){return i != 0; }), 0);
 	EXPECT_EQ(std::count_if(otherVecInt2.begin(), otherVecInt2.end(), [](int i){return i != 0; }), 0);
 
-	std::vector<TestPodStruct> vecPod(64);
-	amt::vector<TestPodStruct> amtVecPod(64);
+	std::vector<__AMT_TEST__::TestPodStruct> vecPod(64);
+	amt::vector<__AMT_TEST__::TestPodStruct> amtVecPod(64);
 	//EXPECT_EQ(vecPod, amtVecPod);
 	EXPECT_EQ(vecPod.size(), amtVecPod.size());
 	for (size_t i = 0; i < vecPod.size(); ++i)
@@ -912,35 +950,37 @@ TEST(__AMT_TEST__, VectorInitializationTest) {
 // ----------------------------------------------------------------------
 // Test map for unsynchronized access when writing. Expected assertion failure.
 
-bool MapUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool MapUnsynchWriteTest_AssertionFailed = false;
 
-void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			MapUnsynchWriteTest_AssertionFailed = true;
-}
+	void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				MapUnsynchWriteTest_AssertionFailed = true;
+	}
 
-void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time
-	size_t iStart = threadNo ? 32678 : 0;
-	size_t iEnd = threadNo ? 65536 : 32768;
-	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
-		map[i] = i + threadNo;
+	void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		size_t iStart = threadNo ? 32678 : 0;
+		size_t iEnd = threadNo ? 65536 : 32768;
+		for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
+			map[i] = i + threadNo;
+	}
 }
 
 TEST(__AMT_TEST__, MapUnsynchWriteTest) {
 	srand(time(NULL));
-	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
 	std::atomic<bool> canStartThread(false);
-	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map), std::ref(canStartThread));
-	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
+	std::thread thread1(&__AMT_TEST__::MapUnsynchWriteTest_WriterThread, 0, std::ref(_map), std::ref(canStartThread));
+	std::thread thread2(&__AMT_TEST__::MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	EXPECT_EQ(__AMT_TEST__::MapUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
 TEST(__AMT_TEST__, MapInitializationTest){
@@ -969,35 +1009,37 @@ TEST(__AMT_TEST__, SetInitializationTest)
 	EXPECT_EQ(set2.size(), 3);
 }
 
-bool SetUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool SetUnsynchWriteTest_AssertionFailed = false;
 
-void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			SetUnsynchWriteTest_AssertionFailed = true;
-}
+	void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				SetUnsynchWriteTest_AssertionFailed = true;
+	}
 
-void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time
-	size_t iStart = threadNo ? 32678 : 0;
-	size_t iEnd = threadNo ? 65536 : 32768;
-	for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
-		set.insert(i);
+	void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		size_t iStart = threadNo ? 32678 : 0;
+		size_t iEnd = threadNo ? 65536 : 32768;
+		for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
+			set.insert(i);
+	}
 }
 
 TEST(__AMT_TEST__, SetUnsynchWriteTest) {
 	srand(time(NULL));
-	amt::SetCustomAssertHandler<0>(&SetUnsynchWriteTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::SetUnsynchWriteTest_CustomAssertHandler);
 	amt::set<int> set;
 	std::atomic<bool> canStartThread(false);
-	std::thread thread1(&SetUnsynchWriteTest_WriterThread, 0, std::ref(set), std::ref(canStartThread));
-	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set), std::ref(canStartThread));
+	std::thread thread1(&__AMT_TEST__::SetUnsynchWriteTest_WriterThread, 0, std::ref(set), std::ref(canStartThread));
+	std::thread thread2(&__AMT_TEST__::SetUnsynchWriteTest_WriterThread, 1, std::ref(set), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	EXPECT_EQ(__AMT_TEST__::SetUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
 // =================================================================================================
@@ -1084,55 +1126,57 @@ TEST(__AMT_TEST__, SetCheckIteratorValidityTest_4) {
 // ---------------------------------------------------------------------
 // Test unsynchronized update of an iterator in different threads
 
-bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
 
-void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
-			SetIter_UnsynchUpdateTest_AssertionFailed = true;
-}
-
-void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time			
-
-	try
+	void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (threadNo)
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+				SetIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+
+	void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time			
+
+		try
 		{
-			while (it != set.end())
-				++it;
+			if (threadNo)
+			{
+				while (it != set.end())
+					++it;
+			}
+			else
+				while (it != set.begin())
+					--it;
 		}
-		else
-			while (it != set.begin())
-				--it;
+		catch (amt::AMTCassertException& e)
+		{
+			SetIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		catch (...)
+		{
+			SetIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		return;
 	}
-	catch (amt::AMTCassertException& e)
-	{
-		SetIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	catch (...)
-	{
-		SetIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	return;
 }
 
 TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
-	amt::SetCustomAssertHandler<0>(&SetIter_UnsynchUpdateTest_CustomAssertHandler);
+	amt::SetCustomAssertHandler<0>(&__AMT_TEST__::SetIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::set<int> set;
 	for (int i = 0; i < 65536; ++i)
 		set.insert(i);
 	auto it = set.find(32768);
 	std::atomic<bool> canStartThread(false);
-	std::thread thread1(&SetIter_UnsynchUpdateTest_WriterThread, 0, std::ref(set), std::ref(it), std::ref(canStartThread));
-	std::thread thread2(&SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));
+	std::thread thread1(&__AMT_TEST__::SetIter_UnsynchUpdateTest_WriterThread, 0, std::ref(set), std::ref(it), std::ref(canStartThread));
+	std::thread thread2(&__AMT_TEST__::SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));
 	canStartThread = true;
 
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(SetIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
+	EXPECT_EQ(__AMT_TEST__::SetIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
 }
 
 // ----------------------------------------------------------------------------
@@ -1216,42 +1260,45 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_4) {
 // ---------------------------------------------------------------------
 // Test unsynchronized update of an iterator in different threads
 
-bool MapIter_UnsynchUpdateTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool MapIter_UnsynchUpdateTest_AssertionFailed = false;
 
-void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
-			MapIter_UnsynchUpdateTest_AssertionFailed = true;
-}
-
-void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time			
-
-	try
+	void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (threadNo)
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+				MapIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+
+	void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time			
+
+		try
 		{
-			while (it != map.end())
-				++it;
+			if (threadNo)
+			{
+				while (it != map.end())
+					++it;
+			}
+			else
+				while (it != map.begin())
+					--it;
 		}
-		else
-			while (it != map.begin())
-				--it;
+		catch (amt::AMTCassertException& e)
+		{
+			MapIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		catch (...)
+		{
+			MapIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		return;
 	}
-	catch (amt::AMTCassertException& e)
-	{
-		MapIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	catch (...)
-	{
-		MapIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	return;
 }
 
 TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
+	using namespace __AMT_TEST__;
 	amt::SetCustomAssertHandler<0>(&MapIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::map<int, int> map;
 	for (int i = 0; i < 65536; ++i)
@@ -1977,14 +2024,13 @@ TEST(__AMT_TEST__, EmplaceTest)
 
 }
 
-} // namespace __AMT_TEST__
-
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 using namespace __AMT_TEST__;
 int main()
 {
 	RUNTEST(__AMT_TEST__, BasicTest);
 	RUNTEST(__AMT_TEST__, BasicArithmeticsTest);
+	RUNTEST(__AMT_TEST__, RemainingOperatorsTest);
 	RUNTEST(__AMT_TEST__, LongLongTest);
 	RUNTEST(__AMT_TEST__, LongLongOverflowTest);
 	RUNTEST(__AMT_TEST__, LongLongAdditionTest);
