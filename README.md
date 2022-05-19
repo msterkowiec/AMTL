@@ -6,7 +6,7 @@
 //
 
 [![CMake-MSVC](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml/badge.svg)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc.yml)
-[![CMake](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake.yml)
+[![CMake-GCC](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-gcc.yml/badge.svg?branch=main)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-gcc.yml)
 
 
 # Purpose
