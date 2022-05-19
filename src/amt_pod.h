@@ -880,7 +880,7 @@ namespace amt
 			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -903,7 +903,7 @@ namespace amt
 			CRegisterReadingThread r1(*this);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType< AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -926,7 +926,7 @@ namespace amt
 			CRegisterReadingThread r(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(U, T)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(U, T) ResType;
@@ -952,7 +952,7 @@ namespace amt
 			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -975,7 +975,7 @@ namespace amt
 			CRegisterReadingThread r1(*this);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 // defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -999,7 +999,7 @@ namespace amt
 			CRegisterReadingThread r(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1026,7 +1026,7 @@ namespace amt
 			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1049,7 +1049,7 @@ namespace amt
 			CRegisterReadingThread r1(*this);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1072,7 +1072,7 @@ namespace amt
 			CRegisterReadingThread r(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else	
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1098,7 +1098,7 @@ namespace amt
 			typename AMTScalarType<U>::CRegisterReadingThread r2(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1121,7 +1121,7 @@ namespace amt
 			CRegisterReadingThread r1(*this);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(T, U)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(T, U) ResType;
@@ -1144,7 +1144,7 @@ namespace amt
 			CRegisterReadingThread r(var2);
 			#endif
 
-			#if defined(_MSC_VER)
+			#if 1 //defined(_MSC_VER)
 			typedef AMTScalarType<AMTL_RESULTANT_TYPE(U,T)> ResType;
 			#else
 			typedef AMTL_RESULTANT_TYPE(U,T) ResType;
