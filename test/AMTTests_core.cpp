@@ -1004,10 +1004,9 @@ TEST(__AMT_TEST__, MapInitializationTest){
 	EXPECT_EQ(map.size(), 2);
 	EXPECT_EQ(map[1], "1");
 	EXPECT_EQ((std::is_same<decltype(map)::mapped_type, std::string>::value), true);
-
-	/* // TEST!!!
+	
 	amt::map<int, std::string> map2(map.begin(), map.end());
-	EXPECT_EQ(map2[2], "2");
+	/* // TEST!!! EXPECT_EQ(map2[2], "2");
 	EXPECT_EQ(map2.size(), 2);*/
 }
 
