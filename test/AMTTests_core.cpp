@@ -1,14 +1,12 @@
+//
+// NOTE: this file is intended to be included from another AMTTests*.cpp file with specific features on or off
+//
+
 // Make sure this line is commented out before committing to github
 // #define __AMT_TEST_WITHOUT_GTEST__
 
-#ifdef __AMT_TEST_WITHOUT_GTEST__
-#define TEST(TestSuiteName, TestName) void TestSuiteName##TestName()
-#define RUNTEST(TestSuiteName, TestName) TestSuiteName##TestName()
-#define EXPECT_EQ(a,b) AMT_CASSERT((a)==(b))
-#define EXPECT_NE(a,b) AMT_CASSERT((a)!=(b))
-#define EXPECT_GE(a,b) AMT_CASSERT((a)>=(b))
-#else
-#include <gtest/gtest.h>
+#ifndef __AMT_TEST_WITHOUT_GTEST__
+#define __AMTL_USE_STANDARD_ASSERT__ 1
 #endif
 
 #include <thread>
@@ -20,16 +18,57 @@
 #include <random>
 #include <time.h> 
 
-// Override these macros for sake of tests before inclusion of AMTL headers:
-#define __AMTL_ASSERTS_ARE_ON__
-#define __AMT_CHECK_MULTITHREADED_ISSUES__ 1
-#define __AMT_CHECK_ITERATORS_VALIDITY__ 1
-#define __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__ 1
-#define __AMT_CHECK_NUMERIC_OVERFLOW__ 1
-#define __AMT_LET_DESTRUCTORS_THROW__ 1
-#define __AMT_DEBUG__ 1
-#ifndef __AMT_TEST_WITHOUT_GTEST__
-#define __AMTL_USE_STANDARD_ASSERT__ 1
+// -------------------------------
+#if defined(__AMTL_ASSERTS_ARE_ON__) && __AMT_CHECK_MULTITHREADED_ISSUES__
+#define AMTL_MAIN_FEATURE_ON 1
+#else
+#define AMTL_MAIN_FEATURE_ON 0
+#endif
+
+#if defined(__AMTL_ASSERTS_ARE_ON__) &&  __AMT_CHECK_ITERATORS_VALIDITY__
+#define AMTL_CHECK_ITERATORS_VALIDITY_ON 1
+#else
+#define AMTL_CHECK_ITERATORS_VALIDITY_ON 0
+#endif
+
+#if defined(__AMTL_ASSERTS_ARE_ON__) &&  __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+#define AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON 1
+#else
+#define AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON 0
+#endif
+
+#if defined(__AMTL_ASSERTS_ARE_ON__) &&  __AMT_CHECK_NUMERIC_OVERFLOW__
+#define AMTL_CHECK_NUMERIC_OVERFLOW_ON 1
+#else
+#define AMTL_CHECK_NUMERIC_OVERFLOW_ON 0
+#endif
+
+#if defined(__AMTL_ASSERTS_ARE_ON__)
+#define AMTL_ON 1
+#else
+#define AMTL_ON 0
+#endif
+// ----------------------------------
+
+#ifdef __AMT_TEST_WITHOUT_GTEST__
+#define TEST(TestSuiteName, TestName) void TestSuiteName##TestName()
+#define RUNTEST(TestSuiteName, TestName) TestSuiteName##TestName()
+#if defined(__AMTL_ASSERTS_ARE_ON__)
+#define EXPECT_EQ(a,b) AMT_CASSERT((a)==(b))
+#define EXPECT_NE(a,b) AMT_CASSERT((a)!=(b))
+#define EXPECT_GE(a,b) AMT_CASSERT((a)>=(b))
+#else
+void cassert(bool b)
+{
+	if (!b)
+		throw std::string("Test failed"); // let it be like this in this case
+}
+#define EXPECT_EQ(a,b) cassert((a)==(b))
+#define EXPECT_NE(a,b) cassert((a)!=(b))
+#define EXPECT_GE(a,b) cassert((a)>=(b))
+#endif
+#else
+#include <gtest/gtest.h>
 #endif
 
 #include "amt_vector.h"
@@ -55,23 +94,26 @@ __AMT_CONSTEXPR__ bool AreNumericTypesEquivalent()
 	return false;
 }
 
-size_t AssertionFailedSilently = false;
 
-void SilentCustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		++ AssertionFailedSilently;
-}
+namespace __AMT_TEST__ {
 
+	size_t AssertionFailedSilently = false;
 
-TEST(AMTTest, BasicTest){
+	void SilentCustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			++AssertionFailedSilently;
+	}
+} // namespace __AMT_TEST__
+
+TEST(__AMT_TEST__, BasicTest){
 
 	std::atomic<int64_t> ati(5);
 	amt::int64_t ai;
 	int64_t i;
 	i = ati;
 	ai = ati;
-	EXPECT_EQ(ati, ai);	
+	EXPECT_EQ(ati, ai);
 	ai = ai;
 	EXPECT_EQ(ati, ai);
 
@@ -87,7 +129,7 @@ TEST(AMTTest, BasicTest){
 	}
 }
 
-TEST(AMTTest, BasicArithmeticsTest){
+TEST(__AMT_TEST__, BasicArithmeticsTest){
 	unsigned char x = 10;
 	amt::uint8_t xx = 10;
 	unsigned char y = 90;
@@ -107,7 +149,7 @@ TEST(AMTTest, BasicArithmeticsTest){
 	EXPECT_EQ(c, -1);
 }
 
-TEST(AMTTest, RemainingOperatorsTest) {
+TEST(__AMT_TEST__, RemainingOperatorsTest) {
 	short sh = 10;
 	amt::int16_t ash(sh);
 
@@ -131,7 +173,9 @@ TEST(AMTTest, RemainingOperatorsTest) {
 	EXPECT_EQ(sh, ash);
 }
 
-TEST(AMTTest, LongLongTest){
+TEST(__AMT_TEST__, LongLongTest){
+	using namespace __AMT_TEST__;
+
 	unsigned long long xll = 9;
 	long long yll = 10;
 	auto zll = (xll - yll) / 2;
@@ -142,14 +186,18 @@ TEST(AMTTest, LongLongTest){
 	auto counter = AssertionFailedSilently;
 	auto zzll = (xxll - yyll) / 2;
 	amt::SetCustomAssertHandler<0>(nullptr);
+	#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 	EXPECT_EQ(AssertionFailedSilently, counter + 1);
+	#else
+	EXPECT_EQ(AssertionFailedSilently, counter);
+	#endif
 	EXPECT_EQ(zll, zzll);
 
 	yyll = 0;
 	EXPECT_EQ(yyll + 1, 1);
 }
 
-TEST(AMTTest, LongLongOverflowTest){
+TEST(__AMT_TEST__, LongLongOverflowTest){
 	amt::uint64_t ll = 65536ULL * 65536 * 65536;
 	auto ullmul = ll * 65535;
 	amt::SetThrowCustomAssertHandler<0>();
@@ -161,10 +209,10 @@ TEST(AMTTest, LongLongOverflowTest){
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, LongLongAdditionTest) {
+TEST(__AMT_TEST__, LongLongAdditionTest) {
 
 	unsigned long long ull = 10;
 	long long ll = 0xFFFFFFFFFFFFFFULL;
@@ -188,7 +236,7 @@ TEST(AMTTest, LongLongAdditionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 	EXPECT_EQ(res, ares);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
 
@@ -203,8 +251,8 @@ TEST(AMTTest, LongLongAdditionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
-	
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
+
 	exceptionCaught = false;
 	try
 	{
@@ -215,12 +263,12 @@ TEST(AMTTest, LongLongAdditionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 
 
 }
 
-TEST(AMTTest, LongLongSubtractionTest) {
+TEST(__AMT_TEST__, LongLongSubtractionTest) {
 
 	unsigned long long ull = 10;
 	long long ll = -0xFFFFFFFFFFFFFFULL;
@@ -244,10 +292,10 @@ TEST(AMTTest, LongLongSubtractionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 	EXPECT_EQ(res, ares);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
-	
+
 	amt::uint64_t maxull = (std::numeric_limits<unsigned long long>::max)();
 	amt::int64_t small_negll = -1LL;
 	exceptionCaught = false;
@@ -259,7 +307,7 @@ TEST(AMTTest, LongLongSubtractionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 
 	exceptionCaught = false;
 	try
@@ -271,13 +319,13 @@ TEST(AMTTest, LongLongSubtractionTest) {
 	{
 		exceptionCaught = true;
 	}
-	EXPECT_EQ(exceptionCaught, true);
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 
 	short small_sh = 1;
 	auto no_overflow = maxull - small_sh;
 }
 
-TEST(AMTTest, LongLongDivTest) {
+TEST(__AMT_TEST__, LongLongDivTest) {
 
 	unsigned char uch = 100;
 	unsigned char uch2 = 4;
@@ -311,12 +359,16 @@ TEST(AMTTest, LongLongDivTest) {
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res4), decltype(ares4)>()), true);
 }
 
-std::mt19937 mt;
+namespace __AMT_TEST__ {
+	std::mt19937 mt;
+}
 
 // TODO: add a boolean parameter "generateMoreEdgeCases"
 template<typename T>
 T GetRandomFloat()
 {
+	using namespace __AMT_TEST__;
+
 	static const T fMin = -(std::numeric_limits<T>::max)();
 	static const T fMax = (std::numeric_limits<T>::max)();
 	T f = ((T)mt()) / (std::mt19937::max)();
@@ -325,11 +377,12 @@ T GetRandomFloat()
 
 template<typename T>
 T GetRandomInteger()
-{	
+{
+	using namespace __AMT_TEST__;
 	if __AMT_IF_CONSTEXPR__(std::is_signed<T>::value)
 	{
 		if __AMT_IF_CONSTEXPR__(sizeof(T) > 4)
-		{				
+		{
 			return (((T)mt()) << 32) + mt();
 		}
 		else
@@ -348,9 +401,9 @@ T GetRandomInteger()
 		}
 		else
 		{
-			return (T) mt();
+			return (T)mt();
 		}
-	}	
+	}
 }
 
 template<typename T, bool isFloatingPoint = false>
@@ -359,7 +412,7 @@ struct GetRandomHelper
 	static T get() { return GetRandomInteger<T>(); }
 };
 template<typename T>
-struct GetRandomHelper<T,true>
+struct GetRandomHelper<T, true>
 {
 	static T get() { return GetRandomFloat<T>(); }
 };
@@ -374,6 +427,7 @@ T GetRandom()
 template<typename T, typename U>
 void TestScalarOperators()
 {
+	using namespace __AMT_TEST__;
 	T t = GetRandom<T>();
 	U u(GetRandom<U>());
 
@@ -383,7 +437,7 @@ void TestScalarOperators()
 	// Addition:
 	auto sum = t + u;
 	auto revsum = u + t;
-	
+
 	amt::SetCustomAssertHandler<0>(&SilentCustomAssertHandler);
 	auto amtSum = tt + uu;
 	auto amtRevSum = uu + tt;
@@ -392,7 +446,7 @@ void TestScalarOperators()
 	auto amtSum3 = t + uu;
 	auto amtRevSum3 = uu + t;
 	amt::SetCustomAssertHandler<0>(nullptr);
-	
+
 	if (sum == sum)
 	{
 		EXPECT_EQ(sum, amtSum);
@@ -581,7 +635,7 @@ void TestScalarOperators()
 	}
 }
 
-TEST(AMTTest, ScalarOperatorsStressTest)
+TEST(__AMT_TEST__, ScalarOperatorsStressTest)
 {
 	// TODO: maybe seed Mersenne Twister...	
 	TestScalarOperators<char>();
@@ -599,16 +653,18 @@ TEST(AMTTest, ScalarOperatorsStressTest)
 	TestScalarOperators<long double>();
 }
 
-struct SomeStruct
-{
-	std::vector<int> data_;
-	bool operator < (const SomeStruct& o) const
+namespace __AMT_TEST__ {
+	struct SomeStruct
 	{
-		return data_ < o.data_;
-	}
-};
+		std::vector<int> data_;
+		bool operator < (const SomeStruct& o) const
+		{
+			return data_ < o.data_;
+		}
+	};
+}
 
-TEST(AMTTest, BasicVectorTest) {
+TEST(__AMT_TEST__, BasicVectorTest) {
 
 	amt::vector<int> vec;
 	EXPECT_EQ(vec.size(), 0);
@@ -622,7 +678,9 @@ TEST(AMTTest, BasicVectorTest) {
 	EXPECT_EQ(vec.size(), 1);
 }
 
-TEST(AMTTest, BasicMapTest) {
+TEST(__AMT_TEST__, BasicMapTest) {
+
+	using namespace __AMT_TEST__;
 
 	amt::map<int, int> map;
 	EXPECT_EQ(map.size(), 0);
@@ -636,13 +694,13 @@ TEST(AMTTest, BasicMapTest) {
 	map[1] = 2;
 	EXPECT_EQ(map.size(), 2);
 	EXPECT_EQ(map.empty(), false);
-	auto it = map.find(0);	
+	auto it = map.find(0);
 	EXPECT_NE(it, map.end());
 	EXPECT_EQ(it->first, 0);
 	EXPECT_EQ(it->second, 0);
 
 	it->second = 3;
-	EXPECT_EQ(map[0], 3);	
+	EXPECT_EQ(map[0], 3);
 
 	amt::map<int, int>::const_iterator cit(it);
 	EXPECT_EQ(cit->first, 0);
@@ -655,7 +713,9 @@ TEST(AMTTest, BasicMapTest) {
 	EXPECT_EQ(omap.size(), 1);
 }
 
-TEST(AMTTest, BasicSetTest) {
+TEST(__AMT_TEST__, BasicSetTest) {
+
+	using namespace __AMT_TEST__;
 
 	amt::set<int> set;
 	EXPECT_EQ(set.size(), 0);
@@ -680,28 +740,31 @@ TEST(AMTTest, BasicSetTest) {
 // ----------------------------------------------------------------------
 // Test unsynchronized access to integer
 
-bool IntUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool IntUnsynchWriteTest_AssertionFailed = false;
 
-void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			IntUnsynchWriteTest_AssertionFailed = true;
+	void IntUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				IntUnsynchWriteTest_AssertionFailed = true;
+	}
+
+	void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
+			if (threadNo)
+				++val;
+			else
+				--val;
+		return;
+	}
 }
 
-void IntUnsynchWriteTest_WriterThread(size_t threadNo, amt::int32_t& val, std::atomic<bool>& canStartThread)
-{
-	while(!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !IntUnsynchWriteTest_AssertionFailed; ++i)
-		if (threadNo)
-			++ val;
-		else
-			-- val;
-	return;
-}
-
-TEST(AMTTest, IntUnsynchWriteTest) {
-	srand (time(NULL));
+TEST(__AMT_TEST__, IntUnsynchWriteTest) {
+	using namespace __AMT_TEST__;
+	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&IntUnsynchWriteTest_CustomAssertHandler);
 	amt::int32_t val;
 	std::atomic<bool> canStartThread(false);
@@ -709,105 +772,114 @@ TEST(AMTTest, IntUnsynchWriteTest) {
 	std::thread thread2(&IntUnsynchWriteTest_WriterThread, 1, std::ref(val), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
-	thread2.join();	
-	EXPECT_EQ(IntUnsynchWriteTest_AssertionFailed, true);
+	thread2.join();
+	EXPECT_EQ(IntUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
 // ----------------------------------------------------------------------
 // Test vector for synchronized access when writing. Expected no assertion failure.
 
-bool VectorSynchWriteTest_AssertionFailed = false;
-std::recursive_mutex mtxVectorSynchWriteTest;
+namespace __AMT_TEST__ {
 
-void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
-			VectorSynchWriteTest_AssertionFailed = true;
-}
+	bool VectorSynchWriteTest_AssertionFailed = false;
+	std::recursive_mutex mtxVectorSynchWriteTest;
 
-void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
-{
-	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+	void VectorSynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-		vec.push_back(i);
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
+				VectorSynchWriteTest_AssertionFailed = true;
 	}
-	return;
-}
-inline size_t GetCurrentSize(const amt::vector<int>& vec)
-{
-	std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-	return vec.size();
-}
-void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
-{
-	size_t size = GetCurrentSize(vec);	
-	for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+
+	void VectorSynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec)
 	{
-		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
-		if (size)
+		for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
 		{
-			size_t idx = rand () % size;
-			++ vec[idx];
+			std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+			vec.push_back(i);
 		}
-		size = GetCurrentSize(vec);	
+		return;
 	}
-	return;
+	inline size_t GetCurrentSize(const amt::vector<int>& vec)
+	{
+		std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+		return vec.size();
+	}
+	void VectorSynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec)
+	{
+		size_t size = GetCurrentSize(vec);
+		for (size_t i = 0; i < 32678 && !VectorSynchWriteTest_AssertionFailed; ++i)
+		{
+			std::unique_lock<std::recursive_mutex> lock(mtxVectorSynchWriteTest);
+			if (size)
+			{
+				size_t idx = rand() % size;
+				++vec[idx];
+			}
+			size = GetCurrentSize(vec);
+		}
+		return;
+	}
 }
 
-TEST(AMTTest, VectorSynchWriteTest) {
-	srand (time(NULL));
+TEST(__AMT_TEST__, VectorSynchWriteTest) {
+	using namespace __AMT_TEST__;
+
+	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&VectorSynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	std::thread thread1(&VectorSynchWriteTest_WriterThread, 0, std::ref(vec));
 	std::thread thread2(&VectorSynchWriteTest_ReaderThread, 1, std::ref(vec));
 	thread1.join();
-	thread2.join();	
+	thread2.join();
 	EXPECT_EQ(VectorSynchWriteTest_AssertionFailed, false);
 }
 
 // ----------------------------------------------------------------------
 // Test vector for unsynchronized access when writing. Expected assertion failure.
 
-bool VectorUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool VectorUnsynchWriteTest_AssertionFailed = false;
 
-void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
+	void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
-			VectorUnsynchWriteTest_AssertionFailed = true;
-
-		#if defined(__AMT_TEST_WITHOUT_GTEST__) && defined(_WIN32)
-		//MessageBoxA(nullptr, "Assertion failed", "Assertion failed", MB_OK);
-		#endif
-	}
-}
-
-void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
-{
-	while(!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
-		vec.push_back(i);
-	return;
-}
-void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
-{
-	while(!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
-	{
-		if (vec.size())
+		if (!a)
 		{
-			size_t idx = rand () % vec.size();
-			++ vec[idx];
+			if (strstr(szDesc, "m_nPendingWriteRequests == 0") != nullptr) // make sure this is the assertion we expect		
+				VectorUnsynchWriteTest_AssertionFailed = true;
+
+#if defined(__AMT_TEST_WITHOUT_GTEST__) && defined(_WIN32)
+			//MessageBoxA(nullptr, "Assertion failed", "Assertion failed", MB_OK);
+#endif
 		}
 	}
-	return;
+
+	void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+			vec.push_back(i);
+		return;
+	}
+	void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		for (size_t i = 0; i < 65536UL * 4 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+		{
+			if (vec.size())
+			{
+				size_t idx = rand() % vec.size();
+				++vec[idx];
+			}
+		}
+		return;
+	}
 }
 
-TEST(AMTTest, VectorUnsynchWriteTest) {
-	srand (time(NULL));
+TEST(__AMT_TEST__, VectorUnsynchWriteTest) {
+	#if AMTL_MAIN_FEATURE_ON
+	using namespace __AMT_TEST__;
+	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&VectorUnsynchWriteTest_CustomAssertHandler);
 	amt::vector<int> vec;
 	std::atomic<bool> canStartThread(false);
@@ -815,18 +887,23 @@ TEST(AMTTest, VectorUnsynchWriteTest) {
 	std::thread thread2(&VectorUnsynchWriteTest_ReaderThread, 1, std::ref(vec), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
-	thread2.join();	
+	thread2.join();
 	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
+	#endif
 }
 
-struct TestPodStruct
-{
-	int i;
-	double db;
-};
+namespace __AMT_TEST__ {
+	struct TestPodStruct
+	{
+		int i;
+		double db;
+	};
+}
 
-TEST(AMTTest, VectorInitializationTest) {
-	
+TEST(__AMT_TEST__, VectorInitializationTest) {
+
+	using namespace __AMT_TEST__;
+
 	amt::SetCustomAssertHandler<0>(nullptr);
 
 	amt::vector<double> vecDbl{ 1.0, 1.0, 2.0, 3.0, 5.0, 8.0, 13.0, 21.0 };
@@ -888,26 +965,29 @@ TEST(AMTTest, VectorInitializationTest) {
 // ----------------------------------------------------------------------
 // Test map for unsynchronized access when writing. Expected assertion failure.
 
-bool MapUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool MapUnsynchWriteTest_AssertionFailed = false;
 
-void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			MapUnsynchWriteTest_AssertionFailed = true;
+	void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				MapUnsynchWriteTest_AssertionFailed = true;
+	}
+
+	void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		size_t iStart = threadNo ? 32678 : 0;
+		size_t iEnd = threadNo ? 65536 : 32768;
+		for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
+			map[i] = i + threadNo;
+	}
 }
 
-void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
-{
-	while(!canStartThread); // make sure threads start at the same time
-	size_t iStart = threadNo ? 32678 : 0;
-	size_t iEnd = threadNo ? 65536 : 32768;
-	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
-		map[i] = i + threadNo;
-}
-
-TEST(AMTTest, MapUnsynchWriteTest) {
-	srand (time(NULL));
+TEST(__AMT_TEST__, MapUnsynchWriteTest) {
+	using namespace __AMT_TEST__;
+	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
 	std::atomic<bool> canStartThread(false);
@@ -915,16 +995,16 @@ TEST(AMTTest, MapUnsynchWriteTest) {
 	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
-	thread2.join();	
-	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, true);
+	thread2.join();
+	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
-TEST(AMTTest, MapInitializationTest){
+TEST(__AMT_TEST__, MapInitializationTest){
 	amt::map<int, std::string> map{ { 1, "1" }, { 2, "2" } };
 	EXPECT_EQ(map.size(), 2);
 	EXPECT_EQ(map[1], "1");
 	EXPECT_EQ((std::is_same<decltype(map)::mapped_type, std::string>::value), true);
-	
+
 	amt::map<int, std::string> map2(map.begin(), map.end());
 	EXPECT_EQ(map2[2], "2");
 	EXPECT_EQ(map2.size(), 2);
@@ -933,9 +1013,9 @@ TEST(AMTTest, MapInitializationTest){
 // ----------------------------------------------------------------------
 // Test set for unsynchronized access when writing. Expected assertion failure.
 
-TEST(AMTTest, SetInitializationTest)
+TEST(__AMT_TEST__, SetInitializationTest)
 {
-	amt::set<std::string> set{ "1" , "2", "22" };
+	amt::set<std::string> set{ "1", "2", "22" };
 	EXPECT_EQ(set.size(), 3);
 	EXPECT_EQ(*set.begin(), "1");
 	EXPECT_EQ(*set.rbegin(), "22");
@@ -945,26 +1025,29 @@ TEST(AMTTest, SetInitializationTest)
 	EXPECT_EQ(set2.size(), 3);
 }
 
-bool SetUnsynchWriteTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool SetUnsynchWriteTest_AssertionFailed = false;
 
-void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if(strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
-			SetUnsynchWriteTest_AssertionFailed = true;
+	void SetUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
+	{
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect		
+				SetUnsynchWriteTest_AssertionFailed = true;
+	}
+
+	void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time
+		size_t iStart = threadNo ? 32678 : 0;
+		size_t iEnd = threadNo ? 65536 : 32768;
+		for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
+			set.insert(i);
+	}
 }
 
-void SetUnsynchWriteTest_WriterThread(size_t threadNo, amt::set<int>& set, std::atomic<bool>& canStartThread)
-{
-	while(!canStartThread); // make sure threads start at the same time
-	size_t iStart = threadNo ? 32678 : 0;
-	size_t iEnd = threadNo ? 65536 : 32768;
-	for (size_t i = iStart; i < iEnd && !SetUnsynchWriteTest_AssertionFailed; ++i)
-		set.insert(i);
-}
-
-TEST(AMTTest, SetUnsynchWriteTest) {
-	srand (time(NULL));
+TEST(__AMT_TEST__, SetUnsynchWriteTest) {
+	using namespace __AMT_TEST__;
+	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&SetUnsynchWriteTest_CustomAssertHandler);
 	amt::set<int> set;
 	std::atomic<bool> canStartThread(false);
@@ -972,8 +1055,8 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set), std::ref(canStartThread));
 	canStartThread = true;
 	thread1.join();
-	thread2.join();	
-	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, true);
+	thread2.join();
+	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
 }
 
 // =================================================================================================
@@ -981,7 +1064,7 @@ TEST(AMTTest, SetUnsynchWriteTest) {
 // ----------------------------------------------------------------------------
 // Tests of iterators of amt::set
 
-TEST(AMTTest, SetCheckIteratorValidityTest) {
+TEST(__AMT_TEST__, SetCheckIteratorValidityTest) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
@@ -995,32 +1078,32 @@ TEST(AMTTest, SetCheckIteratorValidityTest) {
 	EXPECT_EQ(it, it);
 
 	try{
-		++ it; // cannot increment on end
+		++it; // cannot increment on end
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, SetCheckIteratorValidityTest_2) {
+TEST(__AMT_TEST__, SetCheckIteratorValidityTest_2) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
 	auto it = set.begin();
 	try
 	{
-		-- it; // cannot decrement on begin
+		--it; // cannot decrement on begin
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, SetCheckIteratorValidityTest_3) {
+TEST(__AMT_TEST__, SetCheckIteratorValidityTest_3) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
@@ -1031,15 +1114,15 @@ TEST(AMTTest, SetCheckIteratorValidityTest_3) {
 	{
 		isEnd = it == set.end();
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	
-	EXPECT_EQ(assertionFailed, true);
+
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, SetCheckIteratorValidityTest_4) {
+TEST(__AMT_TEST__, SetCheckIteratorValidityTest_4) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::set<int> set;
@@ -1050,52 +1133,55 @@ TEST(AMTTest, SetCheckIteratorValidityTest_4) {
 	{
 		isEnd = it == set2.end(); // cannot use it of set vs end() of different object (set2)
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
 // ---------------------------------------------------------------------
 // Test unsynchronized update of an iterator in different threads
 
-bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
 
-void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
-			SetIter_UnsynchUpdateTest_AssertionFailed = true;
-}
-
-void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time			
-
-	try
+	void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (threadNo)
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+				SetIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+
+	void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time			
+
+		try
 		{
-			while (it != set.end())
-				++it;
+			if (threadNo)
+			{
+				while (it != set.end())
+					++it;
+			}
+			else
+				while (it != set.begin())
+					--it;
 		}
-		else
-			while (it != set.begin())
-				--it;
+		catch (amt::AMTCassertException& e)
+		{
+			SetIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		catch (...)
+		{
+			SetIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		return;
 	}
-	catch (amt::AMTCassertException& e)
-	{
-		SetIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	catch (...)
-	{
-		SetIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	return;
 }
 
-TEST(AMTTest, SetIter_UnsynchUpdateTest) {
+TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
+	using namespace __AMT_TEST__;
 	amt::SetCustomAssertHandler<0>(&SetIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::set<int> set;
 	for (int i = 0; i < 65536; ++i)
@@ -1108,17 +1194,17 @@ TEST(AMTTest, SetIter_UnsynchUpdateTest) {
 
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(SetIter_UnsynchUpdateTest_AssertionFailed, true);
+	EXPECT_EQ(SetIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
 }
 
 // ----------------------------------------------------------------------------
 // Tests of iterators of amt::map
 
-TEST(AMTTest, MapCheckIteratorValidityTest) {
+TEST(__AMT_TEST__, MapCheckIteratorValidityTest) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 
-	amt::map<int, int> map;	
+	amt::map<int, int> map;
 	amt::map<int, int>::const_iterator cit = map.begin();
 	if (cit == map.end()); //these are just the checks.. 
 	EXPECT_EQ(cit, map.end()); //...that this code compiles	
@@ -1127,32 +1213,32 @@ TEST(AMTTest, MapCheckIteratorValidityTest) {
 	it = it;
 	EXPECT_EQ(it, it);
 	try{
-		++ it; // cannot increment on end
+		++it; // cannot increment on end
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, MapCheckIteratorValidityTest_2) {
+TEST(__AMT_TEST__, MapCheckIteratorValidityTest_2) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::map<int, int> map;
 	auto it = map.begin();
 	try
 	{
-		-- it; // cannot decrement on begin
+		--it; // cannot decrement on begin
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, MapCheckIteratorValidityTest_3) {
+TEST(__AMT_TEST__, MapCheckIteratorValidityTest_3) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::map<int, int> map;
@@ -1163,15 +1249,15 @@ TEST(AMTTest, MapCheckIteratorValidityTest_3) {
 	{
 		isEnd = it == map.end();
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	
-	EXPECT_EQ(assertionFailed, true);
+
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
-TEST(AMTTest, MapCheckIteratorValidityTest_4) {
+TEST(__AMT_TEST__, MapCheckIteratorValidityTest_4) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::map<int, int> map;
@@ -1182,52 +1268,55 @@ TEST(AMTTest, MapCheckIteratorValidityTest_4) {
 	{
 		isEnd = it == map2.end(); // cannot use it of set vs end() of different object (set2)
 	}
-	catch(...)
+	catch (...)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
 }
 
 // ---------------------------------------------------------------------
 // Test unsynchronized update of an iterator in different threads
 
-bool MapIter_UnsynchUpdateTest_AssertionFailed = false;
+namespace __AMT_TEST__ {
+	bool MapIter_UnsynchUpdateTest_AssertionFailed = false;
 
-void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
-{
-	if (!a)
-		if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
-			MapIter_UnsynchUpdateTest_AssertionFailed = true;
-}
-
-void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
-{
-	while (!canStartThread); // make sure threads start at the same time			
-
-	try
+	void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		if (threadNo)
+		if (!a)
+			if (strstr(szDesc, "m_nPendingWriteRequests") != nullptr) // make sure this is the assertion we expect
+				MapIter_UnsynchUpdateTest_AssertionFailed = true;
+	}
+
+	void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
+	{
+		while (!canStartThread); // make sure threads start at the same time			
+
+		try
 		{
-			while (it != map.end())
-				++it;
+			if (threadNo)
+			{
+				while (it != map.end())
+					++it;
+			}
+			else
+				while (it != map.begin())
+					--it;
 		}
-		else
-			while (it != map.begin())
-				--it;
+		catch (amt::AMTCassertException& e)
+		{
+			MapIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		catch (...)
+		{
+			MapIter_UnsynchUpdateTest_AssertionFailed = true;
+		}
+		return;
 	}
-	catch (amt::AMTCassertException& e)
-	{
-		MapIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	catch (...)
-	{
-		MapIter_UnsynchUpdateTest_AssertionFailed = true;
-	}
-	return;
 }
 
-TEST(AMTTest, MapIter_UnsynchUpdateTest) {
+TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
+	using namespace __AMT_TEST__;
 	amt::SetCustomAssertHandler<0>(&MapIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::map<int, int> map;
 	for (int i = 0; i < 65536; ++i)
@@ -1240,17 +1329,17 @@ TEST(AMTTest, MapIter_UnsynchUpdateTest) {
 
 	thread1.join();
 	thread2.join();
-	EXPECT_EQ(MapIter_UnsynchUpdateTest_AssertionFailed, true);
+	EXPECT_EQ(MapIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
 }
 
 // ===================================================================================================================
 // Group of tests for TObjectRawDataDebugChecker - a class that asserts that some data stays intact/not overwritten meanwhile
 // -----------------------------------------------------------
-	
-TEST(AMTTest, TestObjectRawDataDebugChecker) {
+
+TEST(__AMT_TEST__, TestObjectRawDataDebugChecker) {
 	amt::SetThrowCustomAssertHandler<0>();
 	bool assertionFailed = false;
-	
+
 	try
 	{
 		char ch = ' ';
@@ -1260,15 +1349,15 @@ TEST(AMTTest, TestObjectRawDataDebugChecker) {
 	catch (amt::AMTCassertException& e)
 	{
 		if (strstr(e.sDesc.c_str(), "DataHasChanged") != nullptr)
-			assertionFailed = true; 
-	}	
-	EXPECT_EQ(assertionFailed, true);
+			assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_ON);
 }
 
-TEST(AMTTest, TestObjectRawDataDebugChecker_2) {
+TEST(__AMT_TEST__, TestObjectRawDataDebugChecker_2) {
 	amt::SetThrowCustomAssertHandler<0>();
 	bool assertionFailed = false;
-	
+
 	try
 	{
 		struct MyData
@@ -1279,7 +1368,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_2) {
 				memset(data, 0, 1024);
 			}
 		};
-		
+
 		MyData myData;
 		amt::TObjectRawDataDebugChecker<MyData> a(&myData);
 		myData.data[512] = 'C';
@@ -1287,15 +1376,15 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_2) {
 	catch (amt::AMTCassertException& e)
 	{
 		if (strstr(e.sDesc.c_str(), "DataHasChanged") != nullptr)
-			assertionFailed = true; 
-	}	
-	EXPECT_EQ(assertionFailed, true);
+			assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_ON);
 }
 
-TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK) {
+TEST(__AMT_TEST__, TestObjectRawDataDebugChecker_AllOK) {
 	amt::SetThrowCustomAssertHandler<0>();
 	bool assertionFailed = false;
-	
+
 	try
 	{
 		struct MyData
@@ -1306,7 +1395,7 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK) {
 				memset(data, 0, 1024);
 			}
 		};
-		
+
 		MyData myData;
 		amt::TObjectRawDataDebugChecker<MyData> a(&myData);
 		// no change in data
@@ -1314,22 +1403,22 @@ TEST(AMTTest, TestObjectRawDataDebugChecker_AllOK) {
 	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
-	}	
+	}
 	EXPECT_EQ(assertionFailed, false);
-}     
-     
+}
+
 
 // =================================================================================================
 // Group of tests for numeric overflow
 // ----------------------------------------------------------------------------
 // Tests for char (amt::_char or amt::int8_t)
 
-TEST(AMTTest, CharNumericOverflowTest_AllOK) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_AllOK) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::int8_t ch = 1;
 	try
-	{	
+	{
 		ch *= 5;
 		auto backup(ch);
 		ch |= ch;
@@ -1341,390 +1430,392 @@ TEST(AMTTest, CharNumericOverflowTest_AllOK) {
 		ch -= ch;
 		ch = backup;
 		ch += 55;
-		
+
 		amt::int8_t o = ch * 2.1;
 		EXPECT_EQ((std::uint8_t) o, 126);
 
 		amt::int8_t o2(ch * 2.1);
 		EXPECT_EQ((std::uint8_t) o2, 126);
-		
+
 		ch /= 10;
 		ch -= 6 + 128;
 		ch = 0;
-		++ ch;
+		++ch;
 		ch++;
 		ch = ch * 1.5;
 		ch *= 1.7;
-		
+
 		EXPECT_EQ((std::uint8_t) ch, 5);
 		ch = 6 % ch;
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, false);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Add) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 100;	
+	amt::int8_t ch = 100;
 	try
 	{
 		ch += 28; // overflow; char max is 127
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Inc) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Inc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 127;	
+	amt::int8_t ch = 127;
 	try
 	{
 		++ch; // overflow; char max is 127
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_PostInc) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_PostInc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 127;	
+	amt::int8_t ch = 127;
 	try
 	{
 		ch++; // overflow; char max is 127
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Subtract_1) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_1) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = -100;	
+	amt::int8_t ch = -100;
 	try
 	{
 		ch -= 28; // no overflow; char min is -128
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, false);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Subtract_2) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = -100;	
+	amt::int8_t ch = -100;
 	try
 	{
 		ch -= 29; // overflow; char min is -128
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Dec) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Dec) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = -128;	
+	amt::int8_t ch = -128;
 	try
 	{
 		--ch; // overflow; char min is -128
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_PostDec) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_PostDec) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = -128;	
+	amt::int8_t ch = -128;
 	try
 	{
 		ch--; // overflow; char min is -128
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Mul) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Mul) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 50;	
+	amt::int8_t ch = 50;
 	try
 	{
 		ch *= 3; // overflow
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_Div) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_Div) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = -128;	
+	amt::int8_t ch = -128;
 	try
 	{
 		ch /= -1; // overflow; char max is 127
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_DivFloat) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_DivFloat) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 1;	
+	amt::int8_t ch = 1;
 	try
 	{
 		ch /= -0.005; // overflow; char min is -128
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, CharNumericOverflowTest_DivZero) {
+TEST(__AMT_TEST__, CharNumericOverflowTest_DivZero) {
+	#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::int8_t ch = 1;	
+	amt::int8_t ch = 1;
 	try
 	{
-		ch /= 0; 
+		ch /= 0;
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
+	#endif
 }
 
 // ------------------------------------------------------
 // Tests for unsigned char (amt::uint8_t)
 
-TEST(AMTTest, UCharNumericOverflowTest_AllOK) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_AllOK) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::uint8_t uch = 1;
 	try
-	{	
+	{
 		uch *= 5;
 		uch += 55;
-		
+
 		amt::uint8_t o = uch * 4.2;
 		EXPECT_EQ((std::uint8_t) o, 252);
-		
+
 		uch /= 10;
 		uch -= 6;
-		++ uch;
+		++uch;
 		uch++;
 		uch = uch * 1.5;
 		uch *= 1.7;
-		
+
 		EXPECT_EQ((std::uint8_t) uch, 5);
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, false);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Add) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Add) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 254;	
+	amt::uint8_t uch = 254;
 	try
 	{
 		uch += 2; // numeric overflow; unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Inc) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Inc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 255;	
+	amt::uint8_t uch = 255;
 	try
 	{
 		++uch; // numeric overflow; unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_PostInc) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_PostInc) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 255;	
+	amt::uint8_t uch = 255;
 	try
 	{
 		uch++; // numeric overflow; unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Sub) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Sub) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 5;	
+	amt::uint8_t uch = 5;
 	try
 	{
 		uch -= 10; // numeric overflow; unsigned char min is 0
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Dec) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Dec) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 0;	
+	amt::uint8_t uch = 0;
 	try
 	{
 		--uch; // numeric overflow; unsigned char min is 0
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_PostDec) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_PostDec) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 0;	
+	amt::uint8_t uch = 0;
 	try
 	{
 		uch--; // numeric overflow; unsigned char min is 0
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Mul_fine) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Mul_fine) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 51;	
+	amt::uint8_t uch = 51;
 	try
 	{
 		uch *= 5; // ok, unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, false);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Mul) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Mul) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 16;	
+	amt::uint8_t uch = 16;
 	try
 	{
 		uch *= 16; // assertion failure, unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_MulFloat) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_MulFloat) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 100;	
+	amt::uint8_t uch = 100;
 	try
 	{
 		uch *= 2.6; // assertion failure, unsigned char max is 255
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_MulNeg) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_MulNeg) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 16;	
+	amt::uint8_t uch = 16;
 	try
 	{
 		uch *= -1; // assertion failure
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_Div) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_Div) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 10;	
+	amt::uint8_t uch = 10;
 	try
 	{
 		uch /= -1; // assertion failure
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 	assertionFailed = false; // reset this flag
 	try
 	{
@@ -1734,40 +1825,42 @@ TEST(AMTTest, UCharNumericOverflowTest_Div) {
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_DivFloat) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_DivFloat) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 100;	
+	amt::uint8_t uch = 100;
 	try
 	{
 		uch /= 0.3; // assertion failure
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, UCharNumericOverflowTest_DivZero) {
+TEST(__AMT_TEST__, UCharNumericOverflowTest_DivZero) {
+	#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
-	amt::uint8_t uch = 10;	
+	amt::uint8_t uch = 10;
 	try
 	{
 		uch /= 0; // assertion failure
 	}
-	catch(amt::AMTCassertException& e)
+	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
+	#endif
 }
 
-TEST(AMTTest, UCharRestFromDivision) {
+TEST(__AMT_TEST__, UCharRestFromDivision) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::uint8_t uch = 10;
@@ -1775,30 +1868,34 @@ TEST(AMTTest, UCharRestFromDivision) {
 	{
 		uch %= 4;
 		EXPECT_EQ(uch, 2);
+		#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 		uch %= 0;
+		#endif
 	}
 	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 	assertionFailed = false; // reset this flag
 	try
 	{
+		#if AMTL_CHECK_NUMERIC_OVERFLOW_ON
 		uch = uch % 0;
+		#endif
 	}
 	catch (amt::AMTCassertException& e)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 
 }
 
 // ------------------------------------------------------
 // Tests for double (amt::_double)
 
-TEST(AMTTest, DoubleNumericOverflowTest_AllOK) {
+TEST(__AMT_TEST__, DoubleNumericOverflowTest_AllOK) {
 	bool assertionFailed = false;
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::_double db = 1000000.0;
@@ -1821,7 +1918,7 @@ TEST(AMTTest, DoubleNumericOverflowTest_AllOK) {
 		o = o * 1.5;
 		EXPECT_EQ(o, (5000055 * 4.2 / 10.0 - 6 + 2) * 1.5);
 		o *= 1.7;
-		EXPECT_EQ(o, (5000055 * 4.2 / 10.0 - 6 + 2) * 1.5 * 1.7);		
+		EXPECT_EQ(o, (5000055 * 4.2 / 10.0 - 6 + 2) * 1.5 * 1.7);
 	}
 	catch (amt::AMTCassertException& e)
 	{
@@ -1830,7 +1927,7 @@ TEST(AMTTest, DoubleNumericOverflowTest_AllOK) {
 	EXPECT_EQ(assertionFailed, false);
 }
 
-TEST(AMTTest, DoubleCorrectArithmeticsTest)
+TEST(__AMT_TEST__, DoubleCorrectArithmeticsTest)
 {
 	/*double db = 5.25;
 	amt::_double adb = db;
@@ -1852,7 +1949,7 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 	amt::_double db(1);
 
 	amt::int32_t two(2);
-	amt::_double adb2(1.1);	
+	amt::_double adb2(1.1);
 	double db2(adb2);
 	auto plus = 2 + (2 + db2) * (2 - db2) + db2;
 	auto aplus = two + (two + adb2) * (two - adb2) + adb2;
@@ -1870,7 +1967,7 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 
 	assertionFailed = false; // reset
 	ui = 100000;
@@ -1882,10 +1979,10 @@ TEST(AMTTest, DoubleCorrectArithmeticsTest)
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, true);
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
 }
 
-TEST(AMTTest, NumericLimitsTest)
+TEST(__AMT_TEST__, NumericLimitsTest)
 {
 	EXPECT_EQ((std::numeric_limits<amt::uint8_t>::max)(), 255);
 	EXPECT_EQ((std::numeric_limits<amt::uint8_t>::min)(), 0);
@@ -1911,7 +2008,7 @@ TEST(AMTTest, NumericLimitsTest)
 
 }
 
-TEST(AMTTest, EmplaceTest)
+TEST(__AMT_TEST__, EmplaceTest)
 {
 	struct Struct
 	{
@@ -1946,72 +2043,73 @@ TEST(AMTTest, EmplaceTest)
 }
 
 #ifdef __AMT_TEST_WITHOUT_GTEST__
+using namespace __AMT_TEST__;
 int main()
-{	
-	RUNTEST(AMTTest, BasicTest);
-	RUNTEST(AMTTest, BasicArithmeticsTest);
-	RUNTEST(AMTTest, RemainingOperatorsTest);
-	RUNTEST(AMTTest, LongLongTest);
-	RUNTEST(AMTTest, LongLongOverflowTest);
-	RUNTEST(AMTTest, LongLongAdditionTest);
-	RUNTEST(AMTTest, LongLongSubtractionTest);
-	RUNTEST(AMTTest, LongLongDivTest);
-	RUNTEST(AMTTest, ScalarOperatorsStressTest);
-	RUNTEST(AMTTest, BasicVectorTest);
-	RUNTEST(AMTTest, BasicMapTest);
-	RUNTEST(AMTTest, BasicSetTest);
-	RUNTEST(AMTTest, IntUnsynchWriteTest);
-	RUNTEST(AMTTest, VectorSynchWriteTest);
-	RUNTEST(AMTTest, VectorUnsynchWriteTest);
-	RUNTEST(AMTTest, VectorInitializationTest);
-	RUNTEST(AMTTest, MapUnsynchWriteTest);
-	RUNTEST(AMTTest, MapInitializationTest);
-	RUNTEST(AMTTest, SetInitializationTest);
-	RUNTEST(AMTTest, SetUnsynchWriteTest);
-	RUNTEST(AMTTest, SetCheckIteratorValidityTest);
-	RUNTEST(AMTTest, SetCheckIteratorValidityTest_2);
-	RUNTEST(AMTTest, SetCheckIteratorValidityTest_3); 
-	RUNTEST(AMTTest, SetCheckIteratorValidityTest_4);
-	RUNTEST(AMTTest, SetIter_UnsynchUpdateTest);
-	RUNTEST(AMTTest, MapCheckIteratorValidityTest);
-	RUNTEST(AMTTest, MapCheckIteratorValidityTest_2);
-	RUNTEST(AMTTest, MapCheckIteratorValidityTest_3);
-	RUNTEST(AMTTest, MapCheckIteratorValidityTest_4);
-	RUNTEST(AMTTest, MapIter_UnsynchUpdateTest);
-	RUNTEST(AMTTest, TestObjectRawDataDebugChecker);
-	RUNTEST(AMTTest, TestObjectRawDataDebugChecker_2);
-	RUNTEST(AMTTest, TestObjectRawDataDebugChecker_AllOK);
-	RUNTEST(AMTTest, CharNumericOverflowTest_AllOK);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Add);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Inc);
-	RUNTEST(AMTTest, CharNumericOverflowTest_PostInc);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Subtract_1);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Subtract_2);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Dec);
-	RUNTEST(AMTTest, CharNumericOverflowTest_PostDec);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Mul);
-	RUNTEST(AMTTest, CharNumericOverflowTest_Div);
-	RUNTEST(AMTTest, CharNumericOverflowTest_DivFloat);
-	RUNTEST(AMTTest, CharNumericOverflowTest_DivZero);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_AllOK);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Add);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Inc);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_PostInc);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Sub);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Dec);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_PostDec);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Mul_fine);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Mul);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_MulFloat);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_MulNeg);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_Div);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_DivFloat);
-	RUNTEST(AMTTest, UCharNumericOverflowTest_DivZero);
-	RUNTEST(AMTTest, UCharRestFromDivision);
-	RUNTEST(AMTTest, DoubleNumericOverflowTest_AllOK);
-	RUNTEST(AMTTest, DoubleCorrectArithmeticsTest);
-	RUNTEST(AMTTest, NumericLimitsTest);
-	RUNTEST(AMTTest, EmplaceTest);
+{
+	RUNTEST(__AMT_TEST__, BasicTest);
+	RUNTEST(__AMT_TEST__, BasicArithmeticsTest);
+	RUNTEST(__AMT_TEST__, RemainingOperatorsTest);
+	RUNTEST(__AMT_TEST__, LongLongTest);
+	RUNTEST(__AMT_TEST__, LongLongOverflowTest);
+	RUNTEST(__AMT_TEST__, LongLongAdditionTest);
+	RUNTEST(__AMT_TEST__, LongLongSubtractionTest);
+	RUNTEST(__AMT_TEST__, LongLongDivTest);
+	RUNTEST(__AMT_TEST__, ScalarOperatorsStressTest);
+	RUNTEST(__AMT_TEST__, BasicVectorTest);
+	RUNTEST(__AMT_TEST__, BasicMapTest);
+	RUNTEST(__AMT_TEST__, BasicSetTest);
+	RUNTEST(__AMT_TEST__, IntUnsynchWriteTest);
+	RUNTEST(__AMT_TEST__, VectorSynchWriteTest);
+	RUNTEST(__AMT_TEST__, VectorUnsynchWriteTest);
+	RUNTEST(__AMT_TEST__, VectorInitializationTest);
+	RUNTEST(__AMT_TEST__, MapUnsynchWriteTest);
+	RUNTEST(__AMT_TEST__, MapInitializationTest);
+	RUNTEST(__AMT_TEST__, SetInitializationTest);
+	RUNTEST(__AMT_TEST__, SetUnsynchWriteTest);
+	RUNTEST(__AMT_TEST__, SetCheckIteratorValidityTest);
+	RUNTEST(__AMT_TEST__, SetCheckIteratorValidityTest_2);
+	RUNTEST(__AMT_TEST__, SetCheckIteratorValidityTest_3);
+	RUNTEST(__AMT_TEST__, SetCheckIteratorValidityTest_4);
+	RUNTEST(__AMT_TEST__, SetIter_UnsynchUpdateTest);
+	RUNTEST(__AMT_TEST__, MapCheckIteratorValidityTest);
+	RUNTEST(__AMT_TEST__, MapCheckIteratorValidityTest_2);
+	RUNTEST(__AMT_TEST__, MapCheckIteratorValidityTest_3);
+	RUNTEST(__AMT_TEST__, MapCheckIteratorValidityTest_4);
+	RUNTEST(__AMT_TEST__, MapIter_UnsynchUpdateTest);
+	RUNTEST(__AMT_TEST__, TestObjectRawDataDebugChecker);
+	RUNTEST(__AMT_TEST__, TestObjectRawDataDebugChecker_2);
+	RUNTEST(__AMT_TEST__, TestObjectRawDataDebugChecker_AllOK);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_AllOK);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Add);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Inc);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_PostInc);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_1);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Dec);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_PostDec);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Mul);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Div);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_DivFloat);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_DivZero);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_AllOK);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Add);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Inc);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_PostInc);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Sub);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Dec);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_PostDec);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Mul_fine);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Mul);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_MulFloat);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_MulNeg);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_Div);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_DivFloat);
+	RUNTEST(__AMT_TEST__, UCharNumericOverflowTest_DivZero);
+	RUNTEST(__AMT_TEST__, UCharRestFromDivision);
+	RUNTEST(__AMT_TEST__, DoubleNumericOverflowTest_AllOK);
+	RUNTEST(__AMT_TEST__, DoubleCorrectArithmeticsTest);
+	RUNTEST(__AMT_TEST__, NumericLimitsTest);
+	RUNTEST(__AMT_TEST__, EmplaceTest);
 
 	return 1;
 }
