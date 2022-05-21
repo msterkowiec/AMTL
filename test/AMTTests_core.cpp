@@ -48,6 +48,9 @@
 #else
 #define AMTL_ON 0
 #endif
+
+#define AMTL_OPTIONS_HASH (AMTL_ON?(((int)AMTL_MAIN_FEATURE_ON) + (((int)AMTL_MAIN_FEATURE_ON) << 1) + (((int)AMTL_CHECK_ITERATORS_VALIDITY_ON) << 2) + (((int)AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON) << 3) + (((int)AMTL_CHECK_NUMERIC_OVERFLOW_ON) << 4)) : 0)
+
 // ----------------------------------
 
 #ifdef __AMT_TEST_WITHOUT_GTEST__
@@ -1004,10 +1007,11 @@ TEST(__AMT_TEST__, MapInitializationTest){
 	EXPECT_EQ(map.size(), 2);
 	EXPECT_EQ(map[1], "1");
 	EXPECT_EQ((std::is_same<decltype(map)::mapped_type, std::string>::value), true);
-	
+	map[AMTL_OPTIONS_HASH + 55] = "AMTL options";
+
 	amt::map<int, std::string> map2(map.begin(), map.end());
 	EXPECT_EQ(map2[2], "2");
-	EXPECT_EQ(map2.size(), 2);
+	EXPECT_EQ(map2.size(), 3);
 }
 
 // ----------------------------------------------------------------------
@@ -1020,9 +1024,10 @@ TEST(__AMT_TEST__, SetInitializationTest)
 	EXPECT_EQ(*set.begin(), "1");
 	EXPECT_EQ(*set.rbegin(), "22");
 	EXPECT_EQ((std::is_same<decltype(set)::value_type, std::string>::value), true);
+	set.insert(std::to_string(AMTL_OPTIONS_HASH + 55));
 
 	amt::set<std::string> set2(set.begin(), set.end());
-	EXPECT_EQ(set2.size(), 3);
+	EXPECT_EQ(set2.size(), 4);
 }
 
 namespace __AMT_TEST__ {
