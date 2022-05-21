@@ -1047,7 +1047,9 @@ TEST(__AMT_TEST__, SetCheckIteratorValidityTest) {
 	EXPECT_EQ(it, it);
 
 	try{
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
 		++it; // cannot increment on end
+		#endif
 	}
 	catch (...)
 	{
@@ -1063,7 +1065,9 @@ TEST(__AMT_TEST__, SetCheckIteratorValidityTest_2) {
 	auto it = set.begin();
 	try
 	{
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
 		--it; // cannot decrement on begin
+		#endif
 	}
 	catch (...)
 	{
