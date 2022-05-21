@@ -25,7 +25,7 @@ if (MSVC)
   add_definitions(/bigobj)
 endif ()
 
-add_executable(AMTTests  "AMTTests_only_main_feature_ON.cpp" "AMTTests_all_features_ON.cpp")
+add_executable(AMTTests "AMTTests_all_features_ON.cpp" "AMTTests_only_main_feature_ON.cpp")
 
 target_link_libraries(AMTTests gtest_main)
 
