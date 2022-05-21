@@ -11,11 +11,15 @@
 // __AMTL_ASSERTS_ARE_ON__
 //
 // Main configurable setting of Assertive MultiThreading Library
-// Comment it out for builds without additional checks (ifndef added to make this setting overridable before inclusion, e.g. for tests)
+//
+// *** IMPORTANT *** 
+//   -> Uncomment this line (#define __AMTL_ASSERTS_ARE_ON__) in order to use features of AMTL (runtime checks)
+//   -> Leave it commented out for builds without additional checks (ifndef added to make this setting overridable before inclusion, e.g. for tests)
+//      In such case usage of AMTL makes "no change" for your program. 
 //
 // ====================================
 #ifndef __AMTL_ASSERTS_ARE_ON__
-#define __AMTL_ASSERTS_ARE_ON__
+// #define __AMTL_ASSERTS_ARE_ON__
 #endif
 // ====================================
 

@@ -25,9 +25,19 @@ if (MSVC)
   add_definitions(/bigobj)
 endif ()
 
-add_executable(AMTTests "AMTTests.cpp")
-
+add_executable(AMTTests "AMTTests_all_features_ON.cpp") 
 target_link_libraries(AMTTests gtest_main)
 
+add_executable(AMTTests_only_main_feature_ON "AMTTests_only_main_feature_ON.cpp")
+target_link_libraries(AMTTests_only_main_feature_ON gtest_main)
+
+add_executable(AMTTests_only_overflow_check_on "AMTTests_only_overflow_check_on.cpp")
+target_link_libraries(AMTTests_only_overflow_check_on gtest_main)
+
+add_executable(AMTTests_all_features_off "AMTTests_all_features_off.cpp") 
+target_link_libraries(AMTTests_all_features_off gtest_main)
 
 gtest_discover_tests(AMTTests)
+gtest_discover_tests(AMTTests_only_main_feature_ON)
+gtest_discover_tests(AMTTests_only_overflow_check_on)
+gtest_discover_tests(AMTTests_all_features_off)
