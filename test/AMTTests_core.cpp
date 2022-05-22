@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <vector>
 #include <random>
+#include <string>
 #include <time.h> 
 
 // -------------------------------
@@ -416,6 +417,72 @@ T GetRandom()
 	return GetRandomHelper<T, std::is_floating_point<T>::value>::get();
 }
 
+template<typename T, typename U, bool anyFloat = std::is_floating_point<T>::value || std::is_floating_point<U>::value>
+struct AvoidFloat
+{
+	//template<typename T, typename U>
+	static void TestBitwiseOperators(T t, U u)
+	{
+		amt::AMTScalarType<T> tt(t);
+		amt::AMTScalarType<U> uu(u);
+
+		// Operator &
+		auto And = t & u;
+		auto amtAnd = tt & uu;
+		auto amtAnd2 = tt & u;
+		auto amtAnd3 = t & uu;
+
+		EXPECT_EQ(And, amtAnd);
+		EXPECT_EQ(And, amtAnd2);
+		EXPECT_EQ(And, amtAnd3);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(And), decltype(amtAnd)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(And), decltype(amtAnd2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(And), decltype(amtAnd3)>()), true);
+
+		auto revand = u & t;
+		auto amtRevAnd = uu & tt;
+		auto amtRevAnd2 = u & tt;
+		auto amtRevAnd3 = uu & t;
+		EXPECT_EQ(revand, amtRevAnd);
+		EXPECT_EQ(revand, amtRevAnd2);
+		EXPECT_EQ(revand, amtRevAnd3);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revand), decltype(amtRevAnd)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revand), decltype(amtRevAnd2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revand), decltype(amtRevAnd3)>()), true);
+
+		// Operator |
+		auto Or = t | u;
+		auto amtOr = tt | uu;
+		auto amtOr2 = tt | u;
+		auto amtOr3 = t | uu;
+
+		EXPECT_EQ(Or, amtOr);
+		EXPECT_EQ(Or, amtOr2);
+		EXPECT_EQ(Or, amtOr3);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(Or), decltype(amtOr)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(Or), decltype(amtOr2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(Or), decltype(amtOr3)>()), true);
+
+		auto revor = u | t;
+		auto amtRevOr = uu | tt;
+		auto amtRevOr2 = u | tt;
+		auto amtRevOr3 = uu | t;
+		EXPECT_EQ(revor, amtRevOr);
+		EXPECT_EQ(revor, amtRevOr2);
+		EXPECT_EQ(revor, amtRevOr3);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revor), decltype(amtRevOr)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revor), decltype(amtRevOr2)>()), true);
+		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revor), decltype(amtRevOr3)>()), true);
+
+	}
+};
+
+template<typename T, typename U>
+struct AvoidFloat<T, U, true>
+{
+	static void TestBitwiseOperators(T t, U u){}
+};
+
 // TODO: Test on const numbers also
 template<typename T, typename U>
 void TestScalarOperators()
@@ -604,12 +671,14 @@ void TestScalarOperators()
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revdiv), decltype(amtlRevDiv2)>()), true);
 		EXPECT_EQ((AreNumericTypesEquivalent<decltype(revdiv), decltype(amtlRevDiv3)>()), true);
 	}
+
+	AvoidFloat<T, U, (std::is_floating_point<T>::value || std::is_floating_point<U>::value)> ::TestBitwiseOperators(t, u);
 }
 
 template<typename T>
 void TestScalarOperators()
 {
-	for (size_t i = 0; i < 1024; ++i)
+	for (size_t i = 0; i < 256; ++i)
 	{
 		TestScalarOperators<T, char>();
 		TestScalarOperators<T, unsigned char>();
