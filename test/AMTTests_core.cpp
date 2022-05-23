@@ -1031,6 +1031,10 @@ TEST(__AMT_TEST__, MapUnsynchWriteTest) {
 	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
+	#if !defined(__AMTL_ASSERTS_ARE_ON__) || !__AMT_CHECK_MULTITHREADED_ISSUES__
+	for (size_t i = 0; i < 65536; ++i)
+		_map[i] = 0; // fill in in advance, so that the test doesn't crash when the check is off
+	#endif
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map), std::ref(canStartThread));
 	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
@@ -1091,6 +1095,10 @@ TEST(__AMT_TEST__, SetUnsynchWriteTest) {
 	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&SetUnsynchWriteTest_CustomAssertHandler);
 	amt::set<int> set;
+	#if !defined(__AMTL_ASSERTS_ARE_ON__) || !__AMT_CHECK_MULTITHREADED_ISSUES__
+	for (size_t i = 0; i < 65536; ++i)
+		set.insert(i); // fill in in advance, so that the test doesn't crash when the check is off
+	#endif
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&SetUnsynchWriteTest_WriterThread, 0, std::ref(set), std::ref(canStartThread));
 	std::thread thread2(&SetUnsynchWriteTest_WriterThread, 1, std::ref(set), std::ref(canStartThread));
