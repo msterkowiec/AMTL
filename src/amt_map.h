@@ -847,6 +847,34 @@ namespace amt
 			std::pair<iterator, bool> res(make_pair(iterator(resBase.first, this), resBase.second));
 			return res;
 		}
+		template< class P >
+		iterator insert(iterator position, P&& value)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			position.AssertIsValid(this);
+			#endif
+			auto resBase = ((Base*)this)->insert(position, std::move(value));
+			++m_nCountOperInvalidateIter;
+			iterator res(resBase, this);
+			return res;
+		}
+		template< class P >
+		iterator insert(const_iterator position, P&& value)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			position.AssertIsValid(this);
+			#endif
+			auto resBase = ((Base*)this)->insert(position, std::move(value));
+			++m_nCountOperInvalidateIter;
+			iterator res(resBase, this);
+			return res;
+		}
 		iterator insert(iterator position, const ValueType& val)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -860,6 +888,20 @@ namespace amt
 			iterator res(resBase, this);
 			return res;
 		}
+		iterator insert(const_iterator position, const ValueType& val)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			position.AssertIsValid(this);
+			#endif
+			++m_nCountOperInvalidateIter;
+			auto resBase = ((Base*)this)->insert(position, val);
+			iterator res(resBase, this);
+			return res;
+		}
+
 		#ifdef _WIN32 // temporary workaround for Linux
 		template <class InputIterator>
 		void insert(InputIterator first, InputIterator last)
