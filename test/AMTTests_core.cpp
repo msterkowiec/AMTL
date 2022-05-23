@@ -764,6 +764,9 @@ TEST(__AMT_TEST__, BasicMapTest) {
 	EXPECT_EQ(cit->second, 3);
 
 	map.insert(std::make_pair(5, 25));
+	EXPECT_EQ(map.size(), 3);
+	map.insert(map.end(), std::make_pair(6, 36));
+	EXPECT_EQ(map.size(), 4);
 
 	amt::map<int, SomeStruct> omap;
 	omap.insert(std::move(std::make_pair(1, SomeStruct())));
