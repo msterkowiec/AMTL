@@ -611,10 +611,14 @@ namespace amt
 	};
 
 	// TODO: Partial specialization for vector of bool:
+	// Probably should internally keep all the bools/bits using amt::vector<amt::uint8_t> and it will make all the checks of multithreaded access conflicts
 	template<class Alloc>
 	class vector<bool, Alloc> : public std::vector<bool, Alloc>
 	{
-		// to be done...
+		// to be done using
+		// amt::vector<amt::uint8_t> data_;
+		// then n-th element will be located at data_[n/8] & (1 << (n%8))
+		// (reference to it might be a bit tricky)
 	};
 
 
