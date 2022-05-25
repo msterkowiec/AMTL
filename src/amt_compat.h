@@ -9,7 +9,6 @@
 
 #include "amt_config.h"
 
-// noexcept; note that with MSVC the line below requires compilation with option /Zc:__cplusplus to make value of macro __cplusplus correct
 #if defined(_MSC_VER) && _MSVC_LANG < 201402L
 #define __AMT_NOEXCEPT__
 #define __AMT_NOEXCEPT_FALSE__
