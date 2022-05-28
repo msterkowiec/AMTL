@@ -1043,8 +1043,8 @@ void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
 {
 	while (!canStartThread); // make sure threads start at the same time
-	size_t iStart = threadNo ? 32678 : 0;
-	size_t iEnd = threadNo ? 65536 : 32768;
+	size_t iStart = threadNo ? 65536 : 0;
+	size_t iEnd = threadNo ? 65536 * 2 : 65536;
 	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
 		map[i] = i + threadNo;
 }
@@ -1054,7 +1054,7 @@ TEST(__AMT_TEST__, MapUnsynchWriteTest) {
 	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
 	#if !defined(__AMTL_ASSERTS_ARE_ON__) || !__AMT_CHECK_MULTITHREADED_ISSUES__
-	for (size_t i = 0; i < 65536; ++i)
+	for (size_t i = 0; i < 65536 * 2; ++i)
 		_map[i] = 0; // fill in in advance, so that the test doesn't crash when the check is off
 	#endif
 	std::atomic<bool> canStartThread(false);
