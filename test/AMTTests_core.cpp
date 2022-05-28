@@ -129,6 +129,28 @@ TEST(__AMT_TEST__, BasicTest){
 	}
 }
 
+void Free(int** pptr)
+{
+	if (*pptr)
+	{
+		free(*pptr);
+		*pptr = nullptr;
+	}
+}
+
+TEST(__AMT_TEST__, BasicPointerTest){
+	amt::raw_ptr<int> ptr((int*) malloc(64));
+	if (ptr)
+	{
+		for (size_t i = 0; i < 16; ++i)
+			ptr[i] = 64;
+		*ptr = 32;
+		EXPECT_EQ(32 + *ptr + *(ptr + 1), 128);
+		Free(&ptr);
+		EXPECT_EQ(ptr, nullptr);
+	}
+}
+
 TEST(__AMT_TEST__, BasicArithmeticsTest){
 	unsigned char x = 10;
 	amt::uint8_t xx = 10;
@@ -2095,6 +2117,7 @@ TEST(__AMT_TEST__, EmplaceTest)
 int main()
 {
 	RUNTEST(__AMT_TEST__, BasicTest);
+	RUNTEST(__AMT_TEST__, BasicPointerTest);
 	RUNTEST(__AMT_TEST__, BasicArithmeticsTest);
 	RUNTEST(__AMT_TEST__, RemainingOperatorsTest);
 	RUNTEST(__AMT_TEST__, LongLongTest);
