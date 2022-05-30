@@ -1,4 +1,4 @@
-name: CMake-GCC
+name: CMake-Clang
 
 on:
   push:
