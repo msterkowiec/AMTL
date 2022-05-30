@@ -1250,7 +1250,22 @@ namespace amt
 			#endif
 			return *m_val;
 		}
-
+		template<typename U, class = typename std::enable_if<std::is_integral<U>::value>::type>
+		inline TypePointedTo& operator [](U n)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			return m_val[n];
+		}
+		template<typename U, class = typename std::enable_if<std::is_integral<U>::value>::type>
+		inline const TypePointedTo& operator [](U n) const
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			return m_val[n];
+		}
 		inline AMTPointerType()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
