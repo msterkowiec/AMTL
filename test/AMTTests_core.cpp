@@ -146,6 +146,8 @@ TEST(__AMT_TEST__, BasicPointerTest){
 			ptr[i] = 64;
 		*ptr = 32;
 		EXPECT_EQ(32 + *ptr + *(ptr + 1), 128);
+		auto ptr2 = ptr + 1;
+		EXPECT_EQ(*(ptr2 - 1), 32);
 		Free(&ptr);
 		EXPECT_EQ(ptr, nullptr);
 	}
@@ -1285,6 +1287,8 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest) {
 	auto it = map.begin();
 	it = it;
 	EXPECT_EQ(it, it);
+
+	#if __AMT_CHECK_ITERATORS_VALIDITY__ || !defined(__clang__)
 	try{
 		++it; // cannot increment on end
 	}
@@ -1293,6 +1297,7 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest) {
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+	#endif
 }
 
 TEST(__AMT_TEST__, MapCheckIteratorValidityTest_2) {
@@ -1300,6 +1305,8 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_2) {
 	amt::SetThrowCustomAssertHandler<0>();
 	amt::map<int, int> map;
 	auto it = map.begin();
+
+	#if __AMT_CHECK_ITERATORS_VALIDITY__ || !defined(__clang__)
 	try
 	{
 		--it; // cannot decrement on begin
@@ -1309,6 +1316,7 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_2) {
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+	#endif
 }
 
 TEST(__AMT_TEST__, MapCheckIteratorValidityTest_3) {
@@ -1318,6 +1326,8 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_3) {
 	auto it = map.begin();
 	map[1] = 1; // invalidates it
 	bool isEnd = false;
+
+	#if __AMT_CHECK_ITERATORS_VALIDITY__ || !defined(__clang__)
 	try
 	{
 		isEnd = it == map.end();
@@ -1328,6 +1338,7 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_3) {
 	}
 
 	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+	#endif
 }
 
 TEST(__AMT_TEST__, MapCheckIteratorValidityTest_4) {
@@ -1337,6 +1348,8 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_4) {
 	amt::map<int, int> map2;
 	auto it = map.begin();
 	bool isEnd = false;
+
+	#if __AMT_CHECK_ITERATORS_VALIDITY__ || !defined(__clang__)
 	try
 	{
 		isEnd = it == map2.end(); // cannot use it of set vs end() of different object (set2)
@@ -1346,6 +1359,7 @@ TEST(__AMT_TEST__, MapCheckIteratorValidityTest_4) {
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+	#endif
 }
 
 // ---------------------------------------------------------------------
