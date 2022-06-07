@@ -1315,22 +1315,24 @@ namespace amt
 			m_val = t;
 			return *this;
 		}
-		inline AMTPointerType& operator = (const AMTPointerType& var)
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline AMTPointerType& operator = (const AMTPointerType<U>& var)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
+			typename AMTPointerType<U>::CRegisterReadingThread r2(var);
 			#endif
-			m_val = var.m_val;
+			m_val = (T) var.m_val;
 			return *this;
-		}
-		inline volatile AMTPointerType& operator = (const AMTPointerType& var) volatile
+		}		
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline volatile AMTPointerType& operator = (const AMTPointerType<U>& var) volatile
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
+			typename AMTPointerType<U>::CRegisterReadingThread r2(var);
 			#endif
-			m_val = var.m_val;
+			m_val = (T) var.m_val;
 			return *this;
 		}
 		inline AMTPointerType& operator |= (const AMTPointerType& var)
@@ -1365,14 +1367,14 @@ namespace amt
 			#endif
 			return m_val;
 		}
-		template<typename U = T, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		/*template<typename U = T, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline operator U()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
 			return (U) m_val;
-		}		
+		}*/		
 		inline T* operator &()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
