@@ -1264,7 +1264,7 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
-		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		template<typename U = T, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline AMTPointerType(const AMTPointerType<U>& o)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
