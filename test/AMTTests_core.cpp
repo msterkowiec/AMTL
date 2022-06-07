@@ -127,6 +127,14 @@ TEST(__AMT_TEST__, BasicTest){
 		amt::uint16_t ush2 = 5;
 		if (ui + ush != ush2);
 	}
+
+	{
+		unsigned int ui = 1;
+		amt::uint32_t amt_ui = ui;
+		unsigned long long ull = ui;
+		amt::uint64_t amt_ull = amt_ui;
+		EXPECT_EQ(ull, amt_ull);		
+	}
 }
 
 void Free(int** pptr)
@@ -2127,11 +2135,34 @@ TEST(__AMT_TEST__, EmplaceTest)
 
 }
 
+struct StructForAMTPointerTypeTest
+{
+	char ch;
+	int i;
+	double db;
+};
+TEST(__AMT_TEST__, AMTPointerTypeTest)
+{
+	StructForAMTPointerTypeTest* raw_ptr = new StructForAMTPointerTypeTest[12];
+	amt::AMTPointerType<StructForAMTPointerTypeTest*> ptr = raw_ptr;
+	ptr->ch = 'A';
+	ptr->i = 1;
+	ptr->db = 2.5;
+	const StructForAMTPointerTypeTest* const_raw_ptr = raw_ptr;
+	amt::AMTPointerType<const StructForAMTPointerTypeTest*> cptr = ptr;
+	EXPECT_EQ(cptr, ptr);
+	EXPECT_EQ(cptr->i, ptr->i);
+	for (size_t i = 1; i < 12; ++ i)
+		ptr[i] = ptr[i - 1];
+	delete[] ptr;
+}
+
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
 {
 	RUNTEST(__AMT_TEST__, BasicTest);
 	RUNTEST(__AMT_TEST__, BasicPointerTest);
+	RUNTEST(__AMT_TEST__, AMTPointerTypeTest);
 	RUNTEST(__AMT_TEST__, BasicArithmeticsTest);
 	RUNTEST(__AMT_TEST__, RemainingOperatorsTest);
 	RUNTEST(__AMT_TEST__, LongLongTest);
