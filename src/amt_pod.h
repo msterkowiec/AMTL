@@ -1351,7 +1351,7 @@ namespace amt
 			m_val &= var.m_val;
 			return *this;
 		}
-		inline operator T()
+		inline operator T&()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
@@ -1365,7 +1365,7 @@ namespace amt
 			#endif
 			return m_val;
 		}
-		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		template<typename U = T, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline operator U()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
