@@ -189,12 +189,16 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
-		inline AMTScalarType(const AMTScalarType& o)
+		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
+		inline AMTScalarType(const AMTScalarType<U>& o)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(o);
+			typename AMTScalarType<U>::CRegisterReadingThread r2(o);
+			#endif
+			#if __AMT_CHECK_NUMERIC_OVERFLOW__
+			CheckAssignmentOverflow(o.m_val);
 			#endif
 			m_val = o.m_val;
 		}
@@ -998,7 +1002,7 @@ namespace amt
 
 		// Modulo division:
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator % (const AMTScalarType<T>& var1, U u)
+		inline friend AMTScalarType<T> operator % (const AMTScalarType<T>& var1, U u) 
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r1(var1);
@@ -1010,7 +1014,7 @@ namespace amt
 			return ret;
 		}
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator % (U u, const AMTScalarType<T>& var2)
+		inline friend AMTScalarType<T> operator % (U u, const AMTScalarType<T>& var2) 
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(var2);
@@ -1021,23 +1025,6 @@ namespace amt
 			AMTScalarType<T> ret(u % var2.m_val);
 			return ret;
 		}
-
-		/*template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator & (const AMTScalarType<T>& var1, U u)
-		{
-			CRegisterReadingThread r1(var1);
-			AMTScalarType<T> ret(var1.m_val & u);
-			return ret;
-		}
-		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
-		inline friend AMTScalarType<T> operator | (U u, const AMTScalarType<T>& var2)
-		{
-			CRegisterReadingThread r(var2);
-			AMTScalarType<T> ret(u | var2.m_val);
-			return ret;
-		}*/
-
-		//#endif
 
 		private:
 			template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
@@ -1082,8 +1069,11 @@ namespace amt
 	template<typename T>
 	class AMTPointerType 
 	{
+		template<typename U>
+		friend class AMTPointerType;
+
 		typedef typename std::remove_pointer<T>::type TypePointedTo;
-		static_assert(std::is_pointer<T>::value, "Template parameter of AMTPointerType has to be a trivial type");
+		static_assert(std::is_pointer<T>::value, "Template parameter of AMTPointerType has to be a pointer type");
 
 	private:
 		T m_val;
@@ -1124,6 +1114,7 @@ namespace amt
 			#if __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 			AMTCountersHashMap* pHashMap = AMTCountersHashMap::GetCounterHashMap();
 			auto pSlot = pHashMap->GetReadWriteCounters((void*) this);
+			AMT_VERIFY_SLOT(pSlot);
 			++pSlot->m_nPendingReadRequests;
 			AMT_CASSERT(pSlot->m_nPendingWriteRequests == 0);
 			AMT_CASSERT(pSlot->m_nSlotUsed == 1);
@@ -1273,14 +1264,15 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
-		inline AMTPointerType(const AMTPointerType& o)
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline AMTPointerType(const AMTPointerType<U>& o)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(o);
+			typename AMTPointerType<U>::CRegisterReadingThread r2(o);
 			#endif
-			m_val = o.m_val;
+			m_val = (T) o.m_val;
 		}
 		inline AMTPointerType(T t)
 		{
@@ -1323,22 +1315,24 @@ namespace amt
 			m_val = t;
 			return *this;
 		}
-		inline AMTPointerType& operator = (const AMTPointerType& var)
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline AMTPointerType& operator = (const AMTPointerType<U>& var)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
+			typename AMTPointerType<U>::CRegisterReadingThread r2(var);
 			#endif
-			m_val = var.m_val;
+			m_val = (T) var.m_val;
 			return *this;
-		}
-		inline volatile AMTPointerType& operator = (const AMTPointerType& var) volatile
+		}		
+		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		inline volatile AMTPointerType& operator = (const AMTPointerType<U>& var) volatile
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
-			CRegisterReadingThread r2(var);
+			typename AMTPointerType<U>::CRegisterReadingThread r2(var);
 			#endif
-			m_val = var.m_val;
+			m_val = (T) var.m_val;
 			return *this;
 		}
 		inline AMTPointerType& operator |= (const AMTPointerType& var)
@@ -1373,14 +1367,14 @@ namespace amt
 			#endif
 			return m_val;
 		}
-		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
+		/*template<typename U = T, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline operator U()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
 			return (U) m_val;
-		}		
+		}*/		
 		inline T* operator &()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -1440,8 +1434,8 @@ namespace amt
 			#endif
 			AMTPointerType res(m_val - n);
 			return res;
-		}		
-		
+		}
+
 		/*inline AMTPointerType& operator += (size_t n)
 		{
 			CRegisterWritingThread r(*this);
