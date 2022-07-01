@@ -8,6 +8,7 @@
 #pragma once
 
 #include <exception>
+#include <string>
 #include "amt_config.h" 
 #include "amt_compat.h" 
 
