@@ -189,7 +189,7 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
-		inline AMTScalarType(const AMTScalarType>& o)
+		inline AMTScalarType(const AMTScalarType& o)
 		{
 			try{
 				#if __AMT_CHECK_MULTITHREADED_ISSUES__
