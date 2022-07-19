@@ -189,6 +189,23 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
+		inline AMTScalarType(const AMTScalarType& o)
+		{
+			try{
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				Init();
+				CRegisterWritingThread r(*this);
+				CRegisterReadingThread r2(o);
+				#endif
+				m_val = o.m_val;
+			}
+			catch(...) {
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				Uninit();				
+				#endif
+				throw;
+			}				
+		}		
 		template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 		inline AMTScalarType(const AMTScalarType<U>& o)
 		{
@@ -1296,6 +1313,23 @@ namespace amt
 			#endif
 			// No m_val initialization to let program behave in a standard way
 		}
+		inline AMTPointerType(const AMTPointerType& o)
+		{
+			try {
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				Init();
+				CRegisterWritingThread r(*this);
+				CRegisterReadingThread r2(o);
+				#endif
+				m_val = o.m_val;
+			}
+			catch(...) {
+				#if __AMT_CHECK_MULTITHREADED_ISSUES__
+				Uninit();				
+				#endif
+				throw;
+			}			
+		}		
 		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline AMTPointerType(const AMTPointerType<U>& o)
 		{
