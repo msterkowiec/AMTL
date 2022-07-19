@@ -32,7 +32,9 @@
 // Recommended setting for start: on (1). It makes trivial types (amt::int8_t etc.) to have the same sizeof os their equivalents from std and, thus, avoid possible problems with persistence, memcpy etc.
 // However it incurs some slowdown due to increased complexity and additional memory usage. If only possible, it might be advisable to make some effort and let code work with this setting off(0) 
 // even though it causes e.g. sizeof(amt::int8_t) == 3. Additional drawback of hash_map that the library can no longer be used as header only with it (unless the project consists of single module)
+#ifndef __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__
 #define __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ 1
+#endif
 
 // This setting lets decide if cases of concurrent partial write and partial read (e.g. reading an element when push_back without reallocation takes place) should be reported as an assetion failure
 // Recommended setting for starters is on (1). In case it proves to produce false positive (possible in case of thread synchronization targetted for maximum performance), it can be switched off
