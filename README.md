@@ -31,9 +31,9 @@ Cases of improper usages that currently can be detected:
 
 All a user of AMTL should do to use it is:
 * change in the application under tests the types from namespace std to amt for as many variables/objects as possible (e.g. even replace all std::map, std::vector, std::intXX_t, std::uintXX_t to amt::)
-* take a look at amt_config.h and edit it, if needed - there's a macro __AMTL_ASSERTS_ARE_ON__: 
-  - __AMTL_ASSERTS_ARE_ON__ should be off (0) in "real" release builds (in such case AMTL has no effect, i.e. amt:: types resolve to std:: types),
-  - __AMTL_ASSERTS_ARE_ON__ should be on (1) for test builds with asserts - here's where features of AMTL can help detect issues (release builds with asserts are quite good since they allow to overcome slowness of asserts)
+* take a look at amt_config.h and edit it, if needed - there's a macro ____AMTL_ASSERTS_ARE_ON____: 
+  - ____AMTL_ASSERTS_ARE_ON____ should be off (0) in "real" release builds (in such case AMTL has no effect, i.e. amt:: types resolve to std:: types),
+  - ____AMTL_ASSERTS_ARE_ON____ should be on (1) for test builds with asserts - here's where features of AMTL can help detect issues (release builds with asserts are quite good since they allow to overcome slowness of asserts)
 
 Thus, when using AMTL it is recommended to use the following four various configurations in various stages of development and testing:
 - debug,
@@ -43,9 +43,9 @@ Thus, when using AMTL it is recommended to use the following four various config
 
 # Two main modes of the library
 AMTL works in two main modes:
-* let's call it *easy but very slow* mode - with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 1 
-* let's call it *more difficult but fast and better* mode - with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 0
-To be concise, I'll call these modes *easy* and *extended*. In the extended mode there's a minor complication: all the trivial types (like amt::uint8_t or amit::int32_t) have two additional bytes in its size - these bytes may be called "current thread reference counts" (for read and write operations, respectively). In the easy mode, these two bytes are stored in the external global singleton hash_map. No need to mention how costly every operation on such integer is, if any operation on it involves lookup in such an external structure. Extended mode is not that slow any more but a developer has to be slightly more cautious, because some memcpy'ing or memmoving that exists in code, may start to work not exactly as it was intended (particularly if serialization on disk is involved). That's why in the first step the easy mode is recommended. If all starts two work fine in easy mode, then it might be good to try to switch application with AMTL to extended mode. The build with AMTL will not only start to run much much faster but - as a sort of a bonus - also will be able to detect another nasty type of flaws in application - operations on uninitialized memory.
+* let's call it __easy but very slow__ mode - with ____AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES____ == 1 
+* let's call it __more difficult but fast__ and better* mode - with ____AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES____ == 0
+To be concise, I'll call these modes __easy__ and __extended__. In the extended mode there's a minor complication: all the trivial types (like amt::uint8_t or amit::int32_t) have two additional bytes in its size - these bytes may be called "current thread reference counts" (for read and write operations, respectively). In the easy mode, these two bytes are stored in the external global singleton hash_map. No need to mention how costly every operation on such integer is, if any operation on it involves lookup in such an external structure. Extended mode is not that slow any more but a developer has to be slightly more cautious, because some memcpy'ing or memmoving that exists in code, may start to work not exactly as it was intended (particularly if serialization on disk is involved). That's why in the first step the easy mode is recommended. If all starts two work fine in easy mode, then it might be good to try to switch application with AMTL to extended mode. The build with AMTL will not only start to run much much faster but - as a sort of a bonus - also will be able to detect another nasty type of flaws in application - operations on uninitialized memory.
 
 # C++ version
 Tested with C++11 and C++17
