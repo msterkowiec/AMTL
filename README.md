@@ -92,7 +92,7 @@ BTW: since then, AMTL showed me about 10 other issues (about half of them multit
 
 # Detection of operations on uninitialized memory ("side effect" feature)
 
-This works in extended mode (with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 0) because "thread reference counters" are located within size of the object, so they will be within the uninitialized memory, so AMTL assertion will be very likely - particularly if marked with debug magic values. Otherwise such uninitialized access might go unnoticed, like in the following simplified case (based on a real life code - production code - in which such issue was detected by AMTL)
+It works in extended mode (with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 0) because "thread reference counters" are located within size of the object, so they will be within the uninitialized memory, so AMTL assertion will be very likely - particularly if the memory is marked with debug magic values. Without AMTL such uninitialized access is almost sure to go unnoticed both in debug and release builds, like in the following simplified case (based on a real life code - production code - in which such issue was detected by AMTL)
 
 ```
 #include <vector>
