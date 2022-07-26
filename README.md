@@ -45,6 +45,7 @@ Thus, when using AMTL it is recommended to use the following four various config
 AMTL works in two main modes:
 * let's call it __easy but very slow__ mode - with ____AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES____ == 1 
 * let's call it __more difficult but fast and better__ mode - with ____AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES____ == 0
+
 To be concise, I'll call these modes __easy__ and __extended__. In the extended mode there's a minor complication: all the trivial types (like amt::uint8_t or amit::int32_t) have two additional bytes in its size - these bytes may be called "current thread reference counts" (for read and write operations, respectively). In the easy mode, these two bytes are stored in the external global singleton hash_map. No need to mention how costly every operation on such integer is, if any operation on it involves lookup in such an external structure. Extended mode is not that slow any more but a developer has to be slightly more cautious, because some memcpy'ing or memmoving that exists in code, may start to work not exactly as it was intended (particularly if serialization on disk is involved). That's why in the first step the easy mode is recommended. If all starts two work fine in easy mode, then it might be good to try to switch application with AMTL to extended mode. The build with AMTL will not only start to run much much faster but - as a sort of a bonus - also will be able to detect another nasty type of flaws in application - operations on uninitialized memory.
 
 # C++ version
@@ -88,6 +89,57 @@ It may be worth adding a few words about project origin. As said, its idea spran
 However this time I was a bit lazy and didn't want to put too much effort into finding out the cause of some thread synchronization issue. AMTL, or more exactly some initial class, showed the exact two places in code and exact two threads that clashed.
 I must admit I was impressed by the result - practically with no effort I had it solved (AMTL, like a good teacher, showed me: "here and here you have a sync issue"). There was no alternative but to try to continue this...
 BTW: since then, AMTL showed me about 10 other issues (about half of them multithreading/sync issues, another half was integer overflow that had been unnoticed earlier - somehow all the tests had been passing...)
+
+# Detection of operations on uninitialized memory ("side effect" feature)
+
+This works in extended mode (with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 0) because "thread reference counters" are located within size of the object, so they will be within the uninitialized memory, so AMTL assertion will be very likely - particularly if marked with debug magic values. Otherwise such uninitialized access might go unnoticed, like in the following simplified case (based on a real life code - production code - in which such issue was detected by AMTL)
+
+#include <vector>
+#include <numeric>
+#include <algorithm>
+#include <iostream>
+
+class Data
+{
+	double* pData_;
+
+public:
+	Data(double* pData) : pData_(pData)
+	{
+
+	}
+	double Product(const std::vector<double>& o)
+	{
+		return std::inner_product(o.begin(), o.end(), pData_, 0.0);
+	}
+
+};
+
+int main()
+{
+	static const size_t SIZE = 4;
+	double* pData = new double[SIZE];
+	std::vector<double> vec(SIZE+1); // let's assume there is "+1" added by mistake - the problem doesn't reveal in the debug or release, 
+	                                 // unless surprisigly "in production" (if pData is accidentally allocated on the edge of a memory page, 
+	                                 // causing access violation exception). The result (dot product) is always ok (20), since the uninitialized value after the buffer
+	                                 // is always multiplied by zero (at the end of the vec).
+	for (size_t i = 0; i < SIZE; ++i)
+	{
+		vec[i] = i + 1;
+		pData[i] = 4 - i;
+	}
+	Data data(pData);
+	double ret = data.Product(vec);
+
+	// Let's test the correctness of the result:
+	if (ret == 20)	       		      					  //                               1 * 4 + 2 * 3 + 3 * 2 + 4 * 1 == 20, OK!
+		std::cout << "OK - the result is 20!!\n"; // but we really are calculating 1 * 4 + 2 * 3 + 3 * 2 + 4 * 1 + 0 * something_uninitialized_after_the_buffer
+	else										                    //                                                             ==============================================
+											                    	  // so we may get a random crash... the issue doesn't reveal neither in debug nor release mode...
+		std::cout << "Something went wrong - the result is: " << ret << "\n";
+}
+
+Usage of amt::double_ instead of double lets detect the problem - of course AMTL doesn't say in its assertion failure "the memory must be uninitialized" - but seeing "thread reference counters" have values 205 and 206 (BTW: 205 == 0xCD == MSVC debug filler for uninitialized heap) makes it obvious enough.
 
 # Hopes
 
