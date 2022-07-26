@@ -94,6 +94,7 @@ BTW: since then, AMTL showed me about 10 other issues (about half of them multit
 
 This works in extended mode (with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ == 0) because "thread reference counters" are located within size of the object, so they will be within the uninitialized memory, so AMTL assertion will be very likely - particularly if marked with debug magic values. Otherwise such uninitialized access might go unnoticed, like in the following simplified case (based on a real life code - production code - in which such issue was detected by AMTL)
 
+{
 #include <vector>
 #include <numeric>
 #include <algorithm>
@@ -132,13 +133,14 @@ int main()
 	double ret = data.Product(vec);
 
 	// Let's test the correctness of the result:
-	if (ret == 20)	       		      					  //                               1 * 4 + 2 * 3 + 3 * 2 + 4 * 1 == 20, OK!
+	if (ret == 20)	       		 		  //                               1 * 4 + 2 * 3 + 3 * 2 + 4 * 1 == 20, OK!
 		std::cout << "OK - the result is 20!!\n"; // but we really are calculating 1 * 4 + 2 * 3 + 3 * 2 + 4 * 1 + 0 * something_uninitialized_after_the_buffer
-	else										                    //                                                             ==============================================
-											                    	  // so we may get a random crash... the issue doesn't reveal neither in debug nor release mode...
+	else			                          //                                                             ==============================================
+					              	  // so we may get a random crash... the issue doesn't reveal neither in debug nor release mode...
 		std::cout << "Something went wrong - the result is: " << ret << "\n";
 }
-
+}
+										
 Usage of amt::double_ instead of double lets detect the problem - of course AMTL doesn't say in its assertion failure "the memory must be uninitialized" - but seeing "thread reference counters" have values 205 and 206 (BTW: 205 == 0xCD == MSVC debug filler for uninitialized heap) makes it obvious enough.
 
 # Hopes
