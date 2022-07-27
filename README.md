@@ -141,8 +141,15 @@ int main()
 }
 ```
 										
-Usage of amt::double_ instead of double lets detect the problem - of course AMTL doesn't say in its assertion failure "the memory must be uninitialized" - but seeing "thread reference counters" have values 205 and 206 (BTW: 205 == 0xCD == MSVC debug filler for uninitialized heap) makes it obvious enough.
+Usage of amt::_double instead of double lets detect the problem - of course AMTL doesn't say in its assertion failure "the memory must be uninitialized" - but seeing "thread reference counters" have values 205 and 206 (BTW: 205 == 0xCD == MSVC debug filler for uninitialized heap) makes it obvious enough.
 
+To make the case more complete: just add the following two lines in the beginning to be able to use AMTL:
+```
+#define __AMTL_ASSERTS_ARE_ON__ // comment it out in order to have a normal build without AMTL
+#include "amt_pod.h"		
+// TODO: replace all usages of "double"	with amt::_double
+```
+		
 # Hopes
 
 Like in the song by Pink Floyd, the hopes are quite high : )
