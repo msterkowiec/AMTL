@@ -146,7 +146,7 @@ Usage of amt::_double instead of double lets detect the problem - of course AMTL
 To make the case more complete: just add the following two lines in the beginning to be able to use AMTL:
 ```
 #define __AMTL_ASSERTS_ARE_ON__ // comment it out in order to have a normal build without AMTL
-#include "amt_pod.h"		
+#include "amt_pod.h" // make sure there's #define __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ 0 in amt_config.h (this feature/side-effect works only in "extended" mode of AMTL)
 // TODO: replace all usages of "double"	with amt::_double
 ```
 		
