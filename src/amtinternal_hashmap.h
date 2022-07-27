@@ -12,6 +12,7 @@
 #include <thread>
 #include <mutex>
 #include <deque>
+#include <vector>
 
 #include "amt_types.h"
 #include "amtinternal_utils.h"
