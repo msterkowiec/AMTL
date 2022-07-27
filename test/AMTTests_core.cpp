@@ -17,6 +17,7 @@
 #include <vector>
 #include <random>
 #include <string>
+#include <chrono>
 #include <time.h> 
 
 // -------------------------------
@@ -1273,6 +1274,7 @@ TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&SetIter_UnsynchUpdateTest_WriterThread, 0, std::ref(set), std::ref(it), std::ref(canStartThread));
 	std::thread thread2(&SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	canStartThread = true;
 
 	thread1.join();
@@ -1418,6 +1420,7 @@ TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&MapIter_UnsynchUpdateTest_WriterThread, 0, std::ref(map), std::ref(it), std::ref(canStartThread));
 	std::thread thread2(&MapIter_UnsynchUpdateTest_WriterThread, 1, std::ref(map), std::ref(it), std::ref(canStartThread));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	canStartThread = true;
 
 	thread1.join();
