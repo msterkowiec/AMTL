@@ -60,7 +60,7 @@ Currently AMTL may be considered a working POC.
 
 # What is done:
 - amt::map, amt::set
-- amt::vector - without iterators and some methods missing (emplace, reserve)
+- amt::vector - without iterators
 - verification of multithreaded access to trivial types (AMTScalarType) e.g. amt::int8_t
 - numeric overflow (partially)
 
