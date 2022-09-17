@@ -1043,6 +1043,7 @@ TEST(__AMT_TEST__, VectorInitializationTest) {
 // Test map for unsynchronized access when writing. Expected assertion failure.
 
 bool MapUnsynchWriteTest_AssertionFailed = false;
+std::atomic<size_t> mapUnsynchWriteTest_WriterThreads_started{0};
 
 void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
@@ -1053,7 +1054,9 @@ void MapUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, lon
 
 void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, std::atomic<bool>& canStartThread)
 {
+	++ mapUnsynchWriteTest_WriterThreads_started;
 	while (!canStartThread); // make sure threads start at the same time
+	
 	size_t iStart = threadNo ? 65536 : 0;
 	size_t iEnd = threadNo ? 65536 * 2 : 65536;
 	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
@@ -1061,6 +1064,7 @@ void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, 
 }
 
 TEST(__AMT_TEST__, MapUnsynchWriteTest) {
+	mapUnsynchWriteTest_WriterThreads_started = 0;
 	srand(time(NULL));
 	amt::SetCustomAssertHandler<0>(&MapUnsynchWriteTest_CustomAssertHandler);
 	amt::map<int, int> _map;
@@ -1071,6 +1075,7 @@ TEST(__AMT_TEST__, MapUnsynchWriteTest) {
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&MapUnsynchWriteTest_WriterThread, 0, std::ref(_map), std::ref(canStartThread));
 	std::thread thread2(&MapUnsynchWriteTest_WriterThread, 1, std::ref(_map), std::ref(canStartThread));
+	while (mapUnsynchWriteTest_WriterThreads_started < 2);
 	canStartThread = true;
 	thread1.join();
 	thread2.join();
