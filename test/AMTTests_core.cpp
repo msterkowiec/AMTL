@@ -1418,9 +1418,9 @@ TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 	MapIter_UnsynchUpdateTest_WriterThreads_started = 0;
 	amt::SetCustomAssertHandler<0>(&MapIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::map<int, int> map;
-	for (int i = 0; i < 65536; ++i)
+	for (int i = 0; i < 2 * 65536; ++i)
 		map[i] = i;
-	auto it = map.find(32768);
+	auto it = map.find(2 * 32768);
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&MapIter_UnsynchUpdateTest_WriterThread, 0, std::ref(map), std::ref(it), std::ref(canStartThread));
 	std::thread thread2(&MapIter_UnsynchUpdateTest_WriterThread, 1, std::ref(map), std::ref(it), std::ref(canStartThread));
