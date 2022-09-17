@@ -1384,8 +1384,11 @@ void MapIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileNam
 			MapIter_UnsynchUpdateTest_AssertionFailed = true;
 }
 
+std::atomic<size_t> MapIter_UnsynchUpdateTest_WriterThreads_started{0};
+
 void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
 {
+	++ MapIter_UnsynchUpdateTest_WriterThreads_started;
 	while (!canStartThread); // make sure threads start at the same time			
 
 	try
@@ -1412,6 +1415,7 @@ void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>&
 
 TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 
+	MapIter_UnsynchUpdateTest_WriterThreads_started = 0;
 	amt::SetCustomAssertHandler<0>(&MapIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::map<int, int> map;
 	for (int i = 0; i < 65536; ++i)
@@ -1421,6 +1425,7 @@ TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 	std::thread thread1(&MapIter_UnsynchUpdateTest_WriterThread, 0, std::ref(map), std::ref(it), std::ref(canStartThread));
 	std::thread thread2(&MapIter_UnsynchUpdateTest_WriterThread, 1, std::ref(map), std::ref(it), std::ref(canStartThread));
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	while (MapIter_UnsynchUpdateTest_WriterThreads_started < 2);
 	canStartThread = true;
 
 	thread1.join();
