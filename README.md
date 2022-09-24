@@ -72,7 +72,7 @@ Currently AMTL may be considered a working POC.
 - completion of code for verification of numeric overflow: a) 64-bit types, b) double/float c) double/float on the right of operators
 - list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
 - unordered_map, unordered_set, unordered_multimap, unordered_multiset
-- vector<bool>
+- vector < bool >
 - make sure that all the traits of types from amt namespace are exactly the same as the traits of their equivalents from std namespace
 - polish AMTScalarType and AMTPointerType
 - last but not least: a) prepare test suite and b) examples c) test AMTL with as large codebase as possible - replacing as many types from std with amt as possible. The objective is that all the existing code (at least C++11) should compile successfully with AMTL types without having to add a single type cast in it.
