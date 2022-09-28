@@ -1235,6 +1235,7 @@ TEST(__AMT_TEST__, SetCheckIteratorValidityTest_4) {
 // Test unsynchronized update of an iterator in different threads
 
 bool SetIter_UnsynchUpdateTest_AssertionFailed = false;
+std::atomic<size_t> SetIter_UnsynchUpdateTest_ThreadsStarted;
 
 void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
@@ -1245,6 +1246,7 @@ void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileNam
 
 void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
 {
+	++ SetIter_UnsynchUpdateTest_ThreadsStarted;
 	while (!canStartThread); // make sure threads start at the same time			
 
 	try
@@ -1271,6 +1273,7 @@ void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set,
 
 TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
 
+	SetIter_UnsynchUpdateTest_ThreadsStarted = 0;
 	amt::SetCustomAssertHandler<0>(&SetIter_UnsynchUpdateTest_CustomAssertHandler);
 	amt::set<int> set;
 	for (int i = 0; i < 65536; ++i)
@@ -1278,8 +1281,8 @@ TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
 	auto it = set.find(32768);
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&SetIter_UnsynchUpdateTest_WriterThread, 0, std::ref(set), std::ref(it), std::ref(canStartThread));
-	std::thread thread2(&SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	std::thread thread2(&SetIter_UnsynchUpdateTest_WriterThread, 1, std::ref(set), std::ref(it), std::ref(canStartThread));	
+	while(SetIter_UnsynchUpdateTest_ThreadsStarted < 2);
 	canStartThread = true;
 
 	thread1.join();
@@ -1429,7 +1432,6 @@ TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 	std::atomic<bool> canStartThread(false);
 	std::thread thread1(&MapIter_UnsynchUpdateTest_WriterThread, 0, std::ref(map), std::ref(it), std::ref(canStartThread));
 	std::thread thread2(&MapIter_UnsynchUpdateTest_WriterThread, 1, std::ref(map), std::ref(it), std::ref(canStartThread));
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	while (MapIter_UnsynchUpdateTest_WriterThreads_started < 2);
 	canStartThread = true;
 
