@@ -1428,19 +1428,24 @@ std::atomic<size_t> MapIter_UnsynchUpdateTest_WriterThreads_started{0};
 
 void MapIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::map<int, int>& map, amt::map<int, int>::iterator& it, std::atomic<bool>& canStartThread)
 {
+	auto origIt = it;
 	++ MapIter_UnsynchUpdateTest_WriterThreads_started;
 	while (!canStartThread); // make sure threads start at the same time			
 
 	try
 	{
-		if (threadNo)
+		for(size_t i = 0 ; i < 16 ; ++ i)
 		{
-			while (it != map.end())
-				++it;
+			if (threadNo)
+			{
+				while (it != map.end())
+					++it;
+			}
+			else
+				while (it != map.begin())
+					--it;
+			it = origIt;	
 		}
-		else
-			while (it != map.begin())
-				--it;
 	}
 	catch (amt::AMTCassertException& e)
 	{
