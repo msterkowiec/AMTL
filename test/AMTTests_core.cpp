@@ -1618,7 +1618,7 @@ TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_1) {
 	{
 		assertionFailed = true;
 	}
-	EXPECT_EQ(assertionFailed, false);
+	EXPECT_EQ(assertionFailed, false);	
 }
 
 TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2) {
@@ -1634,6 +1634,23 @@ TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2) {
 		assertionFailed = true;
 	}
 	EXPECT_EQ(assertionFailed, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
+}
+
+TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_3) {
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::int8_t ch = -100;
+	amt::int32_t i = 250;
+	
+	try
+	{
+		ch += i;
+	}
+	catch (amt::AMTCassertException& e)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, true);	
 }
 
 TEST(__AMT_TEST__, CharNumericOverflowTest_Dec) {
@@ -2214,6 +2231,7 @@ int main()
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_PostInc);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_1);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_3);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Dec);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_PostDec);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Mul);
