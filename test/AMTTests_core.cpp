@@ -328,6 +328,31 @@ TEST(__AMT_TEST__, LongLongSubtractionTest) {
 	EXPECT_EQ(res, ares);
 	EXPECT_EQ((AreNumericTypesEquivalent<decltype(res), decltype(ares)>()), true);
 
+	// --------------------
+	exceptionCaught = false;
+	amt::int64_t negll = (std::numeric_limits<long long>::min)() + 10;
+	try
+	{
+		auto ares2 = negll - 9; 
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, false);
+
+	negll = (std::numeric_limits<long long>::min)() + 10;
+	try
+	{
+		auto ares2 = negll - 15;
+	}
+	catch (...)
+	{
+		exceptionCaught = true;
+	}
+	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
+		
+	// -----------------------------------
 	amt::uint64_t maxull = (std::numeric_limits<unsigned long long>::max)();
 	amt::int64_t small_negll = -1LL;
 	exceptionCaught = false;
