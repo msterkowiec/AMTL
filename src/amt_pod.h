@@ -460,7 +460,7 @@ namespace amt
 						}
 						else
 							if (u < 0 && v > 0)
-								AMT_CASSERT(u + v < u && u + v <= -v);
+								AMT_CASSERT(u - v < u && u - v <= -v);
 							else
 								if (!std::is_signed<ResType>::value)
 									AMT_CASSERT(u >= v);
