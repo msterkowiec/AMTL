@@ -2261,6 +2261,7 @@ int main()
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_1);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_2);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_3);
+	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_4);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Dec);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_PostDec);
 	RUNTEST(__AMT_TEST__, CharNumericOverflowTest_Mul);
