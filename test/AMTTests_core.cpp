@@ -1271,19 +1271,24 @@ void SetIter_UnsynchUpdateTest_CustomAssertHandler(bool a, const char* szFileNam
 
 void SetIter_UnsynchUpdateTest_WriterThread(size_t threadNo, amt::set<int>& set, amt::set<int>::iterator& it, std::atomic<bool>& canStartThread)
 {
+	auto origIt = it;
 	++ SetIter_UnsynchUpdateTest_ThreadsStarted;
 	while (!canStartThread); // make sure threads start at the same time			
 
 	try
-	{
-		if (threadNo)
+	{		
+		for(size_t i = 0 ; i < 16 ; ++ i)
 		{
-			while (it != set.end())
-				++it;
-		}
-		else
-			while (it != set.begin())
-				--it;
+			if (threadNo)
+			{
+				while (it != set.end())
+					++it;
+			}
+			else
+				while (it != set.begin())
+					--it;
+			it = origIt;
+		}		
 	}
 	catch (amt::AMTCassertException& e)
 	{
