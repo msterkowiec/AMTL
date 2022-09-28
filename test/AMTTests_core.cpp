@@ -1644,7 +1644,7 @@ TEST(__AMT_TEST__, CharNumericOverflowTest_Subtract_3) {
 	
 	try
 	{
-		ch += i;
+		ch -= i;
 	}
 	catch (amt::AMTCassertException& e)
 	{
