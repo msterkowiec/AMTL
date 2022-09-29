@@ -341,7 +341,7 @@ TEST(__AMT_TEST__, LongLongSubtractionTest) {
 	}
 	EXPECT_EQ(exceptionCaught, false);
 
-	//#ifndef __GNUC__ 
+	#ifndef __GNUC__ 
 	negll = (std::numeric_limits<std::int64_t>::min)() + 10;
 	try
 	{
@@ -353,7 +353,7 @@ TEST(__AMT_TEST__, LongLongSubtractionTest) {
 		exceptionCaught = true;
 	}
 	EXPECT_EQ(exceptionCaught, AMTL_CHECK_NUMERIC_OVERFLOW_ON);
-	//#endif
+	#endif
 		
 	// -----------------------------------
 	amt::uint64_t maxull = (std::numeric_limits<unsigned long long>::max)();
