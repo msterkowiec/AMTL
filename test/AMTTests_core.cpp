@@ -345,7 +345,8 @@ TEST(__AMT_TEST__, LongLongSubtractionTest) {
 	negll = (std::numeric_limits<std::int64_t>::min)() + 10;
 	try
 	{
-		auto ares2 = negll - 15;
+		int i = 15;
+		auto ares2 = negll - i;
 	}
 	catch (...)
 	{
