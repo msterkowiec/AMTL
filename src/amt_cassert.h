@@ -99,27 +99,30 @@ namespace amt {
 	template<bool>
 	inline void __custom_assert(bool a, const char* szFileName, long lLine, const char* szDesc)
 	{
-		static CustomAssertHandlerPtr s_pCustomAssertHandler = nullptr;
-		if (lLine == -1 && strcmp(szFileName, "amt::SetCustomAssertHandler") == 0)
+		if (!a)
 		{
-			s_pCustomAssertHandler = (CustomAssertHandlerPtr) szDesc;
-			return;
-		}
-		if (s_pCustomAssertHandler != nullptr)
-		{
-			(*s_pCustomAssertHandler)(a, szFileName, lLine, szDesc); // call custom handler
-			return;
-		}
+			static CustomAssertHandlerPtr s_pCustomAssertHandler = nullptr;
+			if (lLine == -1 && strcmp(szFileName, "amt::SetCustomAssertHandler") == 0)
+			{
+				s_pCustomAssertHandler = (CustomAssertHandlerPtr) szDesc;
+				return;
+			}
+			if (s_pCustomAssertHandler != nullptr)
+			{
+				(*s_pCustomAssertHandler)(a, szFileName, lLine, szDesc); // call custom handler
+				return;
+			}
 
-		#if __AMTL_USE_STANDARD_ASSERT__
-		assert(a);
-		#if defined(NDEBUG)
-		throw std::runtime_error("AMTL assertion failed");
-		#endif
-		#else
-		std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ": " << szDesc << " Press <ENTER> to continue.\n";
-		getchar();
-		#endif
+			#if __AMTL_USE_STANDARD_ASSERT__
+			assert(a);
+			#if defined(NDEBUG)
+			throw std::runtime_error("AMTL assertion failed");
+			#endif
+			#else
+			std::cout << "Assertion failure in file " << szFileName << " at line " << lLine << ". Thread id = " <<  std::this_thread::get_id() << ": " << szDesc << " Press <ENTER> to continue.\n";
+			getchar();
+			#endif
+		}
 	}
 	} // namespace amt
 	#endif
