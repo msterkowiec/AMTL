@@ -1087,8 +1087,10 @@ void MapUnsynchWriteTest_WriterThread(size_t threadNo, amt::map<int, int>& map, 
 	
 	size_t iStart = threadNo ? 65536 : 0;
 	size_t iEnd = threadNo ? 65536 * 2 : 65536;
-	for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
-		map[i] = i + threadNo;
+	
+	for (size_t i = 0 ; i < 16 ; ++i)	
+		for (size_t i = iStart; i < iEnd && !MapUnsynchWriteTest_AssertionFailed; ++i)
+			map[i] = i + threadNo;	
 }
 
 TEST(__AMT_TEST__, MapUnsynchWriteTest) {
