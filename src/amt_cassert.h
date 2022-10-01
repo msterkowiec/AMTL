@@ -36,11 +36,11 @@ namespace amt {
 #ifdef _WIN32
 #define AMT_CASSERT(a) ((a) ? (void) 1 : amt::__custom_assert<1>(a, __FILE__, __LINE__, _CRT_STRINGIZE(#a)))
 #else
-	#if !defined(NDEBUG) 
-	#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
-	#else
+	//#if !defined(NDEBUG) 
+	//#define AMT_CASSERT(a) ((a) ? (void) 1 : assert(a))
+	//#else
 	#define AMT_CASSERT(a) ((a) ? (void) 1 : amt::__custom_assert<1>(a, __FILE__, __LINE__, #a))
-	#endif
+	//#endif
 #endif
 
 	#ifdef _WIN32
