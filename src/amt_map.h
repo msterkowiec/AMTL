@@ -456,7 +456,7 @@ namespace amt
 				#endif
 			}
 			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			std::pair<const Key, ValueType>* operator ->() const
+			std::pair<const Key, const ValueType>* operator ->() const
 			#else
 			auto operator ->() const
 			#endif
@@ -469,7 +469,7 @@ namespace amt
 				AssertNotEnd();
 				#endif
 				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-				return (std::pair<const Key, ValueType>*) ((ITER*)this)->operator->();
+				return (std::pair<const Key, const ValueType>*) ((ITER*)this)->operator->();
 				#else
 				return ((ITER*)this)->operator->();
 				#endif
@@ -496,7 +496,7 @@ namespace amt
 			}
 
 			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			const std::pair<Key, ValueType>& operator *() const
+			std::pair<const Key, const ValueType>& operator *() const
 			#else
 			auto& operator *() const
 			#endif
@@ -509,7 +509,7 @@ namespace amt
 				AssertNotEnd();
 				#endif
 				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-				return (std::pair<const Key, ValueType>&) ((ITER*)this)->operator*();
+				return (std::pair<const Key, const ValueType>&) ((ITER*)this)->operator*();
 				#else
 				return ((ITER*)this)->operator*();
 				#endif
