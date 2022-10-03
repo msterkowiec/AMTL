@@ -80,7 +80,7 @@ namespace amt {
 			#else
 			char msg[BUFLEN];
 			DWORD nCurrentThreadId = GetCurrentThreadId();
-			_snprintf(msg, BUFLEN - 1,  "Assertion failed at line %d in thread id %d in file %s\n%s", lLine, nCurrentThreadId, szFileName, szDesc);
+			_snprintf_s(msg, BUFLEN - 1, _TRUNCATE,  "Assertion failed at line %d in thread id %d in file %s\n%s", lLine, nCurrentThreadId, szFileName, szDesc);
 			msg[BUFLEN - 1] = 0;
 
 			MessageBoxA(NULL, msg, (LPCSTR)"Assertion failed", MB_OK | MB_ICONEXCLAMATION);
