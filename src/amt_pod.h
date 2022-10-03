@@ -219,7 +219,8 @@ namespace amt
 				typename AMTScalarType<U>::CRegisterReadingThread r2(o);
 				#endif
 				#if __AMT_CHECK_NUMERIC_OVERFLOW__
-				CheckAssignmentOverflow(o.m_val);
+				if (!std::is_same<T,U>::value)
+					CheckAssignmentOverflow(o.m_val);
 				#endif
 				m_val = o.m_val;
 			}
@@ -255,7 +256,8 @@ namespace amt
 				CRegisterWritingThread r(*this);
 				#endif
 				#if __AMT_CHECK_NUMERIC_OVERFLOW__
-				CheckAssignmentOverflow(u);
+				if (!std::is_same<T,U>::value)
+					CheckAssignmentOverflow(u);
 				#endif
 				m_val = u;
 			}
@@ -276,7 +278,8 @@ namespace amt
 				typename AMTScalarType<U>::CRegisterReadingThread r2(u);
 				#endif
 				#if __AMT_CHECK_NUMERIC_OVERFLOW__
-				CheckAssignmentOverflow(u.m_val); //(AMTScalarType<U>::UnderlyingType)u);
+				if (!std::is_same<T,U>::value)
+					CheckAssignmentOverflow(u.m_val); //(AMTScalarType<U>::UnderlyingType)u);
 				#endif
 				m_val = u.m_val;
 			}
