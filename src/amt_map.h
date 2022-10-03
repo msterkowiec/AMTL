@@ -747,7 +747,7 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			#endif
 			auto baseIt = ((Base*)this)->find(k);
-			iterator it(baseIt, this);
+			const_iterator it(baseIt, this);
 			return it;
 		}
 		__AMT_FORCEINLINE__  size_t count(const Key& k) const
