@@ -11,6 +11,9 @@
 #include <cstdint>
 #include <limits>
 #include <math.h>
+#include <atomic>
+#include <numeric>
+#include <typeinfo>
 #include <type_traits>
 #include "amt_cassert.h"
 #include "amt_types.h"
