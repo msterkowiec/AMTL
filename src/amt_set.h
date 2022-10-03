@@ -421,9 +421,9 @@ namespace amt
 			}		
 			
 			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			const T* operator ->()
+			T* operator ->()
 			#else
-			const auto operator ->()
+			auto operator ->()
 			#endif
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
@@ -441,9 +441,30 @@ namespace amt
 			}
 
 			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
-			const T& operator *()
+			const T* operator ->() const
 			#else
-			const auto& operator *()
+			const auto operator ->() const
+			#endif
+			{
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterReadingThread r(*this);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				AssertIsValid();
+				AssertNotEnd();
+				#endif
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+				return (const T*) ((ITER*)this)->operator->();
+				#else
+				return ((ITER*)this)->operator->();
+				#endif
+			}
+
+
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			T& operator *()
+			#else
+			auto& operator *()
 			#endif
 			{
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
@@ -459,6 +480,26 @@ namespace amt
 				return ((ITER*)this)->operator*();
 				#endif
 			}
+			
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			const T& operator *() const
+			#else
+			const auto& operator *() const
+			#endif
+			{
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterReadingThread r(*this);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				AssertIsValid();
+				AssertNotEnd();
+				#endif
+				#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+				return (const T&) ((ITER*)this)->operator*();
+				#else
+				return ((ITER*)this)->operator*();
+				#endif
+			}			
 		};		
 		
 
