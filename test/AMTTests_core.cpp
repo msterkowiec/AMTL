@@ -2260,7 +2260,7 @@ TEST(__AMT_TEST__, AMTPointerTypeTest)
 
 TEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest)
 {
-	std::vector<AMTScalarType<double>> vec(5);
+	std::vector<amt::AMTScalarType<double>> vec(5);
 	EXPECT_EQ(0.0, vec[0]);
 	EXPECT_EQ(0.0, vec[1]);
 	EXPECT_EQ(0.0, vec[2]);
@@ -2270,7 +2270,7 @@ TEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest)
 
 TEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest)
 {
-	amt::vector<AMTScalarType<double>> amt_vec(5);
+	amt::vector<amt::AMTScalarType<double>> amt_vec(5);
 	EXPECT_EQ(0.0, amt_vec[0]);
 	EXPECT_EQ(0.0, amt_vec[1]);
 	EXPECT_EQ(0.0, amt_vec[2]);
