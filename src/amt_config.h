@@ -64,6 +64,12 @@
 
 #define __AMT_TRY_TO_AUTOMATICALLY_WRAP_UP_CONTAINERS_TYPES__ 0
 
+// This setting (recommended value __ATM_INITIALIZE_AMTL_VARIABLES__ == 1) is to choose "lesser evil".
+// We seem to be unable to keep amt wrappers for numeric/pointer types not initialized - as it would be, if we create int i or double db 
+// because it would work the wrong way in other contexts: since x = double() or i = int() means zero initialization
+// (Maybe incoming versions of C++ standard will provide some ways to be able to fully mimic behaviour of numeric/pointer types)
+#define __ATM_INITIALIZE_AMTL_VARIABLES__ 1
+
 // ------------------------------------------------------
 // Define which functionalities to use:
 #ifndef  __AMT_CHECK_MULTITHREADED_ISSUES__
