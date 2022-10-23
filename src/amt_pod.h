@@ -190,7 +190,9 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			#endif
-			// No m_val initialization to let program behave in a standard way
+			#if __ATM_INITIALIZE_AMTL_VARIABLES__
+			m_val = 0; // breaks standard behaviour (no initialization by default) but lets initialize correctly in the following context: i = int() or db = double(); 
+			#endif
 		}
 		inline AMTScalarType(const AMTScalarType& o)
 		{
@@ -1317,7 +1319,9 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
 			#endif
-			// No m_val initialization to let program behave in a standard way
+			#if __ATM_INITIALIZE_AMTL_VARIABLES__
+			m_val = 0; // breaks standard behaviour (no initialization by default) but lets initialize correctly in the following context: ptr = T(), where T is a pointer type 
+			#endif			
 		}
 		inline AMTPointerType(const AMTPointerType& o)
 		{

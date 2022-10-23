@@ -2258,6 +2258,26 @@ TEST(__AMT_TEST__, AMTPointerTypeTest)
 	delete[] ptr;
 }
 
+TEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest)
+{
+	std::vector<amt::AMTScalarType<double>> vec(5);
+	EXPECT_EQ(0.0, vec[0]);
+	EXPECT_EQ(0.0, vec[1]);
+	EXPECT_EQ(0.0, vec[2]);
+	EXPECT_EQ(0.0, vec[3]);
+	EXPECT_EQ(0.0, vec[4]);
+}	
+
+TEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest)
+{
+	amt::vector<amt::AMTScalarType<double>> amt_vec(5);
+	EXPECT_EQ(0.0, amt_vec[0]);
+	EXPECT_EQ(0.0, amt_vec[1]);
+	EXPECT_EQ(0.0, amt_vec[2]);
+	EXPECT_EQ(0.0, amt_vec[3]);
+	EXPECT_EQ(0.0, amt_vec[4]);		
+}
+
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
 {
@@ -2329,6 +2349,8 @@ int main()
 	RUNTEST(__AMT_TEST__, DoubleCorrectArithmeticsTest);
 	RUNTEST(__AMT_TEST__, NumericLimitsTest);
 	RUNTEST(__AMT_TEST__, EmplaceTest);
+	RUNTEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest);
+	RUNTEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest);
 
 	return 1;
 }
