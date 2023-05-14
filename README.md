@@ -80,9 +80,20 @@ Currently AMTL may be considered a working POC.
 # Known issues
 AMTL is a fresh project (its idea sprang in the middle of April 2021), so many things are still missing and many may have been unnoticed, anyway here is the list of possible issues spotted so far:
 - compilation times in release (with optimizations) sometimes tends to be... almost infinite with VS :) Replacing some __AMT_FORCEINLINE__ with just "inline" may solve the issue (see macro __AMT_DONT_FORCE_INLINE__ in amt_config.h)
-- some explicit casts may be needed particularly in case of conditional operator ? (if one of the options is an AMTL scalar, e.g. amt::int32t, and the other is not wrapped up, e.g. just an int)
+- some explicit casts may be needed particularly in case of conditional operator ? (if one of the options is an AMTL scalar, e.g. amt::int32t, and the other is not wrapped up, e.g. just an int); an AMTL wrapper cannot be used in a bit field either,
 - if some piece of code already contains some implicit casts, adding another level of complexity (AMTL wrappers) may break build with AMTL (C++ will not accept two implicit casts); in such case the code should be simplified in some way (BTW: once, with MSVC2019, I even came accross "Internal compiler error" with explanation to try to simplify the code around the place when this error occurred - anyway it shows that AMTL wrappers may sometimes introduce additional level of complexity that may even be too much for compilers - and that simply writing code without too many implicit casts may make it easier and let avoid reading strange compilation error messages : )
+As a consequence here is a proposition of changes in C++ to consider that might make things a bit easier:
   
+# Pottential changes in C++ language that might make using wrappers easier
+It might be worth adding a new keyword (or a context specific token) "wraps", for example:
+      template<typename T>
+	  class/struct X wraps T 
+Requirement: the class/struct X that wraps type T has to have operator T defined (otherwise compilation error should raised).
+Using keyword/token "wraps" would have the following effect:
+- in case of a conditional operator (?), which is very strict as far as types are concerned (both types have to be the same), usage of a wrapper type (X) should be treated as equivalent of usage of the wrapped type (T)
+- an instance of the wrapper type (X) can be used in a context that requires an implicit cast from type T (in other words: the cast from X to T should not be treated as an implicit cast but both types X and T should be treated as equivalent, whenever an implicit cast from T would be applied by compiler but usage of type X would be illegal)
+- if class/struct X (wrapper) is used in a bit field and the wrapped type (T) is a simple type, the simple type has precedence (wrapper is skipped)
+	
 # Origin
 
 It may be worth adding a few words about project origin. As said, its idea sprang in the middle of April 2021 - during bug fixing of a piece of software that solves chess moremovers (it's been developed "after hours" for quite many years and treated as very well tested - large test suite, "robust", "reliable" etc. etc.)
