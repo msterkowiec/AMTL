@@ -91,7 +91,7 @@ It might be worth adding a new keyword (or a context specific token) "wraps", fo
       template<typename T>
 	  class/struct X wraps T 
 ```	  
-Requirement: the class/struct X that wraps type T has to have operator T defined (otherwise compilation error should raised).
+Requirement: the class/struct X that wraps type T has to have operator T defined (otherwise compilation error should be raised).
 Using keyword/token "wraps" would have the following effect:
 - in case of a conditional operator (?), which is very strict as far as types are concerned (both types have to be the same), usage of a wrapper type (X) should be treated as equivalent of usage of the wrapped type (T)
 - an instance of the wrapper type (X) can be used in a context that requires an implicit cast from type T (in other words: the cast from X to T should not be treated as an implicit cast but both types X and T should be treated as equivalent, whenever an implicit cast from T would be applied by compiler but usage of type X would be illegal)
