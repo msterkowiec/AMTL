@@ -87,8 +87,10 @@ As a consequence here is a proposition of changes in C++ to consider that might 
   
 # Pottential changes in C++ language that might make using wrappers easier
 It might be worth adding a new keyword (or a context specific token) "wraps", for example:
+```
       template<typename T>
 	  class/struct X wraps T 
+```	  
 Requirement: the class/struct X that wraps type T has to have operator T defined (otherwise compilation error should raised).
 Using keyword/token "wraps" would have the following effect:
 - in case of a conditional operator (?), which is very strict as far as types are concerned (both types have to be the same), usage of a wrapper type (X) should be treated as equivalent of usage of the wrapped type (T)
