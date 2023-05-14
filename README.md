@@ -82,6 +82,7 @@ AMTL is a fresh project (its idea sprang in the middle of April 2021), so many t
 - compilation times in release (with optimizations) sometimes tends to be... almost infinite with VS :) Replacing some __AMT_FORCEINLINE__ with just "inline" may solve the issue (see macro __AMT_DONT_FORCE_INLINE__ in amt_config.h)
 - some explicit casts may be needed particularly in case of conditional operator ? (if one of the options is an AMTL scalar, e.g. amt::int32t, and the other is not wrapped up, e.g. just an int); an AMTL wrapper cannot be used in a bit field either,
 - if some piece of code already contains some implicit casts, adding another level of complexity (AMTL wrappers) may break build with AMTL (C++ will not accept two implicit casts); in such case the code should be simplified in some way (BTW: once, with MSVC2019, I even came accross "Internal compiler error" with explanation to try to simplify the code around the place when this error occurred - anyway it shows that AMTL wrappers may sometimes introduce additional level of complexity that may even be too much for compilers - and that simply writing code without too many implicit casts may make it easier and let avoid reading strange compilation error messages : )
+
 As a consequence here is a proposition of changes in C++ to consider that might make things a bit easier:
   
 # Pottential changes in C++ language that might make using wrappers easier
