@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.14)
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.10.x.zip
+  URL https://github.com/google/googletest/archive/refs/tags/v1.13.x.zip
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
