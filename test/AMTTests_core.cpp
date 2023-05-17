@@ -967,14 +967,14 @@ void VectorUnsynchWriteTest_CustomAssertHandler(bool a, const char* szFileName, 
 void VectorUnsynchWriteTest_WriterThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
 {
 	while (!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 16 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 65536UL * 32 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 		vec.push_back(i);
 	return;
 }
 void VectorUnsynchWriteTest_ReaderThread(size_t threadNo, amt::vector<int>& vec, std::atomic<bool>& canStartThread)
 {
 	while (!canStartThread); // make sure threads start at the same time
-	for (size_t i = 0; i < 65536UL * 16 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
+	for (size_t i = 0; i < 65536UL * 32 && !VectorUnsynchWriteTest_AssertionFailed; ++i)
 	{
 		if (vec.size())
 		{
