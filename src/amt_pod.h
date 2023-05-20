@@ -1397,6 +1397,16 @@ namespace amt
 			m_val = t;
 			return *this;
 		}
+		// Added 2023-04-13... somewhow didn't compile with __AMT_FORCE_SAME_SIZE_FOR_TRIVIAL_TYPES__ 0...
+		inline AMTPointerType& operator = (const AMTPointerType<T>& var)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			CRegisterReadingThread r2(var);
+			#endif
+			m_val = (T) var.m_val;
+			return *this;
+		}		
 		template<typename U, class = typename std::enable_if<std::is_pointer<U>::value>::type>
 		inline AMTPointerType& operator = (const AMTPointerType<U>& var)
 		{
