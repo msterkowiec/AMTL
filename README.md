@@ -168,4 +168,5 @@ To make the case more complete: just add the following two lines in the beginnin
 
 Like in the song by Pink Floyd, the hopes are quite high : )
 First of all, AMTL seems to have a potential to make C++ software much better tested and much more robust - and, thus, save time, money and maybe even lives (depending on kind of software).
+What's more, thanks to AMTL C++ may even gain safety comparable to Rust, while all the freedom that C++ developers have remains.
 Eventually a similar solution might/should become a part of standard library - and become switchable by some macro - without need to use symbols from amt namespace any more.
