@@ -464,11 +464,11 @@ namespace amt
 						if (u >= 0 && v < 0)
 						{
 							AMT_CASSERT(v != (std::numeric_limits<V>::min)() || sizeof(V) > 4); // e.g. any char - (-128) is always overflow
-							AMT_CASSERT(u - v > u && u - v >= -v);
+							AMT_CASSERT(u - v > u && v - u <= v);
 						}
 						else
 							if (u < 0 && v > 0)
-								AMT_CASSERT(u - v < u && u - v <= -v);
+								AMT_CASSERT(u - v < u && v - u >= v);
 							else
 								if (!std::is_signed<ResType>::value)
 									AMT_CASSERT(u >= v);
