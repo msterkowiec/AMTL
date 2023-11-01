@@ -80,6 +80,7 @@ void cassert(bool b)
 #include "amt_pod.h"
 #include "amt_map.h"
 #include "amt_set.h"
+#include "amt_string.h"
 #include "amt_rawdatadebugchecker.h"
 
 template<typename U, typename V>
@@ -303,7 +304,7 @@ TEST(__AMT_TEST__, LongLongAdditionTest) {
 TEST(__AMT_TEST__, LongLongSubtractionTest) {
 
 	unsigned long long ull = 10;
-	long long ll = -0xFFFFFFFFFFFFFFULL;
+	long long ll = -(long long)0xFFFFFFFFFFFFFFULL;
 	long long ll2 = 11;
 	auto res = ull - ll;
 	auto res2 = ull - ll2;
@@ -445,7 +446,7 @@ T GetRandomInteger()
 			if (mt() % 2)
 				return (T)mt();
 			else
-				return (T)(-mt());
+				return (T)(-(long long)mt());
 		}
 	}
 	else
@@ -2278,6 +2279,74 @@ TEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest)
 	EXPECT_EQ(0.0, amt_vec[4]);		
 }
 
+// -------------------------------------------------------------------------------------------------
+
+TEST(__AMT_TEST__, AMTStringBasicTest)
+{
+	amt::string str("str");
+	EXPECT_EQ(str.length(), 3);
+	EXPECT_EQ(str[1], 't');
+	str += str;
+	EXPECT_EQ(str.size(), 6);
+	EXPECT_EQ(str, "strstr");
+	str.push_back(' ');
+	EXPECT_EQ(str.size(), 7);
+	EXPECT_EQ(str, "strstr ");
+	str.pop_back();
+	str.pop_back();
+	EXPECT_EQ(str.size(), 5);
+	EXPECT_EQ(str, "strst");
+	str = str.substr(1, 2);
+	EXPECT_EQ(str.size(), 2);
+	EXPECT_EQ(str, "tr");
+	amt::string str2(str);
+	EXPECT_EQ(str2.size(), 2);
+	EXPECT_EQ(str2, "tr");
+	amt::string str3 = std::move(str2);
+	EXPECT_EQ(str3.size(), 2);
+	EXPECT_EQ(str3, "tr");
+}
+
+std::atomic<size_t> amtStringErrorsCount{ 0 };
+
+void AMTStringUnsynchWriteTest_CustomAssertHandler(bool isAssertionOk, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!isAssertionOk)
+	{
+		++amtStringErrorsCount;
+	}
+}
+
+void AMTStringUnsyncUpdateThread(amt::string& s, std::atomic<size_t>& threadsStarted, std::atomic<bool>& canStartThreadWork)
+{
+	++threadsStarted;
+	while (!canStartThreadWork);
+
+	auto len = s.size();
+	while (amtStringErrorsCount == 0)
+	{
+		for (size_t i = 0; i < len; ++i)
+			s[i] = i; // unsynchronized write to a string				
+	}
+}
+
+TEST(__AMT_TEST__, AMTStringUnsyncUpdate)
+{
+	amt::string s("abcdefghijklmnopqrstuvwxyz");
+	std::atomic<size_t> threadsStarted{ 0 };
+	std::atomic<bool> canStartThreadWork{ false };
+	
+	auto thr1 = std::thread(&AMTStringUnsyncUpdateThread, std::ref(s), std::ref(threadsStarted), std::ref(canStartThreadWork));
+	auto thr2 = std::thread(&AMTStringUnsyncUpdateThread, std::ref(s), std::ref(threadsStarted), std::ref(canStartThreadWork));
+	while (threadsStarted < 2);	
+	amtStringErrorsCount = 0;
+	amt::SetCustomAssertHandler<0>(& AMTStringUnsynchWriteTest_CustomAssertHandler);
+	canStartThreadWork = true;
+	thr1.join();
+	thr2.join();
+	EXPECT_NE(amtStringErrorsCount.load(), 0);
+}
+
 #ifdef __AMT_TEST_WITHOUT_GTEST__
 int main()
 {
@@ -2351,7 +2420,9 @@ int main()
 	RUNTEST(__AMT_TEST__, EmplaceTest);
 	RUNTEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest);
 	RUNTEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest);
-
+	RUNTEST(__AMT_TEST__, AMTStringBasicTest);
+	RUNTEST(__AMT_TEST__, AMTStringUnsyncUpdate);
+	
 	return 1;
 }
 #endif
