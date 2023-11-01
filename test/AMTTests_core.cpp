@@ -2323,7 +2323,7 @@ void AMTStringUnsyncUpdateThread(amt::string& s, std::atomic<size_t>& threadsSta
 	while (!canStartThreadWork);
 
 	auto len = s.size();
-	while (amtStringErrorsCount == 0)
+	for (size_t i = 0 ; i < 65536 * 4 && amtStringErrorsCount == 0 ; ++ i)
 	{
 		for (size_t i = 0; i < len; ++i)
 			s[i] = i; // unsynchronized write to a string				
