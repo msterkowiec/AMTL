@@ -2344,7 +2344,12 @@ TEST(__AMT_TEST__, AMTStringUnsyncUpdate)
 	canStartThreadWork = true;
 	thr1.join();
 	thr2.join();
+	
+	#if AMTL_MAIN_FEATURE_ON 
 	EXPECT_NE(amtStringErrorsCount.load(), 0);
+	#else
+	EXPECT_EQ(amtStringErrorsCount.load(), 0);
+	#endif
 }
 
 #ifdef __AMT_TEST_WITHOUT_GTEST__
