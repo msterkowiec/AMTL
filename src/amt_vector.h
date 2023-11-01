@@ -190,7 +190,7 @@ namespace amt
 			#endif
 			*((Base*)this) = std::move(*((Base*)&o));
 		}
-		template< class InputIt >
+		template< class InputIt, std::enable_if_t<amt::is_iterator<InputIt>::value, int> = 0  >
 		inline vector(InputIt begin, InputIt end)
 		{
 			{
@@ -518,7 +518,7 @@ namespace amt
 		//	((Base*)this)->erase(i);
 		//}
 
-		template <class InputIterator>
+		template <class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 		inline void assign(InputIterator first, InputIterator last)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
