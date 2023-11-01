@@ -575,6 +575,18 @@ namespace amt
 			}
 		}
 
+		vector& operator = (std::initializer_list<T> list)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			clear();
+			reserve(list.size());
+			for (auto it = list.begin(); it != list.end(); ++it)
+				push_back(*it);
+			return *this;
+		}
+
 		__AMT_FORCEINLINE__ friend bool operator < (const vector& v1, const vector& v2)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
