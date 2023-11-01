@@ -541,7 +541,7 @@ namespace amt
 			CRegisterWritingThread r(*this);
 			#endif
 		}
-		template< class InputIterator >
+		template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0  >
 		inline set(InputIterator first, InputIterator last) : Base(first, last)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -807,7 +807,7 @@ namespace amt
 			return res;
 		}
 		#ifdef _WIN32 // temporary workaround for compilation on Linux
-		template <class InputIterator>
+		template <class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 		void insert(InputIterator first, InputIterator last)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
