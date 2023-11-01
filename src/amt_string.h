@@ -166,7 +166,7 @@ public:
 		for (auto it = list.begin(); it != list.end(); ++it)
 			push_back(*it);
 	}
-	template< class InputIt >
+	template< class InputIt, std::enable_if_t<amt::is_iterator<InputIt>::value, int> = 0 >
 	inline string(InputIt begin, InputIt end)
 	{
 		{
@@ -174,7 +174,7 @@ public:
 			Init();
 			CRegisterWritingThread r2(*this);
 			#endif
-		}
+		}		
 		reserve(std::distance(begin, end));
 		for (auto it = begin; it != end; ++it)
 			push_back(*it);
@@ -426,7 +426,7 @@ public:
 		((Base*)this)->append(n, ch);
 		return *this;
 	}
-	template <class InputIterator>
+	template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 	string& append(InputIterator first, InputIterator last)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -571,7 +571,7 @@ public:
 		((Base*)this)->assign(n, ch);
 		return *this;
 	}
-	template <class InputIterator>   
+	template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 	string& assign(InputIterator first, InputIterator last)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -668,7 +668,7 @@ public:
 		#endif
 		return ((Base*)this)->insert(p, c);
 	}
-	template <class InputIterator>
+	template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 	iterator insert(iterator p, InputIterator first, InputIterator last)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
@@ -785,7 +785,7 @@ public:
 		((Base*)this)->replace(i1, i2, n, c);
 		return *this;
 	}
-	template <class InputIterator>  
+	template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 	string& replace(const_iterator i1, const_iterator i2, InputIterator first, InputIterator last)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
