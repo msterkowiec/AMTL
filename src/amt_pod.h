@@ -435,9 +435,9 @@ namespace amt
 							else
 								if (!std::is_signed<ResType>::value)
 									if (u < 0)
-										AMT_CASSERT(labs(u) <= v);
+										AMT_CASSERT(llabs(u) <= llabs(v));
 									else
-										AMT_CASSERT(labs(v) <= u);
+										AMT_CASSERT(llabs(v) <= llabs(u));
 					}
 		}
 		template<typename U, typename V, typename ResType>
@@ -1087,37 +1087,45 @@ namespace amt
 			template<typename U, class = typename std::enable_if<std::is_arithmetic<U>::value>::type>
 			void CheckAssignmentOverflow(U u)
 			{
-				if __AMT_IF_CONSTEXPR__(std::is_floating_point<U>::value)
-					if __AMT_IF_CONSTEXPR__(std::is_floating_point<T>::value)
-					{
-						if (sizeof(T) < sizeof(U))
+				if __AMT_IF_CONSTEXPR__(!std::is_same<U, bool>::value)
+				{
+					if __AMT_IF_CONSTEXPR__(std::is_floating_point<U>::value)
+						if __AMT_IF_CONSTEXPR__(std::is_floating_point<T>::value)
 						{
-							AMT_CASSERT(u >= -(std::numeric_limits<T>::max)() && u <= (std::numeric_limits<T>::max)());
-							AMT_CASSERT(u >= -std::numeric_limits<T>::epsilon() && u <= std::numeric_limits<T>::epsilon()); // otherwise we get significant loss on value quality
-						}
-					}
-					else
-					{
-						AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
-					}
-				else
-					if __AMT_IF_CONSTEXPR__(!std::is_floating_point<T>::value)
-					{
-						if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value == std::is_unsigned<U>::value)
-						{
-							if __AMT_IF_CONSTEXPR__(sizeof(T) < sizeof(U))
+							if (sizeof(T) < sizeof(U))
 							{
-								AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+								AMT_CASSERT(u >= -(std::numeric_limits<T>::max)() && u <= (std::numeric_limits<T>::max)());
+								AMT_CASSERT(u >= -std::numeric_limits<T>::epsilon() && u <= std::numeric_limits<T>::epsilon()); // otherwise we get significant loss on value quality
 							}
 						}
 						else
-							if __AMT_IF_CONSTEXPR__(std::is_unsigned<U>::value)
+						{
+							AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+						}
+					else
+						if __AMT_IF_CONSTEXPR__(!std::is_floating_point<T>::value)
+						{
+							if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value == std::is_unsigned<U>::value)
 							{
-								AMT_CASSERT(u <= (std::numeric_limits<T>::max)());
+								if __AMT_IF_CONSTEXPR__(sizeof(T) < sizeof(U))
+								{
+									AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+								}
 							}
 							else
-								AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
-					}
+								if __AMT_IF_CONSTEXPR__(std::is_unsigned<U>::value)
+								{
+									AMT_CASSERT(u <= (std::numeric_limits<T>::max)());
+								}
+								else
+									if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value)
+									{
+										AMT_CASSERT(u >= 0 && ((typename std::make_unsigned<U>::type) u) <= (std::numeric_limits<T>::max)());
+									}
+									else
+										AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
+						}
+				}
 			}
 
 	};
