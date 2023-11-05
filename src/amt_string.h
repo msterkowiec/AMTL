@@ -30,6 +30,8 @@ public:
 
 private:
 
+	// Partial read is a read of size/length only
+	// Partial write is a write that does not change the size of the string
 	mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 	mutable std::atomic<AMTCounterType> m_nPendingPartialReadRequests;
 	mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
@@ -52,6 +54,16 @@ private:
 		AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 0);
 		--m_nPendingReadRequests;
 	}
+	__AMT_FORCEINLINE__ void RegisterPartiallyReadingThread() const
+	{
+		++m_nPendingPartialReadRequests;
+		AMT_CASSERT(m_nPendingWriteRequests == 0);
+	}
+	__AMT_FORCEINLINE__ void UnregisterPartiallyReadingThread() const
+	{
+		AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 0); // + ?
+		--m_nPendingPartialReadRequests;
+	}
 	__AMT_FORCEINLINE__ void RegisterWritingThread() const
 	{
 		++m_nPendingWriteRequests;
@@ -64,6 +76,19 @@ private:
 		AMT_CASSERT(m_nPendingReadRequests == 0 && m_nPendingPartialReadRequests == 0);
 		--m_nPendingWriteRequests;
 	}
+	__AMT_FORCEINLINE__ void RegisterPartiallyWritingThread() const
+	{
+		++m_nPendingPartialWriteRequests;
+		AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 1);
+		AMT_CASSERT(m_nPendingReadRequests == 0);
+	}
+	__AMT_FORCEINLINE__ void UnregisterPartiallyWritingThread() const
+	{
+		AMT_CASSERT(m_nPendingWriteRequests == 0 && m_nPendingPartialWriteRequests == 1);
+		AMT_CASSERT(m_nPendingReadRequests == 0);
+		--m_nPendingPartialWriteRequests;
+	}
+
 	class CRegisterReadingThread
 	{
 		const string& s;
@@ -76,6 +101,20 @@ private:
 		inline ~CRegisterReadingThread() __AMT_CAN_THROW__
 		{
 			s.UnregisterReadingThread();
+		}
+	};
+	class CRegisterPartiallyReadingThread
+	{
+		const string& s;
+
+	public:
+		inline CRegisterPartiallyReadingThread(const string& s) : s(s)
+		{
+			s.RegisterPartiallyReadingThread();
+		}
+		inline ~CRegisterPartiallyReadingThread() __AMT_CAN_THROW__
+		{
+			s.UnregisterPartiallyReadingThread();
 		}
 	};
 	class CRegisterWritingThread
@@ -92,6 +131,21 @@ private:
 			s.UnregisterWritingThread();
 		}
 	};
+	class CRegisterPartiallyWritingThread
+	{
+		const string& s;
+
+	public:
+		inline CRegisterPartiallyWritingThread(const string& s) : s(s)
+		{
+			s.RegisterPartiallyWritingThread();
+		}
+		inline ~CRegisterPartiallyWritingThread() __AMT_CAN_THROW__
+		{
+			s.UnregisterPartiallyWritingThread();
+		}
+	};
+
 
 public:
 	string() : Base()
@@ -174,7 +228,7 @@ public:
 			Init();
 			CRegisterWritingThread r2(*this);
 			#endif
-		}		
+		}
 		reserve(std::distance(begin, end));
 		for (auto it = begin; it != end; ++it)
 			push_back(*it);
@@ -239,21 +293,21 @@ public:
 	size_t size() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterReadingThread r(*this);
+		CRegisterPartiallyReadingThread r(*this);
 		#endif
 		return Base::size();
 	}
 	size_t length() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterReadingThread r(*this);
+		CRegisterPartiallyReadingThread r(*this);
 		#endif
 		return Base::length();
 	}
 	bool empty() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterReadingThread r(*this);
+		CRegisterPartiallyReadingThread r(*this);
 		#endif
 		return Base::empty();
 	}
@@ -274,14 +328,14 @@ public:
 	size_t capacity() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterReadingThread r(*this);
+		CRegisterPartiallyReadingThread r(*this);
 		#endif
 		return Base::capacity();
 	}
 	void reserve(size_t n = 0)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterWritingThread r(*this);
+		CRegisterPartiallyWritingThread r(*this);
 		#endif
 		Base::reserve(n);
 	}
@@ -307,7 +361,7 @@ public:
 	char& operator[] (size_t pos)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterWritingThread r(*this); // potential write when using this version of operator []
+		CRegisterPartiallyWritingThread r(*this); // potential write when using this version of operator []
 		#endif
 		return ((Base*)this)->operator[](pos);
 	}
@@ -321,7 +375,7 @@ public:
 	char& at(size_t pos)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterWritingThread r(*this); // potential write when using this version of operator []
+		CRegisterPartiallyWritingThread r(*this); // potential write when using this version of operator []
 		#endif
 		return ((Base*)this)->at(pos);
 	}
@@ -335,7 +389,7 @@ public:
 	char& back()
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterWritingThread r(*this); // potential write when using this version of operator []
+		CRegisterPartiallyWritingThread r(*this); // potential write when using this version of operator []
 		#endif
 		return ((Base*)this)->back();
 	}
@@ -349,7 +403,7 @@ public:
 	char& front()
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
-		CRegisterWritingThread r(*this); // potential write when using this version of operator []
+		CRegisterPartiallyWritingThread r(*this); // potential write when using this version of operator []
 		#endif
 		return ((Base*)this)->front();
 	}
@@ -822,7 +876,7 @@ public:
 	const char* c_str() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
-		CRegisterWritingThread r(*this); // this is highly debatable, but in general c_str() can not only add a terminating null character, but also reallocate buffer, if needed
+		CRegisterPartiallyWritingThread r(*this); // this is highly debatable, but in general c_str() can not only add a terminating null character, but also reallocate buffer, if needed
 		#endif
 		return ((Base*)this)->c_str();
 	}
