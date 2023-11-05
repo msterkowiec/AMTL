@@ -2299,12 +2299,20 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	str = str.substr(1, 2);
 	EXPECT_EQ(str.size(), 2);
 	EXPECT_EQ(str, "tr");
+	
 	amt::string str2(str);
 	EXPECT_EQ(str2.size(), 2);
 	EXPECT_EQ(str2, "tr");
+	
 	amt::string str3 = std::move(str2);
 	EXPECT_EQ(str3.size(), 2);
 	EXPECT_EQ(str3, "tr");
+
+	amt::string str4(str3.begin(), str3.end());
+	EXPECT_EQ(str4.size(), 2);
+	EXPECT_EQ(str4, "tr");
+	EXPECT_EQ(str3, str4);
+	EXPECT_EQ(str3, str4.c_str());	
 }
 
 std::atomic<size_t> amtStringErrorsCount{ 0 };
