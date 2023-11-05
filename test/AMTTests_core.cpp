@@ -2313,6 +2313,75 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	EXPECT_EQ(str4, "tr");
 	EXPECT_EQ(str3, str4);
 	EXPECT_EQ(str3, str4.c_str());	
+
+	auto it = str4.begin();
+	auto itEnd = str4.end();
+	EXPECT_NE(it, itEnd);	
+}
+
+TEST(__AMT_TEST__, AMTStringIteratorValidityTest)
+{
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::string str;
+
+	auto cit = str.begin();
+	if (cit == str.end()); //these are just the checks.. 
+	EXPECT_EQ(cit, str.end()); //...that this code compiles
+
+	auto it = str.begin();
+	it = it;
+	EXPECT_EQ(it, it);
+
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		++it; // cannot increment on end
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	assertionFailed = false;
+	amt::string str2;
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		if (it == str2.begin()) // cannot compare iterators of different instances
+			str2.push_back(' ');
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	assertionFailed = false;
+	it = str2.end();
+	str2.push_back(' '); // invalidates iterator
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		++ it; // cannot use an invalidated operator
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	str2 = "abc";
+	it = str2.begin();
+	EXPECT_EQ(*it, 'a');
+	++it;
+	EXPECT_EQ(*it, 'b');
+	++it;
+	EXPECT_EQ(*it, 'c');
+	++it;
+	EXPECT_EQ(it, str2.end());
 }
 
 std::atomic<size_t> amtStringErrorsCount{ 0 };
@@ -2434,6 +2503,7 @@ int main()
 	RUNTEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest);
 	RUNTEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest);
 	RUNTEST(__AMT_TEST__, AMTStringBasicTest);
+	RUNTEST(__AMT_TEST__, AMTStringIteratorValidityTest);
 	RUNTEST(__AMT_TEST__, AMTStringUnsyncUpdate);
 	
 	return 1;
