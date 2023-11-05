@@ -1118,11 +1118,11 @@ namespace amt
 									AMT_CASSERT(u <= (std::numeric_limits<T>::max)());
 								}
 								else
-									if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value)
-									{
-										AMT_CASSERT(u >= 0 && ((typename std::make_unsigned<U>::type) u) <= (std::numeric_limits<T>::max)());
-									}
-									else
+									//if __AMT_IF_CONSTEXPR__(std::is_unsigned<T>::value)
+									//{
+									//	AMT_CASSERT(u >= 0 && ((typename std::make_unsigned<U>::type) u) <= (std::numeric_limits<T>::max)());
+									//}
+									//else
 										AMT_CASSERT(u >= (std::numeric_limits<T>::min)() && u <= (std::numeric_limits<T>::max)());
 						}
 				}
