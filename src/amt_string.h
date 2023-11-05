@@ -13,11 +13,6 @@ class string : public std::string
 	typedef std::string Base;
 
 public:
-	typedef Base::iterator iterator; // TODO: create custom iterator
-	typedef Base::const_iterator const_iterator; // TODO: create custom const_iterator
-	typedef Base::reverse_iterator reverse_iterator; // TODO: create custom reverse_iterator
-	typedef Base::const_reverse_iterator const_reverse_iterator; // TODO: create custom const_reverse_iterator
-
 	using value_type = char;
 	using traits_type = std::char_traits<char>;
 	using allocator_type = std::allocator<char>;
@@ -36,6 +31,7 @@ private:
 	mutable std::atomic<AMTCounterType> m_nPendingPartialReadRequests;
 	mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 	mutable std::atomic<AMTCounterType> m_nPendingPartialWriteRequests;
+	mutable std::atomic<std::uint64_t> m_nCountOperInvalidateIter; // count of operations that invalidate iterators - this single count seems good enough
 
 	inline void Init()
 	{
@@ -146,8 +142,426 @@ private:
 		}
 	};
 
+	// ITER can be iterator, const_iterator etc.
+	template<class ITER>
+	class IteratorBase : public ITER
+	{
+		std::int64_t m_nCountOperInvalidateIter; // the counter that container had, while creating iterator
+		const string* m_pStr;
+
+		#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
+		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
+		#endif
+
+		__AMT_FORCEINLINE__ void RegisterReadingThread() const
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			++m_nPendingReadRequests;
+			AMT_CASSERT(m_nPendingWriteRequests == 0);
+			#endif
+		}
+		__AMT_FORCEINLINE__ void UnregisterReadingThread() const
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			AMT_CASSERT(m_nPendingWriteRequests == 0);
+			--m_nPendingReadRequests;
+			#endif
+		}
+		__AMT_FORCEINLINE__ void RegisterWritingThread() const
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			++m_nPendingWriteRequests;
+			AMT_CASSERT(m_nPendingWriteRequests == 1);
+			AMT_CASSERT(m_nPendingReadRequests == 0);
+			#endif
+		}
+		__AMT_FORCEINLINE__ void UnregisterWritingThread() const
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			AMT_CASSERT(m_nPendingWriteRequests == 1);
+			AMT_CASSERT(m_nPendingReadRequests == 0);
+			--m_nPendingWriteRequests;
+			#endif
+		}
+		class CRegisterReadingThread
+		{
+			const IteratorBase& m_it;
+
+		public:
+			inline CRegisterReadingThread(const IteratorBase& it) : m_it(it)
+			{
+				m_it.RegisterReadingThread();
+			}
+			inline ~CRegisterReadingThread() __AMT_CAN_THROW__
+			{
+				m_it.UnregisterReadingThread();
+			}
+		};
+		class CRegisterWritingThread
+		{
+			const IteratorBase& m_it;
+
+		public:
+			inline CRegisterWritingThread(const IteratorBase& it) : m_it(it)
+			{
+				m_it.RegisterWritingThread();
+			}
+			inline ~CRegisterWritingThread() __AMT_CAN_THROW__
+			{
+				m_it.UnregisterWritingThread();
+			}
+		};
+
+		// These helper structures are to work around situations when if constexpr is not available yet:
+		template<char IS_REVERSE_ITER, typename = void>
+		struct SAssertNotBegin
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->begin());
+			}
+		};
+		template<typename V>
+		struct SAssertNotBegin<true, V>
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->rbegin());
+			}
+		};
+		template<typename V>
+		struct SAssertNotBegin<2, V>
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->crbegin());
+			}
+		};
+		template<char IS_REVERSE_ITER, typename = void>
+		struct SAssertNotEnd
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->end());
+			}
+		};
+		template<typename V>
+		struct SAssertNotEnd<true, V>
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->rend());
+			}
+		};
+		template<typename V>
+		struct SAssertNotEnd<2, V>
+		{
+			template<typename ITER_TYPE>
+			static inline void RunCheck(const ITER_TYPE& it, const string& str)
+			{
+				AMT_CASSERT(it != ((Base*)&str)->crend());
+			}
+		};
+
+	public:
+		__AMT_FORCEINLINE__ IteratorBase()
+		{
+			m_pStr = nullptr;
+			m_nCountOperInvalidateIter = (size_t) -1;
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			m_nPendingReadRequests = 0;
+			m_nPendingWriteRequests = 0;
+			#endif
+		}		
+		__AMT_FORCEINLINE__ IteratorBase(ITER it, const string* pStr) : ITER()
+		{
+			*((ITER*)this) = it;
+			m_pStr = pStr;
+			m_nCountOperInvalidateIter = m_pStr->m_nCountOperInvalidateIter;
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			m_nPendingReadRequests = 0;
+			m_nPendingWriteRequests = 0;
+			#endif
+		}
+		__AMT_FORCEINLINE__ IteratorBase(const IteratorBase& o)
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			m_nPendingReadRequests = 0;
+			m_nPendingWriteRequests = 0;
+			CRegisterWritingThread r(*this);
+			CRegisterReadingThread r2(o);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			o.AssertIsValid();
+			#endif
+			m_pStr = o.m_pStr;
+			m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+			*((ITER*)this) = *((ITER*)&o);
+		}
+		__AMT_FORCEINLINE__ IteratorBase& operator = (const IteratorBase& o)
+		{
+			if (this != &o)
+			{ 
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterWritingThread r(*this);
+				CRegisterReadingThread r2(o);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				o.AssertIsValid();
+				#endif
+				m_pStr = o.m_pStr;
+				*((ITER*)this) = *((ITER*)&o);
+				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterWritingThread r(*this);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				o.AssertIsValid();
+				#endif
+				m_pStr = o.m_pStr;
+				*((ITER*)this) = *((ITER*)&o);
+				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+		}
+		__AMT_FORCEINLINE__ IteratorBase& operator = (IteratorBase&& o)
+		{
+			if (this != &o)
+			{ 
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterWritingThread r(*this);
+				CRegisterWritingThread r2(o);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				o.AssertIsValid();
+				#endif	
+				m_pStr = o.m_pStr;
+				*((ITER*)this) = std::move(*((ITER*)&o));
+				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+			else
+			{
+				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+				CRegisterWritingThread r(*this);
+				#endif
+				#if __AMT_CHECK_ITERATORS_VALIDITY__
+				o.AssertIsValid();										
+				#endif
+				m_pStr = o.m_pStr;
+				*((ITER*)this) = std::move(*((ITER*)&o));
+				m_nCountOperInvalidateIter = o.m_nCountOperInvalidateIter;
+				return *this;
+			}
+		}
+		__AMT_FORCEINLINE__ friend bool operator == (const IteratorBase& it1, const IteratorBase& it2)
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(it1);
+			CRegisterReadingThread r2(it2);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			it1.AssertIsValid();
+			it2.AssertIsValid();				
+			AMT_CASSERT(it1.m_pStr == it2.m_pStr);
+			#endif
+			return *((ITER*)&it1) == *((ITER*)&it2);
+		}
+		__AMT_FORCEINLINE__ friend bool operator != (const IteratorBase& it1, const IteratorBase& it2)
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(it1);
+			CRegisterReadingThread r2(it2);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			it1.AssertIsValid();
+			it2.AssertIsValid();				
+			AMT_CASSERT(it1.m_pStr == it2.m_pStr);
+			#endif
+			return *((ITER*)&it1) != *((ITER*)&it2);
+		}
+		__AMT_FORCEINLINE__ ~IteratorBase() __AMT_CAN_THROW__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this); // not necessarily wrapped up in #if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			AMT_CASSERT(m_nPendingReadRequests == 0);
+			AMT_CASSERT(m_nPendingWriteRequests == 1);
+			#endif
+		}
+		__AMT_FORCEINLINE__ bool IsIteratorValid() const
+		{
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			return m_nCountOperInvalidateIter == m_pStr->m_nCountOperInvalidateIter; // good enough
+			#else
+			return true;
+			#endif
+		}
+		__AMT_FORCEINLINE__ void AssertIsValid(const string* pStr = nullptr) const
+		{
+			AMT_CASSERT(m_pStr != nullptr);
+			AMT_CASSERT(m_pStr == pStr || pStr == nullptr); // passing string is not mandatory but lets make sure that iterator is not used versus wrong object
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AMT_CASSERT(IsIteratorValid());
+			#endif
+		}
+		__AMT_FORCEINLINE__ void AssertNotBegin() const
+		{			
+			SAssertNotBegin<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::template RunCheck<ITER>(*((ITER*)this), *m_pStr);
+		}
+		__AMT_FORCEINLINE__ void AssertNotEnd() const
+		{
+			SAssertNotEnd<IsRevIter<Base, ITER>::value + IsConstRevIter<Base, ITER>::value>::template RunCheck<ITER>(*((ITER*)this), *m_pStr);
+		}
+		__AMT_FORCEINLINE__ IteratorBase& operator++()
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			((ITER*)this)->operator++();
+			return *this;
+		}
+		__AMT_FORCEINLINE__ IteratorBase& operator--()
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotBegin();
+			#endif
+			((ITER*)this)->operator--();
+			return *this;
+		}
+		__AMT_FORCEINLINE__ IteratorBase operator++(int) // postfix operator
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			auto it = *this;
+			((ITER*)this)->operator++();
+			return it;
+		}
+		__AMT_FORCEINLINE__ IteratorBase operator--(int) // postfix operator
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotBegin();
+			#endif
+			auto it = *this;
+			((ITER*)this)->operator--();
+			return it;
+		}		
+			
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+		T* operator ->()
+		#else
+		auto operator ->()
+		#endif
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			return (const T*) ((ITER*)this)->operator->();
+			#else
+			return ((ITER*)this)->operator->();
+			#endif
+		}
+
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+		const T* operator ->() const
+		#else
+		const auto operator ->() const
+		#endif
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			return (const T*) ((ITER*)this)->operator->();
+			#else
+			return ((ITER*)this)->operator->();
+			#endif
+		}
+
+
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+		T& operator *()
+		#else
+		auto& operator *()
+		#endif
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			return (const T&) ((ITER*)this)->operator*();
+			#else
+			return ((ITER*)this)->operator*();
+			#endif
+		}
+			
+		#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+		const T& operator *() const
+		#else
+		const auto& operator *() const
+		#endif
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			#if defined(_MSC_VER) && _MSVC_LANG < 201402L
+			return (const T&) ((ITER*)this)->operator*();
+			#else
+			return ((ITER*)this)->operator*();
+			#endif
+		}	
+	};		
 
 public:
+
+	using iterator = IteratorBase<typename Base::iterator>;
+	using const_iterator = IteratorBase<typename Base::const_iterator>;
+	using reverse_iterator = IteratorBase<typename Base::reverse_iterator>;
+	using const_reverse_iterator = IteratorBase<typename Base::const_reverse_iterator>;
+
 	string() : Base()
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -163,6 +577,7 @@ public:
 		AMT_CASSERT(m_nPendingPartialReadRequests == 0);
 		AMT_CASSERT(m_nPendingPartialWriteRequests == 0);
 		#endif
+		++m_nCountOperInvalidateIter;
 	}
 	string(const std::string& o) : Base(o)
 	{
@@ -241,6 +656,7 @@ public:
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
@@ -249,6 +665,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
@@ -261,7 +678,9 @@ public:
 			CRegisterWritingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = std::move(*((Base*)&o));
+			++o.m_nCountOperInvalidateIter;
 		}
 		return *this;
 	}
@@ -270,6 +689,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		* ((Base*)this) = str;
 		return *this;
 	}
@@ -278,12 +698,16 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		* ((Base*)this) = ch;
 		return *this;
 	}
 	string& operator = (std::initializer_list<char> list)
 	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
+		#endif
+		++m_nCountOperInvalidateIter;
 		clear();
 		reserve(list.size());
 		for (auto it = list.begin(); it != list.end(); ++it)
@@ -316,6 +740,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		Base::clear();
 	}
 	void shrink_to_fit()
@@ -323,6 +748,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		Base::shrink_to_fit();
 	}
 	size_t capacity() const __AMT_NOEXCEPT__
@@ -337,6 +763,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterPartiallyWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		Base::reserve(n);
 	}
 	void resize(size_t n)
@@ -344,6 +771,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		Base::resize(n);
 	}
 	void resize(size_t n, char c)
@@ -351,6 +779,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		Base::resize(n, c);
 	}
 	size_t max_size() const __AMT_NOEXCEPT__
@@ -422,6 +851,7 @@ public:
 			CRegisterReadingThread r(o); 
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o);
 			return *this;
 		}
@@ -430,6 +860,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o);
 			return *this;
 
@@ -443,6 +874,7 @@ public:
 			CRegisterReadingThread r(o); 
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o, subpos, sublen);
 			return *this;
 		}
@@ -451,6 +883,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o, subpos, sublen);
 			return *this;
 
@@ -461,6 +894,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(str);
 		return *this;
 	}
@@ -469,6 +903,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(str, n);
 		return *this;
 	}
@@ -477,6 +912,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(n, ch);
 		return *this;
 	}
@@ -486,6 +922,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(first, last);
 		return *this;
 	}
@@ -494,6 +931,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(il);
 		return *this;
 	}
@@ -505,6 +943,7 @@ public:
 			CRegisterReadingThread r(o); 
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o);
 			return *this;
 		}
@@ -513,6 +952,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->append(o);
 			return *this;
 		}
@@ -522,6 +962,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(str);
 		return *this;
 	}
@@ -530,6 +971,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		*((Base*)this) += ch;
 		return *this;
 	}
@@ -538,6 +980,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->append(il);
 		return *this;
 	}
@@ -546,6 +989,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->push_back(ch);
 	}
 	string& assign(const string& o)
@@ -556,6 +1000,7 @@ public:
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
@@ -564,6 +1009,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = *((Base*)&o);
 			return *this;
 		}
@@ -576,6 +1022,7 @@ public:
 			CRegisterWritingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			*((Base*)this) = std::move(*((Base*)&o));
 		}
 		return *this;
@@ -588,6 +1035,7 @@ public:
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->assign(o, subpos, sublen);
 			return *this;
 		}
@@ -597,6 +1045,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->assign(o, subpos, sublen);
 			return *this;
 		}
@@ -606,6 +1055,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->assign(str);
 		return *this;
 	}
@@ -614,6 +1064,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->assign(str, n);
 		return *this;
 	}
@@ -622,6 +1073,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->assign(n, ch);
 		return *this;
 	}
@@ -631,6 +1083,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->assign(first, last);
 		return *this;
 	}
@@ -639,6 +1092,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterWritingThread r2(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->assign(il);
 		return *this;
 	}
@@ -650,6 +1104,7 @@ public:
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert(pos, o);
 			return *this;
 		}
@@ -659,6 +1114,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert(pos, o);
 			return *this;
 		}
@@ -671,6 +1127,7 @@ public:
 			CRegisterReadingThread r(o);
 			CRegisterWritingThread r2(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert(pos, o, subpos, sublen);
 			return *this;
 		}
@@ -680,6 +1137,7 @@ public:
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 			CRegisterWritingThread r(*this);
 			#endif
+			++m_nCountOperInvalidateIter;
 			((Base*)this)->insert(pos, o, subpos, sublen);
 			return *this;
 		}
@@ -689,6 +1147,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->insert(pos, str);
 		return *this;
 	}
@@ -697,6 +1156,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->insert(pos, str, n);
 		return *this;
 	}
@@ -705,6 +1165,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->insert(pos, n, c);
 		return *this;
 	}
@@ -713,14 +1174,20 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
-		return ((Base*)this)->insert(p, n, c);
+		++m_nCountOperInvalidateIter;
+		auto iterBase = ((Base*)this)->insert(p, n, c);
+		amt::string::iterator res(iterBase, this);
+		return res;
 	}
 	iterator insert(const_iterator p, char c)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
-		return ((Base*)this)->insert(p, c);
+		++m_nCountOperInvalidateIter;
+		auto iterBase = ((Base*)this)->insert(p, c);
+		amt::string::iterator res(iterBase, this);
+		return res;
 	}
 	template< class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 	iterator insert(iterator p, InputIterator first, InputIterator last)
@@ -728,13 +1195,17 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
-		return ((Base*)this)->insert(p, first, last);
+		++m_nCountOperInvalidateIter;
+		auto iterBase = ((Base*)this)->insert(p, first, last);
+		amt::string::iterator res(iterBase, this);
+		return res;
 	}
 	string& insert(const_iterator p, std::initializer_list<char> il)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->insert(p, il);
 		return *this;
 	}
@@ -743,6 +1214,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->erase(pos, len);
 		return *this;
 	}
@@ -751,14 +1223,20 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
-		return ((Base*)this)->erase(p);
+		++m_nCountOperInvalidateIter;
+		auto iterBase = ((Base*)this)->erase(p);
+		iterator res(iterBase, this);
+		return res;
 	}
 	iterator erase(const_iterator first, const_iterator last)
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
-		return ((Base*)this)->erase(first, last);
+		++m_nCountOperInvalidateIter;
+		auto iterBase = ((Base*)this)->erase(first, last);
+		iterator res(iterBase, this);
+		return res;
 	}
 	string& replace(size_t pos, size_t len, const string& o)
 	{
@@ -766,6 +1244,7 @@ public:
 		CRegisterWritingThread r(*this);
 		CRegisterReadingThread r2(o);
 		#endif
+		++m_nCountOperInvalidateIter;
 		// TODO: if (this == &o)
 		((Base*)this)->replace(pos, len, o);
 		return *this;
@@ -777,6 +1256,7 @@ public:
 		CRegisterWritingThread r(*this);
 		CRegisterReadingThread r2(o);
 		#endif
+		++m_nCountOperInvalidateIter;
 		// TODO: if (this == &o)
 		((Base*)this)->replace(i1, i2, o);
 		return *this;		
@@ -787,6 +1267,7 @@ public:
 		CRegisterWritingThread r(*this);
 		CRegisterReadingThread r2(o);
 		#endif
+		++m_nCountOperInvalidateIter;
 		// TODO: if (this == &o)
 		((Base*)this)->replace(pos, len, o, subpos, sublen);
 		return *this;
@@ -796,6 +1277,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(pos, len, s);
 		return *this;
 	}
@@ -804,6 +1286,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(i1, i2, s);
 		return *this;
 	}
@@ -812,6 +1295,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(pos, len, s, n);
 		return *this;
 	}
@@ -820,6 +1304,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(i1, i2, s, n);
 		return *this;
 	}
@@ -828,6 +1313,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(pos, len, n, c);
 		return *this;
 	}
@@ -836,6 +1322,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(i1, i2, n, c);
 		return *this;
 	}
@@ -846,6 +1333,7 @@ public:
 		CRegisterWritingThread r(*this);
 		// TODO: handle iterators
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(i1, i2, first, last);
 		return *this;
 	}
@@ -855,6 +1343,7 @@ public:
 		CRegisterWritingThread r(*this);
 		// TODO: handle iterators
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->replace(i1, i2, il);
 		return *this;
 	}
@@ -864,6 +1353,8 @@ public:
 		CRegisterWritingThread r(*this);
 		CRegisterWritingThread r2(str);
 		#endif
+		++m_nCountOperInvalidateIter;
+		++str.m_nCountOperInvalidateIter;
 		((Base*)this)->swap(*(Base*) &str);
 	}
 	void pop_back()
@@ -871,6 +1362,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterWritingThread r(*this);
 		#endif
+		++m_nCountOperInvalidateIter;
 		((Base*)this)->pop_back();
 	}
 	const char* c_str() const __AMT_NOEXCEPT__
@@ -878,6 +1370,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterPartiallyWritingThread r(*this); // this is highly debatable, but in general c_str() can not only add a terminating null character, but also reallocate buffer, if needed
 		#endif
+		++m_nCountOperInvalidateIter; // this is highly debatable too
 		return ((Base*)this)->c_str();
 	}
 	const char* data() const noexcept
@@ -892,6 +1385,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
+		++m_nCountOperInvalidateIter;
 		return ((Base*)this)->copy(s, len, pos);
 	}
 	size_t find(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
@@ -1120,7 +1614,118 @@ public:
 		#endif
 		return ((Base*)this)->compare(pos, len, s, n);
 	}
-	// TODO: iterators + non-member function overloads
+
+	// Iterators:
+	inline iterator begin()
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->begin();
+		iterator res(resBase, this);
+		return res;
+	}
+	inline const_iterator begin() const
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->begin();
+		const_iterator res(resBase, this);
+		return res;
+	}
+	inline const_iterator cbegin() const __AMT_NOEXCEPT__
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->cbegin();
+		const_iterator res(resBase, this);
+		return res;
+	}
+	inline reverse_iterator rbegin()
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->rbegin();
+		reverse_iterator res(resBase, this);
+		return res;
+	}
+	inline const_reverse_iterator rbegin() const
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->rbegin();
+		const_reverse_iterator res(resBase, this);
+		return res;
+	}
+	inline const_reverse_iterator crbegin() const __AMT_NOEXCEPT__
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->crbegin();
+		const_reverse_iterator res(resBase, this);
+		return res;
+	}
+	inline iterator end()
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->end();
+		iterator res(resBase, this);
+		return res;
+	}
+	inline const_iterator end() const
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->end();
+		const_iterator res(resBase, this);
+		return res;
+	}
+	inline const_iterator cend() const __AMT_NOEXCEPT__
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->cend();
+		const_iterator res(resBase, this);
+		return res;
+	}
+	inline reverse_iterator rend()
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->rend();
+		reverse_iterator res(resBase, this);
+		return res;
+	}
+	inline const_reverse_iterator rend() const
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->rend();
+		const_reverse_iterator res(resBase, this);
+		return res;
+	}
+	inline const_reverse_iterator crend() const __AMT_NOEXCEPT__
+	{
+		#if __AMT_CHECK_MULTITHREADED_ISSUES__
+		CRegisterReadingThread r(*this);
+		#endif
+		auto resBase = ((Base*)this)->crend();
+		const_reverse_iterator res(resBase, this);
+		return res;
+	}
+
+	// TODO: non-member function overloads
 };
 
 } // end of namespace amt
