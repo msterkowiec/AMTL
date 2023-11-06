@@ -81,6 +81,7 @@ void cassert(bool b)
 #include "amt_map.h"
 #include "amt_set.h"
 #include "amt_string.h"
+#include "amt_wstring.h"
 #include "amt_rawdatadebugchecker.h"
 
 template<typename U, typename V>
@@ -2279,6 +2280,156 @@ TEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest)
 	EXPECT_EQ(0.0, amt_vec[4]);		
 }
 
+// ----------------------------------------------------------------------
+
+TEST(__AMT_TEST__, AMTWStringBasicTest)
+{
+	amt::wstring str(L"str");
+	EXPECT_EQ(str.length(), 3);
+	EXPECT_EQ(str[1], L't');
+	str += str;
+	EXPECT_EQ(str.size(), 6);
+	EXPECT_EQ(str, L"strstr");
+	str.push_back(' ');
+	EXPECT_EQ(str.size(), 7);
+	EXPECT_EQ(str, L"strstr ");
+	str.pop_back();
+	str.pop_back();
+	EXPECT_EQ(str.size(), 5);
+	EXPECT_EQ(str, L"strst");
+	str = str.substr(1, 2);
+	EXPECT_EQ(str.size(), 2);
+	EXPECT_EQ(str, L"tr");
+
+	amt::wstring str2(str);
+	EXPECT_EQ(str2.size(), 2);
+	EXPECT_EQ(str2, L"tr");
+
+	amt::wstring str3 = std::move(str2);
+	EXPECT_EQ(str3.size(), 2);
+	EXPECT_EQ(str3, L"tr");
+
+	amt::wstring str4(str3.begin(), str3.end());
+	EXPECT_EQ(str4.size(), 2);
+	EXPECT_EQ(str4, L"tr");
+	EXPECT_EQ(str3, str4);
+	EXPECT_EQ(str3, str4.c_str());
+
+	auto it = str4.begin();
+	auto itEnd = str4.end();
+	EXPECT_NE(it, itEnd);
+}
+
+TEST(__AMT_TEST__, AMTWStringIteratorValidityTest)
+{
+	bool assertionFailed = false;
+	amt::SetThrowCustomAssertHandler<0>();
+	amt::wstring str;
+
+	auto cit = str.begin();
+	if (cit == str.end()); //these are just the checks.. 
+	EXPECT_EQ(cit, str.end()); //...that this code compiles
+
+	auto it = str.begin();
+	it = it;
+	EXPECT_EQ(it, it);
+
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		++it; // cannot increment on end
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	assertionFailed = false;
+	amt::wstring str2;
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		if (it == str2.begin()) // cannot compare iterators of different instances
+			str2.push_back(L' ');
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	assertionFailed = false;
+	it = str2.end();
+	str2.push_back(' '); // invalidates iterator
+	try {
+		#if AMTL_CHECK_ITERATORS_VALIDITY_ON
+		++ it; // cannot use an invalidated operator
+		#endif
+	}
+	catch (...)
+	{
+		assertionFailed = true;
+	}
+
+	EXPECT_EQ(assertionFailed, AMTL_CHECK_ITERATORS_VALIDITY_ON);
+
+	str2 = L"abc";
+	it = str2.begin();
+	EXPECT_EQ(*it, L'a');
+	++it;
+	EXPECT_EQ(*it, L'b');
+	++it;
+	EXPECT_EQ(*it, L'c');
+	++it;
+	EXPECT_EQ(it, str2.end());
+}
+
+std::atomic<size_t> amtWStringErrorsCount{ 0 };
+
+void AMTWStringUnsynchWriteTest_CustomAssertHandler(bool isAssertionOk, const char* szFileName, long lLine, const char* szDesc)
+{
+	if (!isAssertionOk)
+	{
+		++amtWStringErrorsCount;
+	}
+}
+
+void AMTWStringUnsyncUpdateThread(amt::wstring& s, std::atomic<size_t>& threadsStarted, std::atomic<bool>& canStartThreadWork)
+{
+	++threadsStarted;
+	while (!canStartThreadWork);
+
+	auto len = s.size();
+	for (size_t i = 0 ; i < 65536 * 4 && amtWStringErrorsCount == 0 ; ++ i)
+	{
+		for (size_t i = 0; i < len; ++i)
+			s[i] = i; // unsynchronized write to a string				
+	}
+}
+
+TEST(__AMT_TEST__, AMTWStringUnsyncUpdate)
+{
+	amt::wstring s(L"abcdefghijklmnopqrstuvwxyz");
+	std::atomic<size_t> threadsStarted{ 0 };
+	std::atomic<bool> canStartThreadWork{ false };
+	
+	auto thr1 = std::thread(&AMTWStringUnsyncUpdateThread, std::ref(s), std::ref(threadsStarted), std::ref(canStartThreadWork));
+	auto thr2 = std::thread(&AMTWStringUnsyncUpdateThread, std::ref(s), std::ref(threadsStarted), std::ref(canStartThreadWork));
+	while (threadsStarted < 2);	
+	amtWStringErrorsCount = 0;
+	amt::SetCustomAssertHandler<0>(& AMTWStringUnsynchWriteTest_CustomAssertHandler);
+	canStartThreadWork = true;
+	thr1.join();
+	thr2.join();
+
+	#if AMTL_MAIN_FEATURE_ON 
+	EXPECT_NE(amtWStringErrorsCount.load(), 0);
+	#else
+	EXPECT_EQ(amtWStringErrorsCount.load(), 0);
+	#endif
+}
+
 // -------------------------------------------------------------------------------------------------
 
 TEST(__AMT_TEST__, AMTStringBasicTest)
@@ -2502,6 +2653,9 @@ int main()
 	RUNTEST(__AMT_TEST__, EmplaceTest);
 	RUNTEST(__AMT_TEST__, VectorOfAMTDoubleInitializationTest);
 	RUNTEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest);
+	RUNTEST(__AMT_TEST__, AMTWStringBasicTest);
+	RUNTEST(__AMT_TEST__, AMTWStringIteratorValidityTest);
+	RUNTEST(__AMT_TEST__, AMTWStringUnsyncUpdate);	
 	RUNTEST(__AMT_TEST__, AMTStringBasicTest);
 	RUNTEST(__AMT_TEST__, AMTStringIteratorValidityTest);
 	RUNTEST(__AMT_TEST__, AMTStringUnsyncUpdate);
