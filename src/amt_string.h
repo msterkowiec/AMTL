@@ -8,6 +8,10 @@
 namespace amt
 {
 
+#if !defined(__AMTL_ASSERTS_ARE_ON__)
+	using string = std::string;
+#else
+
 class string : public std::string
 {
 	typedef std::string Base;
@@ -1727,5 +1731,7 @@ public:
 
 	// TODO: non-member function overloads
 };
+
+#endif
 
 } // end of namespace amt
