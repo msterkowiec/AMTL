@@ -8,6 +8,10 @@
 namespace amt
 {
 
+#if !defined(__AMTL_ASSERTS_ARE_ON__)
+	using wstring = std::wstring;
+#else
+
 class wstring : public std::wstring
 {
 	typedef std::wstring Base;
@@ -1727,5 +1731,7 @@ public:
 
 	// TODO: non-member function overloads
 };
+
+#endif
 
 } // end of namespace amt
