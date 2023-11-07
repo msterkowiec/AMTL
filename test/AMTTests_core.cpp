@@ -788,8 +788,7 @@ struct SomeStruct
 
 TEST(__AMT_TEST__, BasicVectorTest) 
 {
-	//amt::vector<int> vec;
-	std::vector<int> vec; // test!!!
+	amt::vector<int> vec;
 	EXPECT_EQ(vec.size(), 0);
 	EXPECT_EQ(vec.capacity(), 0);
 	vec.reserve(32);
