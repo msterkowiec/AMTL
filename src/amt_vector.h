@@ -311,13 +311,21 @@ namespace amt
 				return std::_Unfancy(((ITER*)this)->_Ptr);
 			}
 			#else
-			operator T* ()
+			/*operator T* ()
 			{
 				return &**((ITER*)this);
 			}
 			operator const T* () const
 			{
 				return &**((ITER*)this);
+			}*/
+			operator ITER ()
+			{
+				return *((ITER*)this);
+			}
+			operator const ITER() const
+			{
+				return *((ITER*)this);
 			}
 			#endif
 
