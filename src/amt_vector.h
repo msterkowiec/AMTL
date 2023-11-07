@@ -758,7 +758,7 @@ namespace amt
 			#endif
 		}
 		template< class InputIt, std::enable_if_t<amt::is_iterator<InputIt>::value, int> = 0  >
-		inline vector(InputIt begin, InputIt end, const Alloc& alloc = Alloc()) : Base(static_cast<Base::iterator>(begin), static_cast<Base::iterator>(end), alloc)
+		inline vector(InputIt begin, InputIt end, const Alloc& alloc = Alloc()) : Base(static_cast<typename Base::iterator>(begin), static_cast<typename Base::iterator>(end), alloc)
 		{			
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
@@ -1078,7 +1078,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
 			#endif
-			((Base*)this)->assign(static_cast<Base::iterator>(first), static_cast<Base::iterator>(last));
+			((Base*)this)->assign(static_cast<typename Base::iterator>(first), static_cast<typename Base::iterator>(last));
 		}
 		inline void assign(size_t n, const ValueType& val)
 		{
