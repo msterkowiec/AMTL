@@ -313,11 +313,11 @@ namespace amt
 			#else
 			operator T* ()
 			{
-				return &*((ITER*)this);
+				return &**((ITER*)this);
 			}
 			operator const T* () const
 			{
-				return &*((ITER*)this);
+				return &**((ITER*)this);
 			}
 			#endif
 
