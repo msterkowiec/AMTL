@@ -310,6 +310,15 @@ namespace amt
 			T* _Unwrapped() const noexcept {
 				return std::_Unfancy(((ITER*)this)->_Ptr);
 			}
+			#else
+			operator T* ()
+			{
+				return &*((ITER*)this);
+			}
+			operator const T* () const
+			{
+				return &*((ITER*)this);
+			}
 			#endif
 
 			__AMT_FORCEINLINE__ IteratorBase()
