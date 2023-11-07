@@ -729,11 +729,6 @@ namespace amt
 				#endif
 				return *((ITER*)this) - *((ITER*)&o);
 			}
-			using difference_type = ptrdiff_t;
-			using value_type = T;
-			using pointer = T*;
-			using reference = T&;
-			using iterator_category = std::random_access_iterator_tag;
 		};	// end of class IteratorBase
 
 	public:
