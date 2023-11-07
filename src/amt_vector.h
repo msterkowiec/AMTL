@@ -26,8 +26,8 @@ namespace amt
 	class vector : public std::vector<T, Alloc>
 	{
 		typedef std::vector<T, Alloc> Base;
-		typedef Base::value_type ValueType;
-		typedef Base::allocator_type AllocatorType;		
+		typedef typename Base::value_type ValueType;
+		typedef typename Base::allocator_type AllocatorType;		
 
 		using difference_type = ptrdiff_t;
 
