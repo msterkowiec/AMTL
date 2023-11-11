@@ -307,35 +307,7 @@ namespace amt
 		public:
 
 			#if defined(_MSC_VER)
-			using _Prevent_inheriting_unwrap = std::_Vector_iterator;
-			T* _Unwrapped() const noexcept {
-				return std::_Unfancy(((ITER*)this)->_Ptr);
-			}
-			#else
-			/*operator T* ()
-			{
-				return &**((ITER*)this);
-			}
-			operator const T* () const
-			{
-				return &**((ITER*)this);
-			}*/
-			/*const T& get() const
-			{
-				return **((ITER*)this);
-			}
-			T& get()
-			{
-				return **((ITER*)this);
-			}
-			operator ITER ()
-			{
-				return *((ITER*)this);
-			}
-			operator const ITER() const
-			{
-				return *((ITER*)this);
-			}*/
+			using _Prevent_inheriting_unwrap = IteratorBase;
 			#endif
 
 			__AMT_FORCEINLINE__ IteratorBase()
