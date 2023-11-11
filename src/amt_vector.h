@@ -327,7 +327,7 @@ namespace amt
 			T& get()
 			{
 				return **((ITER*)this);
-			}*/
+			}
 			operator ITER ()
 			{
 				return *((ITER*)this);
@@ -335,7 +335,7 @@ namespace amt
 			operator const ITER() const
 			{
 				return *((ITER*)this);
-			}
+			}*/
 			#endif
 
 			__AMT_FORCEINLINE__ IteratorBase()
