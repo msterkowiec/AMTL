@@ -31,12 +31,13 @@ namespace amt
 
 		using difference_type = ptrdiff_t;
 
-		/*  * read
+		/*  	
+  			* read
 			* partial read(single index)
 			* partial write(e.g.push_back without reallocation)
 			* write
 			Reads conflict with each other, all writes conflict with each other and with full read and, additionally, write conflicts with anything else			
-        */
+        	*/
 		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingPartialReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
@@ -725,7 +726,7 @@ namespace amt
 				#endif
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
-				AssertNotEnd();
+				//AssertNotEnd(); // commented out - allow for some arithmetics on end iterator
 				#endif
 				return *((ITER*)this) - *((ITER*)&o);
 			}
