@@ -320,14 +320,14 @@ namespace amt
 			{
 				return &**((ITER*)this);
 			}*/
-			const T& get() const
+			/*const T& get() const
 			{
 				return **((ITER*)this);
 			}
 			T& get()
 			{
 				return **((ITER*)this);
-			}
+			}*/
 			operator ITER ()
 			{
 				return *((ITER*)this);
