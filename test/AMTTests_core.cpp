@@ -786,8 +786,8 @@ struct SomeStruct
 	}
 };
 
-TEST(__AMT_TEST__, BasicVectorTest) {
-
+TEST(__AMT_TEST__, BasicVectorTest) 
+{
 	amt::vector<int> vec;
 	EXPECT_EQ(vec.size(), 0);
 	EXPECT_EQ(vec.capacity(), 0);
@@ -798,6 +798,17 @@ TEST(__AMT_TEST__, BasicVectorTest) {
 	EXPECT_EQ(vec.size(), 1);
 	vec = vec;
 	EXPECT_EQ(vec.size(), 1);
+	std::vector<int>::iterator it = vec.begin();
+	EXPECT_NE(it, vec.end());
+
+	vec.push_back(5);
+	EXPECT_EQ(vec.size(), 2);
+	EXPECT_EQ(vec[0], 10);
+	//amt::vector<int>::iterator i1 = vec.begin();
+	//amt::vector<int>::iterator i2 = vec.end();
+	//std::sort(i1, i2);
+	std::sort(vec.begin(), vec.end());
+	EXPECT_EQ(vec[0], 5);
 }
 
 TEST(__AMT_TEST__, BasicMapTest) {
@@ -2217,14 +2228,28 @@ TEST(__AMT_TEST__, EmplaceTest)
 		}
 	};
 
+	std::vector<Struct> stdVec;
+	auto stdIt = stdVec.emplace(stdVec.begin(), std::vector<int>{1, 2});
+
 	amt::vector<Struct> vec;
 	vec.emplace_back(std::vector<int>{ 1 });
 	EXPECT_EQ(vec.size(), 1);
 	EXPECT_EQ(vec[0].size(), 1);
+	
+	auto begin = vec.begin();	
+	amt::vector<Struct>::const_iterator constBeginIter = vec.begin();
+	auto rbegin = vec.rbegin();
+	amt::vector<Struct>::const_reverse_iterator constRBeginIter = vec.rbegin();
 
 	auto it = vec.emplace(vec.begin(), std::vector<int>{1, 2});
 	EXPECT_NE(it, vec.end());
-	EXPECT_EQ(it->size(), 2);
+	EXPECT_EQ(vec.size(), 2);
+
+	it = vec.begin();
+	auto& data = *(it + 1);
+	++it;
+	auto& data2 = *(it - 1);
+	it -= 1;
 
 	amt::map<int, Struct> map;
 	map.emplace(1, std::vector<int>{1, 2, 3});
@@ -2235,7 +2260,6 @@ TEST(__AMT_TEST__, EmplaceTest)
 	set.emplace(std::vector<int>{1, 2, 3, 4});
 	auto sit = set.begin();
 	EXPECT_EQ(sit->size(), 4);
-
 }
 
 struct StructForAMTPointerTypeTest
