@@ -537,11 +537,6 @@ namespace amt
 		using reverse_iterator = IteratorBase<typename Base::reverse_iterator>;
 		using const_reverse_iterator = IteratorBase<typename Base::const_reverse_iterator>;
 
-		//typedef typename Base::iterator iterator;
-		//typedef typename Base::const_iterator const_iterator;
-		//typedef typename Base::reverse_iterator reverse_iterator; 
-		//typedef typename Base::const_reverse_iterator const_reverse_iterator;
-
 		inline map() : Base()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -550,6 +545,14 @@ namespace amt
 		}
 
 		inline map(const map& o) : Base(o)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(o);
+			Init();
+			CRegisterWritingThread r2(*this);
+			#endif
+		}
+		inline map(const map& o, const allocator_type& alloc) : Base(o, alloc)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(o);
@@ -566,7 +569,23 @@ namespace amt
 			#endif
 			*((Base*)this) = std::move(*((Base*)&o));
 		}
-		inline map(std::initializer_list<std::pair<const Key, T>> list) : Base(list)
+		inline map(map&& o, const allocator_type& alloc) : Base(o, alloc)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(o);
+			Init();
+			CRegisterWritingThread r2(*this);
+			#endif
+			*((Base*)this) = std::move(*((Base*)&o));
+		}
+		inline map(std::initializer_list<std::pair<const Key, T>> list, const allocator_type& alloc) : Base(list, alloc)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			#endif
+		}
+		inline map(std::initializer_list<std::pair<const Key, T>> list, const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) : Base(list, comp, alloc)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
@@ -575,6 +594,28 @@ namespace amt
 		}
 		template< class InputIt, std::enable_if_t<amt::is_iterator<InputIt>::value, int> = 0 >
 		inline map(InputIt first, InputIt last, const Compare& comp = Compare(), const Allocator& alloc = Allocator()) : Base(first, last, comp, alloc)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			#endif
+		}
+		template <class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
+		inline map(InputIterator first, InputIterator last, const allocator_type& alloc) : Base(first, last, alloc)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			#endif
+		}
+		explicit map(const key_compare& comp, const allocator_type& alloc = allocator_type()) : Base(comp, alloc)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			Init();
+			CRegisterWritingThread r(*this);
+			#endif
+		}
+		explicit map(const allocator_type& alloc) : Base(alloc)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();
@@ -695,6 +736,17 @@ namespace amt
 				++o.m_nCountOperInvalidateIter;
 				return *this;
 			}
+		}
+
+		map& operator= (std::initializer_list<value_type> il)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			++m_nCountOperInvalidateIter;
+			*((Base*)this) = il;
+			++m_nCountOperInvalidateIter;
+			return *this;
 		}
 
 		__AMT_FORCEINLINE__ friend bool operator == (const map& m1, const map& m2)
