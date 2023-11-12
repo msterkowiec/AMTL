@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2023. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -18,15 +18,29 @@ namespace amt
 {
 
 #if !defined(__AMTL_ASSERTS_ARE_ON__)
-	template<typename T, class Compare = std::less<T>, class Allocator = std::allocator<T>, bool PREVENT_AMT_WRAP = false >
+	template<typename T, class Compare = std::less<T>, class Allocator = std::allocator<T>>
 	using set = std::set<T, Compare, Allocator>;
 #else
 
-	template<typename T, class Compare = std::less<T>, class Alloc = std::allocator<T>, bool PREVENT_AMT_WRAP = false >
-	class set : public std::set<__AMT_TRY_WRAP_TYPE__(T, PREVENT_AMT_WRAP, Alloc), Compare, __AMT_CHANGE_ALLOCATOR_IF_NEEDED__(T, PREVENT_AMT_WRAP, Alloc)>
+	template<typename T, class Compare = std::less<T>, class Alloc = std::allocator<T>>
+	class set : public std::set<T, Compare, Alloc>
 	{
-		typedef std::set<__AMT_TRY_WRAP_TYPE__(T, PREVENT_AMT_WRAP, Alloc), Compare, __AMT_CHANGE_ALLOCATOR_IF_NEEDED__(T, PREVENT_AMT_WRAP, Alloc)> Base;
+		typedef std::set<T, Compare, Alloc> Base;
 
+	public:
+		using key_type = T;
+		using value_type = T;
+		using key_compare = Compare;
+		using value_compare = Compare;
+		using allocator_type = Alloc;
+		using reference = T&;
+		using const_reference = const T&;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using size_type = size_t;
+		using difference_type = ptrdiff_t;
+
+	private:
 		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 		mutable std::atomic<std::uint64_t> m_nCountOperInvalidateIter; // count of operations that invalidate iterators - this single count seems good enough
@@ -395,27 +409,27 @@ namespace amt
 			}
 			__AMT_FORCEINLINE__ IteratorBase operator++(int) // postfix operator
 			{
+				auto it = *this; // copy constructor verifies thread synchronization (CRegisterReadingThread/CRegisterWritingThread), so it should be done earlier to avoid false assertion failure
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
-				#endif
-				auto it = *this;
+				#endif				
 				((ITER*)this)->operator++();
 				return it;
 			}
 			__AMT_FORCEINLINE__ IteratorBase operator--(int) // postfix operator
 			{
+				auto it = *this; // copy constructor verifies thread synchronization (CRegisterReadingThread/CRegisterWritingThread), so it should be done earlier to avoid false assertion failure
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotBegin();
-				#endif
-				auto it = *this;
+				#endif				
 				((ITER*)this)->operator--();
 				return it;
 			}		
@@ -594,6 +608,16 @@ namespace amt
 				++o.m_nCountOperInvalidateIter;
 				return *this;
 			}
+		}
+		set& operator= (std::initializer_list<value_type> il)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			++m_nCountOperInvalidateIter;
+			*((Base*)this) = il;
+			++m_nCountOperInvalidateIter;
+			return *this;
 		}
 		inline ~set() __AMT_CAN_THROW__
 		{
@@ -806,7 +830,7 @@ namespace amt
 			iterator res(resBase, this);
 			return res;
 		}
-		#ifdef _WIN32 // temporary workaround for compilation on Linux
+		
 		template <class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 		void insert(InputIterator first, InputIterator last)
 		{
@@ -818,9 +842,9 @@ namespace amt
 			last.AssertIsValid(this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			((Base*)this)->insert<InputIterator>(first, last);
+			((Base*)this)->insert(first, last);
 		}
-		#endif
+		
 		iterator lower_bound(const T& k)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__

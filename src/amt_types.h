@@ -20,6 +20,9 @@ namespace amt
 	typedef unsigned char AMTCounterType;
 
 	template<typename Container, typename T>
+	using IsConstIter = std::is_same<T, typename Container::const_iterator>;
+
+	template<typename Container, typename T>
 	using IsRegRevIter = std::is_same<T, typename Container::reverse_iterator>;
 
 	template<typename Container, typename T>
