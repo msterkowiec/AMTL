@@ -18,7 +18,7 @@ namespace amt
 {
 
 #if !defined(__AMTL_ASSERTS_ARE_ON__)
-	template<typename T, class Alloc = std::allocator<T>, bool PREVENT_AMT_WRAP = false>
+	template<typename T, class Alloc = std::allocator<T>>
 	using vector = std::vector<T, Alloc>;
 #else
 
