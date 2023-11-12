@@ -777,18 +777,18 @@ TEST(__AMT_TEST__, ScalarOperatorsStressTest)
 	TestScalarOperators<long double>();
 }
 
-struct SomeStruct
+bool basicVectorTestAssertionFailure = false;
+void BasicVectorTest_CustomAssertHandler(bool a, const char* szFileName, long lLine, const char* szDesc)
 {
-	std::vector<int> data_;
-	bool operator < (const SomeStruct& o) const
-	{
-		return data_ < o.data_;
-	}
-};
+	if (!a)
+		basicVectorTestAssertionFailure = true;
+}
 
-TEST(__AMT_TEST__, BasicVectorTest) {
-
-	amt::vector<int> vec;
+template<typename VectorType>
+void BasicVectorTestImpl()
+{
+	VectorType vec;
+	//std::vector<int> vec;
 	EXPECT_EQ(vec.size(), 0);
 	EXPECT_EQ(vec.capacity(), 0);
 	vec.reserve(32);
@@ -798,7 +798,85 @@ TEST(__AMT_TEST__, BasicVectorTest) {
 	EXPECT_EQ(vec.size(), 1);
 	vec = vec;
 	EXPECT_EQ(vec.size(), 1);
+	auto it = vec.begin();
+	EXPECT_NE(it, vec.end());
+
+	vec.push_back(7);
+	vec.push_back(5);
+	EXPECT_EQ(vec.size(), 3);
+	EXPECT_EQ(vec[0], 10);
+	//amt::vector<int>::iterator i1 = vec.begin();
+	//amt::vector<int>::iterator i2 = vec.end();
+	//std::sort(i1, i2);
+	std::sort(vec.begin(), vec.end());
+	EXPECT_EQ(vec[0], 5);
+
+	std::sort(vec.rbegin(), vec.rend());
+	EXPECT_EQ(vec[0], 10);
+
+	it = vec.begin();
+	it += 3;
+	it -= 2;
+	--it;
+	EXPECT_EQ(it, vec.begin());
+
+	auto diff = vec.end() - it;
+	EXPECT_EQ(diff, vec.size());
+
+	EXPECT_EQ(it[0], 10);
+	EXPECT_EQ((it++)[1], 7);
+	EXPECT_EQ((it--)[0], 7);
+	EXPECT_EQ(*++it, 7);
+	EXPECT_EQ(it[-1], 10);
+	if (!std::is_same<VectorType, std::vector<int>>::value)
+	{
+		size_t sum = 0;
+		basicVectorTestAssertionFailure = false;
+		amt::SetCustomAssertHandler<0>(&BasicVectorTest_CustomAssertHandler);
+		sum += it[-2];
+		EXPECT_EQ(basicVectorTestAssertionFailure, true);
+		basicVectorTestAssertionFailure = false;
+		sum += it[3];
+		EXPECT_EQ(basicVectorTestAssertionFailure, true);
+		EXPECT_EQ(sum, 0);
+	}
+
+	auto itNewlyAdded = vec.insert(vec.end(), { 1, 1, 1 });
+	EXPECT_EQ(vec.size(), 6);
+	EXPECT_EQ(*itNewlyAdded++, 1);
+	EXPECT_EQ(*itNewlyAdded++, 1);
+	EXPECT_EQ(*itNewlyAdded++, 1);
+	itNewlyAdded = vec.insert(vec.begin() + 1, 3);
+	EXPECT_EQ(*itNewlyAdded++, 3);
+	EXPECT_NE(*itNewlyAdded++, 3);
+	EXPECT_EQ(vec.size(), 7);
 }
+
+struct SomeStruct
+{
+	std::vector<int> data_;
+	bool operator < (const SomeStruct& o) const
+	{
+		return data_ < o.data_;
+	}
+};
+
+TEST(__AMT_TEST__, BasicVectorTest) 
+{
+	BasicVectorTestImpl<std::vector<int>>();
+	BasicVectorTestImpl<amt::vector<int>>();
+
+	// Test cross-type iterator implicit cast: 
+	amt::vector<int> vec;
+	vec.push_back(10);
+	vec.push_back(5);
+	std::vector<int>::iterator it = vec.begin(); // implicitly cast amt::vector::iterator to std::vector iterator
+	EXPECT_EQ(*it, 10);
+
+	std::sort<std::vector<int>::iterator>(it, vec.end()); // mixing iterators unfortunately requires explicit type specification
+	EXPECT_EQ(*it, 5); // formally iterators are invalidated but in practice std::vector iterators should be ok
+}
+
 
 TEST(__AMT_TEST__, BasicMapTest) {
 
@@ -1044,6 +1122,8 @@ TEST(__AMT_TEST__, VectorInitializationTest) {
 	EXPECT_EQ(std::count_if(vecZerosInt2.begin(), vecZerosInt2.end(), [](int i){return i != 0; }), 0);
 
 	amt::vector<double> otherVecDbl(vecZerosDbl.begin(), vecZerosDbl.end());
+	amt::vector<double> yetAnotherVecDbl;
+	yetAnotherVecDbl.assign(vecZerosDbl.begin(), vecZerosDbl.end());	
 	amt::vector<amt::AMTScalarType<double>> otherVecDbl2(vecZerosDbl2.begin(), vecZerosDbl2.end());
 	amt::vector<int> otherVecInt(vecZerosInt.begin(), vecZerosInt.end());
 	amt::vector<amt::AMTScalarType<int>> otherVecInt2(vecZerosInt2.begin(), vecZerosInt2.end());
@@ -2217,14 +2297,28 @@ TEST(__AMT_TEST__, EmplaceTest)
 		}
 	};
 
+	std::vector<Struct> stdVec;
+	auto stdIt = stdVec.emplace(stdVec.begin(), std::vector<int>{1, 2});
+
 	amt::vector<Struct> vec;
 	vec.emplace_back(std::vector<int>{ 1 });
 	EXPECT_EQ(vec.size(), 1);
 	EXPECT_EQ(vec[0].size(), 1);
+	
+	auto begin = vec.begin();	
+	amt::vector<Struct>::const_iterator constBeginIter = vec.begin();
+	auto rbegin = vec.rbegin();
+	amt::vector<Struct>::const_reverse_iterator constRBeginIter = vec.rbegin();
 
 	auto it = vec.emplace(vec.begin(), std::vector<int>{1, 2});
 	EXPECT_NE(it, vec.end());
-	EXPECT_EQ(it->size(), 2);
+	EXPECT_EQ(vec.size(), 2);
+
+	it = vec.begin();
+	auto& data = *(it + 1);
+	++it;
+	auto& data2 = *(it - 1);
+	it -= 1;
 
 	amt::map<int, Struct> map;
 	map.emplace(1, std::vector<int>{1, 2, 3});
@@ -2235,7 +2329,6 @@ TEST(__AMT_TEST__, EmplaceTest)
 	set.emplace(std::vector<int>{1, 2, 3, 4});
 	auto sit = set.begin();
 	EXPECT_EQ(sit->size(), 4);
-
 }
 
 struct StructForAMTPointerTypeTest
