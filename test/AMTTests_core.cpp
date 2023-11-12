@@ -878,9 +878,10 @@ struct SomeStruct
 	}
 };
 
-TEST(__AMT_TEST__, BasicMapTest) {
-
-	amt::map<int, int> map;
+template<typename MapType>
+void BasicMapTestImpl()
+{
+	MapType map;
 	EXPECT_EQ(map.size(), 0);
 	EXPECT_EQ(map.find(0), map.end());
 	map[0] = 0;
@@ -900,7 +901,7 @@ TEST(__AMT_TEST__, BasicMapTest) {
 	it->second = 3;
 	EXPECT_EQ(map[0], 3);
 
-	amt::map<int, int>::const_iterator cit(it);
+	typename MapType::const_iterator cit(it);
 	EXPECT_EQ(cit->first, 0);
 	EXPECT_EQ(cit->second, 3);
 
@@ -909,9 +910,27 @@ TEST(__AMT_TEST__, BasicMapTest) {
 	map.insert(map.end(), std::make_pair(6, 36));
 	EXPECT_EQ(map.size(), 4);
 
+	map.insert( { {10, 100}, {20, 400} });
+	EXPECT_EQ(map.size(), 6);
+	
+	it = map.end();
+	EXPECT_EQ((--it)->second, 400);
+	EXPECT_EQ((it--)->second, 400);
+	EXPECT_EQ(it->second, 100);
+}
+
+TEST(__AMT_TEST__, BasicMapTest) 
+{
+	BasicMapTestImpl<std::map<int, int>>();
+	BasicMapTestImpl<amt::map<int, int>>();
+
 	amt::map<int, SomeStruct> omap;
 	omap.insert(std::move(std::make_pair(1, SomeStruct())));
 	EXPECT_EQ(omap.size(), 1);
+
+	amt::map<int, int> map;
+	amt::map<int, int>::const_iterator amtConstIt = map.begin();
+	std::map<int, int>::const_iterator nativeConstIt = map.begin();
 }
 
 TEST(__AMT_TEST__, BasicSetTest) {
