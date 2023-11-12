@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <chrono>
+#include <iostream>
 #include <time.h> 
 
 // -------------------------------
@@ -760,7 +761,7 @@ void TestScalarOperators()
 }
 
 TEST(__AMT_TEST__, ScalarOperatorsStressTest)
-{
+{	
 	// TODO: maybe seed Mersenne Twister...	
 	TestScalarOperators<char>();
 	TestScalarOperators<unsigned char>();
@@ -774,7 +775,7 @@ TEST(__AMT_TEST__, ScalarOperatorsStressTest)
 	TestScalarOperators<unsigned long long>();
 	TestScalarOperators<float>();
 	TestScalarOperators<double>();
-	TestScalarOperators<long double>();
+	TestScalarOperators<long double>();	
 }
 
 bool basicVectorTestAssertionFailure = false;
@@ -852,15 +853,6 @@ void BasicVectorTestImpl()
 	EXPECT_EQ(vec.size(), 7);
 }
 
-struct SomeStruct
-{
-	std::vector<int> data_;
-	bool operator < (const SomeStruct& o) const
-	{
-		return data_ < o.data_;
-	}
-};
-
 TEST(__AMT_TEST__, BasicVectorTest) 
 {
 	BasicVectorTestImpl<std::vector<int>>();
@@ -877,6 +869,14 @@ TEST(__AMT_TEST__, BasicVectorTest)
 	EXPECT_EQ(*it, 5); // formally iterators are invalidated but in practice std::vector iterators should be ok
 }
 
+struct SomeStruct
+{
+	std::vector<int> data_;
+	bool operator < (const SomeStruct& o) const
+	{
+		return data_ < o.data_;
+	}
+};
 
 TEST(__AMT_TEST__, BasicMapTest) {
 
@@ -1123,7 +1123,7 @@ TEST(__AMT_TEST__, VectorInitializationTest) {
 
 	amt::vector<double> otherVecDbl(vecZerosDbl.begin(), vecZerosDbl.end());
 	amt::vector<double> yetAnotherVecDbl;
-	yetAnotherVecDbl.assign(vecZerosDbl.begin(), vecZerosDbl.end());	
+	yetAnotherVecDbl.assign(vecZerosDbl.begin(), vecZerosDbl.end());
 	amt::vector<amt::AMTScalarType<double>> otherVecDbl2(vecZerosDbl2.begin(), vecZerosDbl2.end());
 	amt::vector<int> otherVecInt(vecZerosInt.begin(), vecZerosInt.end());
 	amt::vector<amt::AMTScalarType<int>> otherVecInt2(vecZerosInt2.begin(), vecZerosInt2.end());
@@ -2329,6 +2329,7 @@ TEST(__AMT_TEST__, EmplaceTest)
 	set.emplace(std::vector<int>{1, 2, 3, 4});
 	auto sit = set.begin();
 	EXPECT_EQ(sit->size(), 4);
+
 }
 
 struct StructForAMTPointerTypeTest
@@ -2523,7 +2524,7 @@ TEST(__AMT_TEST__, AMTWStringUnsyncUpdate)
 	#endif
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------
 
 TEST(__AMT_TEST__, AMTStringBasicTest)
 {
@@ -2543,11 +2544,11 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	str = str.substr(1, 2);
 	EXPECT_EQ(str.size(), 2);
 	EXPECT_EQ(str, "tr");
-	
+
 	amt::string str2(str);
 	EXPECT_EQ(str2.size(), 2);
 	EXPECT_EQ(str2, "tr");
-	
+
 	amt::string str3 = std::move(str2);
 	EXPECT_EQ(str3.size(), 2);
 	EXPECT_EQ(str3, "tr");
@@ -2556,7 +2557,7 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	EXPECT_EQ(str4.size(), 2);
 	EXPECT_EQ(str4, "tr");
 	EXPECT_EQ(str3, str4);
-	EXPECT_EQ(str3, str4.c_str());	
+	EXPECT_EQ(str3, str4.c_str());
 
 	auto it = str4.begin();
 	auto itEnd = str4.end();
@@ -2665,7 +2666,7 @@ TEST(__AMT_TEST__, AMTStringUnsyncUpdate)
 	canStartThreadWork = true;
 	thr1.join();
 	thr2.join();
-	
+
 	#if AMTL_MAIN_FEATURE_ON 
 	EXPECT_NE(amtStringErrorsCount.load(), 0);
 	#else
@@ -2748,11 +2749,11 @@ int main()
 	RUNTEST(__AMT_TEST__, AMTVectorOfAMTDoubleInitializationTest);
 	RUNTEST(__AMT_TEST__, AMTWStringBasicTest);
 	RUNTEST(__AMT_TEST__, AMTWStringIteratorValidityTest);
-	RUNTEST(__AMT_TEST__, AMTWStringUnsyncUpdate);	
+	RUNTEST(__AMT_TEST__, AMTWStringUnsyncUpdate);
 	RUNTEST(__AMT_TEST__, AMTStringBasicTest);
 	RUNTEST(__AMT_TEST__, AMTStringIteratorValidityTest);
 	RUNTEST(__AMT_TEST__, AMTStringUnsyncUpdate);
-	
+
 	return 1;
 }
 #endif
