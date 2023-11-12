@@ -840,6 +840,7 @@ void BasicVectorTestImpl()
 		sum += it[3];
 		EXPECT_EQ(basicVectorTestAssertionFailure, true);
 		EXPECT_EQ(sum, 0);
+		amt::SetCustomAssertHandler<0>(nullptr);
 	}
 
 	auto itNewlyAdded = vec.insert(vec.end(), { 1, 1, 1 });
@@ -919,7 +920,7 @@ void BasicMapTestImpl()
 	EXPECT_EQ(it->second, 100);
 
 	map = { {0, 0}, {3, 3} };
-	EXPECT_EQ(map.size(), 2);	
+	EXPECT_EQ(map.size(), 2);
 }
 
 TEST(__AMT_TEST__, BasicMapTest) 
@@ -956,12 +957,11 @@ void BasicSetTestImpl()
 
 	set.insert(42);
 	it = set.end();
-	--it;
 	EXPECT_EQ(*--it, 42);
 	EXPECT_EQ(*it--, 42);
 	EXPECT_EQ(*it--, 1);
 	EXPECT_EQ(*it++, 0);
-	EXPECT_EQ(*++it, 1);
+	EXPECT_EQ(*it, 1);
 	EXPECT_EQ(*it++, 1);
 	EXPECT_EQ(*it, 42);
 
@@ -1017,6 +1017,7 @@ TEST(__AMT_TEST__, IntUnsynchWriteTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(IntUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 // ----------------------------------------------------------------------
@@ -1071,6 +1072,7 @@ TEST(__AMT_TEST__, VectorSynchWriteTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(VectorSynchWriteTest_AssertionFailed, false);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 // ----------------------------------------------------------------------
@@ -1125,6 +1127,7 @@ TEST(__AMT_TEST__, VectorUnsynchWriteTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(VectorUnsynchWriteTest_AssertionFailed, true);
+	amt::SetCustomAssertHandler<0>(nullptr);
 	#endif
 }
 
@@ -1239,6 +1242,7 @@ TEST(__AMT_TEST__, MapUnsynchWriteTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(MapUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 TEST(__AMT_TEST__, MapInitializationTest){
@@ -1303,6 +1307,7 @@ TEST(__AMT_TEST__, SetUnsynchWriteTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(SetUnsynchWriteTest_AssertionFailed, AMTL_MAIN_FEATURE_ON);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 // =================================================================================================
@@ -1452,6 +1457,7 @@ TEST(__AMT_TEST__, SetIter_UnsynchUpdateTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(SetIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 // ----------------------------------------------------------------------------
@@ -1607,6 +1613,7 @@ TEST(__AMT_TEST__, MapIter_UnsynchUpdateTest) {
 	thread1.join();
 	thread2.join();
 	EXPECT_EQ(MapIter_UnsynchUpdateTest_AssertionFailed, AMTL_CHECK_SYNC_OF_ACCESS_TO_ITERATORS_ON);
+	amt::SetCustomAssertHandler<0>(nullptr);
 }
 
 // ===================================================================================================================
@@ -2563,6 +2570,7 @@ TEST(__AMT_TEST__, AMTWStringUnsyncUpdate)
 	canStartThreadWork = true;
 	thr1.join();
 	thr2.join();
+	amt::SetCustomAssertHandler<0>(nullptr);
 
 	#if AMTL_MAIN_FEATURE_ON 
 	EXPECT_NE(amtWStringErrorsCount.load(), 0);
@@ -2713,6 +2721,7 @@ TEST(__AMT_TEST__, AMTStringUnsyncUpdate)
 	canStartThreadWork = true;
 	thr1.join();
 	thr2.join();
+	amt::SetCustomAssertHandler<0>(nullptr);
 
 	#if AMTL_MAIN_FEATURE_ON 
 	EXPECT_NE(amtStringErrorsCount.load(), 0);
