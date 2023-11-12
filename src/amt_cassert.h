@@ -93,6 +93,7 @@ namespace amt {
 	#include <iostream>
 	#include <thread>
 	#include <cstdio>
+	#include <string.h>
 
 	namespace amt{
     // Default handler for non-Windows systems:

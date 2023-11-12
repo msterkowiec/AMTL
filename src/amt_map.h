@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2023. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
@@ -18,17 +18,31 @@ namespace amt
 {
 
 #if !defined(__AMTL_ASSERTS_ARE_ON__)
-	template<typename Key, typename T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T> >, bool PREVENT_AMT_WRAP = false>
+	template<typename Key, typename T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T> >>
 	using map = std::map<Key, T, Compare, Allocator>;
 #else
 
 
-	template<typename Key, typename T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T> >, bool PREVENT_AMT_WRAP = false>
-	class map : public std::map<Key, __AMT_TRY_WRAP_MAPPED_TYPE__(Key, T, PREVENT_AMT_WRAP, Allocator), Compare, __AMT_CHANGE_MAP_ALLOCATOR_IF_NEEDED__(Key, T, PREVENT_AMT_WRAP, Allocator)>
+	template<typename Key, typename T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
+	class map : public std::map<Key, T, Compare, Allocator>
 	{		
 		typedef __AMT_TRY_WRAP_MAPPED_TYPE__(Key, T, PREVENT_AMT_WRAP, Allocator) ValueType;
-		typedef std::map<Key, ValueType, Compare, __AMT_CHANGE_MAP_ALLOCATOR_IF_NEEDED__(Key, T, PREVENT_AMT_WRAP, Allocator)> Base;
+		typedef std::map<Key, ValueType, Compare, Allocator> Base;
 
+	public:
+		using key_type = Key;
+		using mapped_type = T;
+		using value_type = std::pair<const key_type, mapped_type>;
+		using key_compare = Compare;
+		using allocator_type = Allocator;
+		using reference = T&;
+		using const_reference = const T&;
+		using pointer = T*;
+		using const_pointer = const T*;
+		using size_type = size_t;
+		using difference_type = ptrdiff_t;
+
+	private:
 		mutable std::atomic<AMTCounterType> m_nPendingReadRequests;
 		mutable std::atomic<AMTCounterType> m_nPendingWriteRequests;
 		mutable std::atomic<std::uint64_t> m_nCountOperInvalidateIter; // count of operations that invalidate iterators - this single count seems good enough
@@ -411,27 +425,27 @@ namespace amt
 			}
 			__AMT_FORCEINLINE__ IteratorBase operator++(int) // postfix operator
 			{
+				auto it = *this; // copy constructor verifies thread synchronization (CRegisterReadingThread/CRegisterWritingThread), so it should be done earlier to avoid false assertion failure
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotEnd();
-				#endif
-				auto it = *this;
+				#endif				
 				((ITER*)this)->operator++();
 				return it;
 			}
 			__AMT_FORCEINLINE__ IteratorBase operator--(int) // postfix operator
 			{
+				auto it = *this; // copy constructor verifies thread synchronization (CRegisterReadingThread/CRegisterWritingThread), so it should be done earlier to avoid false assertion failure
 				#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
 				CRegisterWritingThread r(*this);
 				#endif
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
 				AssertIsValid();
 				AssertNotBegin();
-				#endif
-				auto it = *this;
+				#endif				
 				((ITER*)this)->operator--();
 				return it;
 			}		
@@ -902,7 +916,7 @@ namespace amt
 			return res;
 		}
 
-		#ifdef _WIN32 // temporary workaround for Linux
+		//#ifdef _WIN32 // temporary workaround for Linux
 		template <class InputIterator, std::enable_if_t<amt::is_iterator<InputIterator>::value, int> = 0 >
 		void insert(InputIterator first, InputIterator last)
 		{
@@ -914,9 +928,19 @@ namespace amt
 			last.AssertIsValid(this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			((Base*)this)->insert<InputIterator>(first, last);
+			((Base*)this)->insert(first, last);
 		}
-		#endif
+		//#endif
+
+		void insert(std::initializer_list<value_type> il)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterWritingThread r(*this);
+			#endif
+			++m_nCountOperInvalidateIter;
+			((Base*)this)->insert(il);
+		}
+
 		iterator lower_bound(const Key& k)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
