@@ -917,6 +917,9 @@ void BasicMapTestImpl()
 	EXPECT_EQ((--it)->second, 400);
 	EXPECT_EQ((it--)->second, 400);
 	EXPECT_EQ(it->second, 100);
+
+	map = { {0, 0}, {3, 3} };
+	EXPECT_EQ(map.size(), 2);	
 }
 
 TEST(__AMT_TEST__, BasicMapTest) 
@@ -933,20 +936,45 @@ TEST(__AMT_TEST__, BasicMapTest)
 	std::map<int, int>::const_iterator nativeConstIt = map.begin();
 }
 
-TEST(__AMT_TEST__, BasicSetTest) {
-
-	amt::set<int> set;
+template<typename SetType>
+void BasicSetTestImpl()
+{
+	SetType set;
 	EXPECT_EQ(set.size(), 0);
 	EXPECT_EQ(set.find(0), set.end());
+
 	set.insert(0);
 	EXPECT_EQ(set.size(), 1);
 	set = set;
 	EXPECT_EQ(set.size(), 1);
+
 	set.insert(1);
 	EXPECT_EQ(set.size(), 2);
 	auto it = set.find(0);
 	EXPECT_NE(it, set.end());
 	EXPECT_EQ(*it, 0);
+
+	set.insert(42);
+	it = set.end();
+	--it;
+	EXPECT_EQ(*--it, 42);
+	EXPECT_EQ(*it--, 42);
+	EXPECT_EQ(*it--, 1);
+	EXPECT_EQ(*it++, 0);
+	EXPECT_EQ(*++it, 1);
+	EXPECT_EQ(*it++, 1);
+	EXPECT_EQ(*it, 42);
+
+	set = { 42, 41, 4 };
+	EXPECT_EQ(set.size(), 3);
+	EXPECT_EQ(*set.begin(), 4);
+	EXPECT_EQ(*set.rbegin(), 42);
+}
+
+TEST(__AMT_TEST__, BasicSetTest) 
+{
+	BasicSetTestImpl<std::set<int>>();
+	BasicSetTestImpl<amt::set<int>>();
 
 	amt::set<SomeStruct> oset;
 	oset.insert(SomeStruct());
