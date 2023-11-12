@@ -43,6 +43,7 @@ private:
 		m_nPendingWriteRequests = 0;
 		m_nPendingPartialReadRequests = 0;
 		m_nPendingPartialWriteRequests = 0;
+		m_nCountOperInvalidateIter = 0;
 	}
 	__AMT_FORCEINLINE__ void RegisterReadingThread() const
 	{
