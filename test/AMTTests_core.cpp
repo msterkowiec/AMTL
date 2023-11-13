@@ -1044,7 +1044,9 @@ void LessBasicSetTestImpl()
 	it = set.upper_bound(2);
 	EXPECT_EQ(it->getName(), "John");
 
-	auto [it1, it2] = set.equal_range(1);
+	auto res = set.equal_range(1);
+	auto it1 = res.first;
+	auto it2 = res.second;	
 	EXPECT_EQ(it1->getName(), "Peter");
 	EXPECT_EQ(it2->getName(), "Anna");
 }
