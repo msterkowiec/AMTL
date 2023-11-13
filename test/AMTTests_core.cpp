@@ -969,6 +969,11 @@ void BasicSetTestImpl()
 	EXPECT_EQ(set.size(), 3);
 	EXPECT_EQ(*set.begin(), 4);
 	EXPECT_EQ(*set.rbegin(), 42);
+
+	auto lbIt = set.lower_bound(42);
+	EXPECT_EQ(*lbIt, 42);
+	auto ubIt = set.upper_bound(42);
+	EXPECT_EQ(ubIt, set.end());
 }
 
 TEST(__AMT_TEST__, BasicSetTest) 
@@ -979,6 +984,75 @@ TEST(__AMT_TEST__, BasicSetTest)
 	amt::set<SomeStruct> oset;
 	oset.insert(SomeStruct());
 	EXPECT_EQ(oset.size(), 1);
+}
+
+// -------------------------------------------------------
+
+class Employee
+{
+	std::string name;
+	int id;
+public:
+	Employee(const std::string& name, size_t id) : name(name), id(id)
+	{
+	}
+	std::string& getName()
+	{
+		return name;
+	}
+	const std::string& getName() const
+	{
+		return name;
+	}
+	size_t getId() const
+	{
+		return id;
+	}
+};
+
+struct EmployeeComparer
+{
+	using is_transparent = void;
+	bool operator()(Employee const& employee1, Employee const& employee2) const
+	{
+		return employee1.getId() < employee2.getId();
+	}
+	bool operator()(int id, Employee const& employee) const
+	{
+		return id < employee.getId();
+	}
+	bool operator()(Employee const& employee, int id) const
+	{
+		return employee.getId() < id;
+	}
+};
+
+
+template<class SetType>
+void LessBasicSetTestImpl()
+{
+	SetType set{ {"Peter", 1}, {"Anna", 2}};
+	set.emplace("John", 3);
+	set.emplace("Joanna", 4);
+
+	auto it = set.find(2);
+	EXPECT_EQ(it->getName(), "Anna");
+
+	it = set.lower_bound(3);
+	EXPECT_EQ(it->getName(), "John");
+
+	it = set.upper_bound(2);
+	EXPECT_EQ(it->getName(), "John");
+
+	auto [it1, it2] = set.equal_range(1);
+	EXPECT_EQ(it1->getName(), "Peter");
+	EXPECT_EQ(it2->getName(), "Anna");
+}
+
+TEST(__AMT_TEST__, LessBasicSetTest)
+{
+	LessBasicSetTestImpl<std::set<Employee, EmployeeComparer>>();
+	LessBasicSetTestImpl<amt::set<Employee, EmployeeComparer>>();
 }
 
 // ======================================================================
@@ -2747,6 +2821,7 @@ int main()
 	RUNTEST(__AMT_TEST__, BasicVectorTest);
 	RUNTEST(__AMT_TEST__, BasicMapTest);
 	RUNTEST(__AMT_TEST__, BasicSetTest);
+	RUNTEST(__AMT_TEST__, LessBasicSetTest);
 	RUNTEST(__AMT_TEST__, IntUnsynchWriteTest);
 	RUNTEST(__AMT_TEST__, VectorSynchWriteTest);
 	RUNTEST(__AMT_TEST__, VectorUnsynchWriteTest);
