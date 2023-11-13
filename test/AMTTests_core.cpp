@@ -1035,6 +1035,7 @@ void LessBasicSetTestImpl()
 	set.emplace("John", 3);
 	set.emplace("Joanna", 4);
 
+	#if __AMT_CPP14ORHIGHER__
 	auto it = set.find(2);
 	EXPECT_EQ(it->getName(), "Anna");
 
@@ -1049,6 +1050,7 @@ void LessBasicSetTestImpl()
 	auto it2 = res.second;	
 	EXPECT_EQ(it1->getName(), "Peter");
 	EXPECT_EQ(it2->getName(), "Anna");
+	#endif
 }
 
 TEST(__AMT_TEST__, LessBasicSetTest)
