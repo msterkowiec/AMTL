@@ -721,6 +721,7 @@ namespace amt
 			iterator it(baseIt, this);
 			return it;
 		}
+		#if __AMT_CPP14ORHIGHER__
 		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
 		__AMT_NODISCARD__ iterator find(const K& k)
 		{
@@ -741,6 +742,7 @@ namespace amt
 			iterator it(baseIt, this);
 			return it;
 		}
+		#endif
 		__AMT_FORCEINLINE__  size_t count(const T& k) const
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -883,6 +885,7 @@ namespace amt
 			iterator res(resBase, this);
 			return res;
 		}
+		#if __AMT_CPP14ORHIGHER__
 		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
 		__AMT_NODISCARD__ iterator lower_bound(const _Other& _Keyval) 
 		{
@@ -903,6 +906,7 @@ namespace amt
 			iterator it(baseIter, this);
 			return it;
 		}
+		#endif
 		iterator upper_bound(const T& k)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -921,6 +925,7 @@ namespace amt
 			const_iterator res(resBase, this);
 			return res;
 		}
+		#if __AMT_CPP14ORHIGHER__
 		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
 		__AMT_NODISCARD__ iterator upper_bound(const _Other& _Keyval) 
 		{
@@ -941,6 +946,7 @@ namespace amt
 			iterator it(baseIter, this);
 			return it;
 		}
+		#endif
 		std::pair<const_iterator, const_iterator> equal_range(const T& k) const
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -959,6 +965,7 @@ namespace amt
 			std::pair<iterator, iterator> res(iterator(resBase.first, this), iterator(resBase.second, this));
 			return res;
 		}
+		#if __AMT_CPP14ORHIGHER__
 		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
 		std::pair<iterator, iterator> equal_range(const K& k)
 		{
@@ -979,6 +986,7 @@ namespace amt
 			std::pair<const_iterator, const_iterator> res(const_iterator(resBase.first, this), const_iterator(resBase.second, this));
 			return res;
 		}
+		#endif
 
 		// Iterators:
 		inline iterator begin()
