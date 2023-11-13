@@ -727,7 +727,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIt = ((Base*)this)->find<K, _Mycomp>(k);
+			auto baseIt = ((Base*)this)->template find<K, _Mycomp>(k);
 			iterator it(baseIt, this);
 			return it;
 		}
@@ -737,7 +737,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIt = ((Base*)this)->find<K, _Mycomp>(k);
+			auto baseIt = ((Base*)this)->template find<K, _Mycomp>(k);
 			iterator it(baseIt, this);
 			return it;
 		}
@@ -889,7 +889,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIter = ((Base*)this)->lower_bound<_Other, _Mycomp>(_Keyval);
+			auto baseIter = ((Base*)this)->template lower_bound<_Other, _Mycomp>(_Keyval);
 			iterator it(baseIter, this);
 			return it;
 		}
@@ -899,7 +899,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIter = ((Base*)this)->lower_bound<_Other, _Mycomp>(_Keyval);
+			auto baseIter = ((Base*)this)->template lower_bound<_Other, _Mycomp>(_Keyval);
 			iterator it(baseIter, this);
 			return it;
 		}
@@ -927,7 +927,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIter = ((Base*)this)->upper_bound<_Other, _Mycomp>(_Keyval);
+			auto baseIter = ((Base*)this)->template upper_bound<_Other, _Mycomp>(_Keyval);
 			iterator it(baseIter, this);
 			return it;
 		}
@@ -937,7 +937,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto baseIter = ((Base*)this)->upper_bound<_Other, _Mycomp>(_Keyval);
+			auto baseIter = ((Base*)this)->template upper_bound<_Other, _Mycomp>(_Keyval);
 			iterator it(baseIter, this);
 			return it;
 		}
@@ -965,7 +965,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto resBase = ((Base*)this)->equal_range<K, _Mycomp>(k);
+			auto resBase = ((Base*)this)->template equal_range<K, _Mycomp>(k);
 			std::pair<iterator, iterator> res(iterator(resBase.first, this), iterator(resBase.second, this));
 			return res;
 		}
@@ -975,7 +975,7 @@ namespace amt
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
-			auto resBase = ((Base*)this)->equal_range<K, _Mycomp>(k);
+			auto resBase = ((Base*)this)->template equal_range<K, _Mycomp>(k);
 			std::pair<const_iterator, const_iterator> res(const_iterator(resBase.first, this), const_iterator(resBase.second, this));
 			return res;
 		}
