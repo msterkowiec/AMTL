@@ -25,6 +25,18 @@
 #endif
 #endif
 
+#if (defined(_MSC_VER) && _MSVC_LANG >= 201402L) || __cplusplus >= 201402L
+#define __AMT_CPP14ORHIGHER__ 1
+#else
+#define __AMT_CPP14ORHIGHER__ 0
+#endif
+
+#if (defined(_MSC_VER) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L
+#define __AMT_NODISCARD__ [[nodiscard]]
+#else
+#define __AMT_NODISCARD__
+#endif
+
 #if __AMT_LET_DESTRUCTORS_THROW__
 #define __AMT_CAN_THROW__ __AMT_NOEXCEPT_FALSE__
 #else
