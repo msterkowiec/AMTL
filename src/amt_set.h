@@ -703,7 +703,7 @@ namespace amt
 			return *((Base*)&m1) >= *((Base*)&m2);
 		}
 
-		__AMT_FORCEINLINE__ iterator find(const T& key)
+		__AMT_NODISCARD__ __AMT_FORCEINLINE__ iterator find(const T& key)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
@@ -712,12 +712,32 @@ namespace amt
 			iterator it(baseIt, this);
 			return it;
 		}
-		__AMT_FORCEINLINE__ const_iterator find(const T& k) const
+		__AMT_NODISCARD__ __AMT_FORCEINLINE__ const_iterator find(const T& k) const
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterReadingThread r(*this);
 			#endif
 			auto baseIt = ((Base*)this)->find(k);
+			iterator it(baseIt, this);
+			return it;
+		}
+		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
+		__AMT_NODISCARD__ iterator find(const K& k)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIt = ((Base*)this)->find<K, _Mycomp>(k);
+			iterator it(baseIt, this);
+			return it;
+		}
+		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
+		__AMT_NODISCARD__ const_iterator find(const K& k) const
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIt = ((Base*)this)->find<K, _Mycomp>(k);
 			iterator it(baseIt, this);
 			return it;
 		}
@@ -863,6 +883,26 @@ namespace amt
 			iterator res(resBase, this);
 			return res;
 		}
+		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
+		__AMT_NODISCARD__ iterator lower_bound(const _Other& _Keyval) 
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIter = ((Base*)this)->lower_bound<_Other, _Mycomp>(_Keyval);
+			iterator it(baseIter, this);
+			return it;
+		}
+		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
+		__AMT_NODISCARD__ const_iterator lower_bound(const _Other& _Keyval) const
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIter = ((Base*)this)->lower_bound<_Other, _Mycomp>(_Keyval);
+			iterator it(baseIter, this);
+			return it;
+		}
 		iterator upper_bound(const T& k)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -881,6 +921,26 @@ namespace amt
 			const_iterator res(resBase, this);
 			return res;
 		}
+		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
+		__AMT_NODISCARD__ iterator upper_bound(const _Other& _Keyval) 
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIter = ((Base*)this)->upper_bound<_Other, _Mycomp>(_Keyval);
+			iterator it(baseIter, this);
+			return it;
+		}
+		template <class _Other, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent>
+		__AMT_NODISCARD__ const_iterator upper_bound(const _Other& _Keyval) const
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto baseIter = ((Base*)this)->upper_bound<_Other, _Mycomp>(_Keyval);
+			iterator it(baseIter, this);
+			return it;
+		}
 		std::pair<const_iterator, const_iterator> equal_range(const T& k) const
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
@@ -897,6 +957,26 @@ namespace amt
 			#endif
 			auto resBase = ((Base*)this)->equal_range(k);
 			std::pair<iterator, iterator> res(iterator(resBase.first, this), iterator(resBase.second, this));
+			return res;
+		}
+		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
+		std::pair<iterator, iterator> equal_range(const K& k)
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto resBase = ((Base*)this)->equal_range<K, _Mycomp>(k);
+			std::pair<iterator, iterator> res(iterator(resBase.first, this), iterator(resBase.second, this));
+			return res;
+		}
+		template< class K, class _Mycomp = key_compare, class = typename _Mycomp::is_transparent >
+		std::pair<const_iterator, const_iterator> equal_range(const K& k) const
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			auto resBase = ((Base*)this)->equal_range<K, _Mycomp>(k);
+			std::pair<const_iterator, const_iterator> res(const_iterator(resBase.first, this), const_iterator(resBase.second, this));
 			return res;
 		}
 
