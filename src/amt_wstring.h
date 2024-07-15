@@ -909,7 +909,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterPartiallyWritingThread r(*this); // potential write when using this version of operator []
 		#endif
-		return ((const Base*)this)->back();
+		return ((Base*)this)->back();
 	}
 	const wchar_t& back() const
 	{
