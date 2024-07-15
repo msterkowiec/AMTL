@@ -558,6 +558,90 @@ private:
 			return ((ITER*)this)->operator*();
 			#endif
 		}	
+
+		IteratorBase operator+(const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			auto baseIter = ((ITER*)this)->operator+(n);
+			IteratorBase resIter(baseIter, m_pStr);
+			return resIter;
+		}
+		IteratorBase operator-(const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			auto baseIter = ((ITER*)this)->operator-(n);
+			IteratorBase resIter(baseIter, m_pStr);
+			return resIter;
+		}
+		IteratorBase& operator+=(const difference_type n) __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			((ITER*)this)->operator+=(n);
+			return *this;
+		}
+		IteratorBase& operator-=(const difference_type n) __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			//AssertNotEnd(); // commented out - allow for some arithmetics on end iterator
+			#endif
+			((ITER*)this)->operator-=(n); 
+			return *this;
+		}
+		difference_type operator-(const IteratorBase& o) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			CRegisterReadingThread r2(o);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			//AssertNotEnd(); // commented out - allow for some arithmetics on end iterator
+			#endif
+			return *((ITER*)this) - *((ITER*)&o);
+		}
+		string& operator[](const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			size_t curIdx = *((ITER*)this) - m_pStr->begin();
+			AMT_CASSERT(curIdx + n < m_pStr->size());
+			#if __AMT_LET_DESTRUCTORS_THROW__ // this macro means we are in UTs... let the UT complete smoothly in this error condition...
+			if (curIdx + n >= m_pStr->size())
+			{
+				static string val{}; // workaround for UTs...
+				return val; 
+			}
+			#endif
+			return ITER::operator[](n);
+		}
+
 	};		
 
 public:
@@ -662,7 +746,7 @@ public:
 			CRegisterWritingThread r2(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 		else
@@ -671,7 +755,7 @@ public:
 			CRegisterWritingThread r(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 	}
@@ -818,7 +902,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		return ((Base*)this)->at(pos);
+		return ((const Base*)this)->at(pos);
 	}
 	char& back()
 	{
@@ -832,7 +916,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->back();
+		return ((const Base*)this)->back();
 	}
 	char& front()
 	{
@@ -846,7 +930,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->front();
+		return ((const Base*)this)->front();
 	}
 	string& append(const string& o)
 	{
@@ -1006,7 +1090,7 @@ public:
 			CRegisterWritingThread r2(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 		else
@@ -1015,7 +1099,7 @@ public:
 			CRegisterWritingThread r(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 	}
@@ -1373,17 +1457,17 @@ public:
 	const char* c_str() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
-		CRegisterPartiallyWritingThread r(*this); // this is highly debatable, but in general c_str() can not only add a terminating null character, but also reallocate buffer, if needed
+		CRegisterReadingThread r(*this); // it is only in older versions of C++ that c_str() could write or even reallocate
 		#endif
-		++m_nCountOperInvalidateIter; // this is highly debatable too
-		return ((Base*)this)->c_str();
+		// ++m_nCountOperInvalidateIter; // commented out (see also the comment above)
+		return ((const Base*)this)->c_str();
 	}
 	const char* data() const noexcept
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->c_str();
+		return ((const Base*)this)->c_str();
 	}
 	size_t copy(char* s, size_t len, size_t pos = 0) const
 	{
@@ -1391,7 +1475,7 @@ public:
 		CRegisterReadingThread r(*this); 
 		#endif
 		++m_nCountOperInvalidateIter;
-		return ((Base*)this)->copy(s, len, pos);
+		return ((const Base*)this)->copy(s, len, pos);
 	}
 	size_t find(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1399,28 +1483,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->find(o, pos);
+		return ((const Base*)this)->find(o, pos);
 	}
 	size_t find(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find(s, pos);
+		return ((const Base*)this)->find(s, pos);
 	}
 	size_t find(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find(s, pos, n);
+		return ((const Base*)this)->find(s, pos, n);
 	}
 	size_t find(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find(c, pos);
+		return ((const Base*)this)->find(c, pos);
 	}
 	size_t rfind(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1428,28 +1512,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->rfind(o, pos);
+		return ((const Base*)this)->rfind(o, pos);
 	}
 	size_t rfind(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->rfind(s, pos);
+		return ((const Base*)this)->rfind(s, pos);
 	}
 	size_t rfind(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->rfind(s, pos, n);
+		return ((const Base*)this)->rfind(s, pos, n);
 	}
 	size_t rfind(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->rfind(c, pos);
+		return ((const Base*)this)->rfind(c, pos);
 	}
 	size_t find_first_of(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1457,28 +1541,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->find_first_of(o, pos);
+		return ((const Base*)this)->find_first_of(o, pos);
 	}
 	size_t find_first_of(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_of(s, pos);
+		return ((const Base*)this)->find_first_of(s, pos);
 	}
 	size_t find_first_of(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_of(s, pos, n);
+		return ((const Base*)this)->find_first_of(s, pos, n);
 	}
 	size_t find_first_of(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_of(c, pos);
+		return ((const Base*)this)->find_first_of(c, pos);
 	}
 	size_t find_last_of(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1486,28 +1570,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->find_last_of(o, pos);
+		return ((const Base*)this)->find_last_of(o, pos);
 	}
 	size_t find_last_of(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_of(s, pos);
+		return ((const Base*)this)->find_last_of(s, pos);
 	}
 	size_t find_last_of(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_of(s, pos, n);
+		return ((const Base*)this)->find_last_of(s, pos, n);
 	}
 	size_t find_last_of(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_of(c, pos);
+		return ((const Base*)this)->find_last_of(c, pos);
 	}
 	size_t find_first_not_of(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1515,28 +1599,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->find_first_not_of(o, pos);
+		return ((const Base*)this)->find_first_not_of(o, pos);
 	}
 	size_t find_first_not_of(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_not_of(s, pos);
+		return ((const Base*)this)->find_first_not_of(s, pos);
 	}
 	size_t find_first_not_of(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_not_of(s, pos, n);
+		return ((const Base*)this)->find_first_not_of(s, pos, n);
 	}
 	size_t find_first_not_of(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_first_not_of(c, pos);
+		return ((const Base*)this)->find_first_not_of(c, pos);
 	}
 	size_t find_last_not_of(const string& o, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
@@ -1544,35 +1628,35 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->find_last_not_of(o, pos);
+		return ((const Base*)this)->find_last_not_of(o, pos);
 	}
 	size_t find_last_not_of(const char* s, size_t pos = 0) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_not_of(s, pos);
+		return ((const Base*)this)->find_last_not_of(s, pos);
 	}
 	size_t find_last_not_of(const char* s, size_t pos, size_type n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_not_of(s, pos, n);
+		return ((const Base*)this)->find_last_not_of(s, pos, n);
 	}
 	size_t find_last_not_of(char c, size_t pos = 0) const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->find_last_not_of(c, pos);
+		return ((const Base*)this)->find_last_not_of(c, pos);
 	}
 	string substr(size_t pos = 0, size_t len = npos) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->substr(pos, len);
+		return ((const Base*)this)->substr(pos, len);
 	}
 	int compare(const string& o) const __AMT_NOEXCEPT__
 	{
@@ -1580,7 +1664,7 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->compare(o);
+		return ((const Base*)this)->compare(o);
 	}
 	int compare(size_t pos, size_t len, const string& o) const
 	{
@@ -1588,7 +1672,7 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->compare(pos, len, o);
+		return ((const Base*)this)->compare(pos, len, o);
 	}
 	int compare(size_t pos, size_t len, const string& o, size_t subpos, size_t sublen) const
 	{
@@ -1596,28 +1680,28 @@ public:
 		CRegisterReadingThread r(*this); 
 		CRegisterReadingThread r2(o);
 		#endif
-		return ((Base*)this)->compare(pos, len, o, subpos, sublen);
+		return ((const Base*)this)->compare(pos, len, o, subpos, sublen);
 	}
 	int compare(const char* s) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->compare(s);
+		return ((const Base*)this)->compare(s);
 	}
 	int compare(size_t pos, size_t len, const char* s) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->compare(pos, len, s);
+		return ((const Base*)this)->compare(pos, len, s);
 	}
 	int compare(size_t pos, size_t len, const char* s, size_t n) const
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->compare(pos, len, s, n);
+		return ((const Base*)this)->compare(pos, len, s, n);
 	}
 
 	// Iterators:
@@ -1635,7 +1719,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->begin();
+		auto resBase = ((const Base*)this)->begin();
 		const_iterator res(resBase, this);
 		return res;
 	}
@@ -1644,7 +1728,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->cbegin();
+		auto resBase = ((const Base*)this)->cbegin();
 		const_iterator res(resBase, this);
 		return res;
 	}
@@ -1662,7 +1746,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->rbegin();
+		auto resBase = ((const Base*)this)->rbegin();
 		const_reverse_iterator res(resBase, this);
 		return res;
 	}
@@ -1671,7 +1755,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->crbegin();
+		auto resBase = ((const Base*)this)->crbegin();
 		const_reverse_iterator res(resBase, this);
 		return res;
 	}
@@ -1689,7 +1773,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->end();
+		auto resBase = ((const Base*)this)->end();
 		const_iterator res(resBase, this);
 		return res;
 	}
@@ -1698,7 +1782,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->cend();
+		auto resBase = ((const Base*)this)->cend();
 		const_iterator res(resBase, this);
 		return res;
 	}
@@ -1716,7 +1800,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->rend();
+		auto resBase = ((const Base*)this)->rend();
 		const_reverse_iterator res(resBase, this);
 		return res;
 	}
@@ -1725,7 +1809,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		auto resBase = ((Base*)this)->crend();
+		auto resBase = ((const Base*)this)->crend();
 		const_reverse_iterator res(resBase, this);
 		return res;
 	}

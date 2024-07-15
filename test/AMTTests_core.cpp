@@ -935,6 +935,10 @@ TEST(__AMT_TEST__, BasicMapTest)
 	amt::map<int, int> map;
 	amt::map<int, int>::const_iterator amtConstIt = map.begin();
 	std::map<int, int>::const_iterator nativeConstIt = map.begin();
+
+	amt::map<int, int> mapInt{{1, 11}, {2, 22}, {3, 33}};
+	auto it = mapInt.erase(mapInt.begin());
+	EXPECT_EQ(it->first, 2);	
 }
 
 template<typename SetType>
@@ -984,6 +988,10 @@ TEST(__AMT_TEST__, BasicSetTest)
 	amt::set<SomeStruct> oset;
 	oset.insert(SomeStruct());
 	EXPECT_EQ(oset.size(), 1);
+
+	amt::set<int> setInt{1,2,3};
+	auto it = setInt.erase(setInt.begin());
+	EXPECT_EQ(*it, 2);
 }
 
 // -------------------------------------------------------
@@ -2544,6 +2552,11 @@ TEST(__AMT_TEST__, AMTWStringBasicTest)
 	auto it = str4.begin();
 	auto itEnd = str4.end();
 	EXPECT_NE(it, itEnd);
+
+	amt::wstring strToCopyToVec(L"YetAnotherString");
+	amt::vector<wchar_t> vecFromString(strToCopyToVec.begin() + 3, strToCopyToVec.begin() + 10);
+	amt::wstring fromVector(&vecFromString[0], vecFromString.size());
+	EXPECT_EQ(fromVector, L"Another");	
 }
 
 TEST(__AMT_TEST__, AMTWStringIteratorValidityTest)
@@ -2695,6 +2708,11 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	auto it = str4.begin();
 	auto itEnd = str4.end();
 	EXPECT_NE(it, itEnd);	
+
+	amt::string strToCopyToVec("YetAnotherString");
+	amt::vector<char> vecFromString(strToCopyToVec.begin() + 3, strToCopyToVec.begin() + 10);
+	amt::string fromVector(&vecFromString[0], vecFromString.size());
+	EXPECT_EQ(fromVector, "Another");
 }
 
 TEST(__AMT_TEST__, AMTStringIteratorValidityTest)

@@ -794,7 +794,7 @@ namespace amt
 			#endif
 		}
 		template< class InputIt, std::enable_if_t<amt::is_iterator<InputIt>::value, int> = 0  >
-		inline vector(InputIt begin, InputIt end, const Alloc& alloc = Alloc()) : Base(static_cast<typename Base::iterator>(begin), static_cast<typename Base::iterator>(end), alloc)
+		inline vector(InputIt begin, InputIt end, const Alloc& alloc = Alloc()) : Base(begin, end, alloc)
 		{			
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			Init();

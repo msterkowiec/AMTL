@@ -750,7 +750,7 @@ namespace amt
 			#endif
 			return ((Base*)this)->count(k);
 		}
-		__AMT_FORCEINLINE__ void erase(iterator it)
+		__AMT_FORCEINLINE__ iterator erase(iterator it)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
@@ -759,7 +759,8 @@ namespace amt
 			it.AssertIsValid(this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			((Base*)this)->erase(it);
+			auto res = ((Base*)this)->erase(it);
+			return iterator(res, this);
 		}
 		__AMT_FORCEINLINE__ size_t erase(const T& key)
 		{
@@ -769,7 +770,7 @@ namespace amt
 			++m_nCountOperInvalidateIter;
 			return ((Base*)this)->erase(key);
 		}
-		__AMT_FORCEINLINE__ void erase(iterator first, iterator last)
+		__AMT_FORCEINLINE__ iterator erase(iterator first, iterator last)
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
 			CRegisterWritingThread r(*this);
@@ -779,7 +780,8 @@ namespace amt
 			last.AssertIsValid(this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			((Base*)this)->erase(first, last);
+			auto res = ((Base*)this)->erase(first, last);
+			return iterator(res, this);
 		}
 
 		__AMT_FORCEINLINE__ void swap(set& o)
