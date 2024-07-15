@@ -1452,7 +1452,7 @@ public:
 		CRegisterWritingThread r(*this);
 		#endif
 		++m_nCountOperInvalidateIter;
-		((const Base*)this)->pop_back();
+		((Base*)this)->pop_back();
 	}
 	const wchar_t* c_str() const __AMT_NOEXCEPT__
 	{
