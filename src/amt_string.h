@@ -1457,9 +1457,9 @@ public:
 	const char* c_str() const __AMT_NOEXCEPT__
 	{
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__				
-		CRegisterPartiallyWritingThread r(*this); // this is highly debatable, but in general c_str() can not only add a terminating null character, but also reallocate buffer, if needed
+		CRegisterReadingThread r(*this); // it is only in older versions of C++ that c_str() could write or even reallocate
 		#endif
-		++m_nCountOperInvalidateIter; // this is highly debatable too
+		// ++m_nCountOperInvalidateIter; // commented out (see also the comment above)
 		return ((Base*)this)->c_str();
 	}
 	const char* data() const noexcept
