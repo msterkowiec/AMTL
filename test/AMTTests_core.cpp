@@ -2544,6 +2544,11 @@ TEST(__AMT_TEST__, AMTWStringBasicTest)
 	auto it = str4.begin();
 	auto itEnd = str4.end();
 	EXPECT_NE(it, itEnd);
+
+	amt::wstring strToCopyToVec(L"YetAnotherString");
+	amt::vector<wchar_t> vecFromString(str.begin() + 3, str.begin() + 10);
+	amt::wstring fromVector(&vecFromString[0], vecFromString.size());
+	EXPECT_EQ(fromVector, L"Another");	
 }
 
 TEST(__AMT_TEST__, AMTWStringIteratorValidityTest)
