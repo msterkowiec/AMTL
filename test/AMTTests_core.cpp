@@ -936,7 +936,7 @@ TEST(__AMT_TEST__, BasicMapTest)
 	amt::map<int, int>::const_iterator amtConstIt = map.begin();
 	std::map<int, int>::const_iterator nativeConstIt = map.begin();
 
-	amt::map<int, int> setInt{{1, 11}, {2, 22}, {3, 33}};
+	amt::map<int, int> mapInt{{1, 11}, {2, 22}, {3, 33}};
 	auto it = mapInt.erase(1);
 	EXPECT_EQ(it->first, 2);	
 }
