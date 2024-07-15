@@ -1,9 +1,7 @@
-//
-// Assertive MultiThreading Library
-//
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2024. Use, modification and
-//  distribution is subject to license (see accompanying file license.txt)
-//
+Assertive MultiThreading Library
+
+Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2024. Use, modification and
+distribution is subject to license (see accompanying file license.txt)
 
 [![CMake-MSVC-2019](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc-2019.yml/badge.svg)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc-2019.yml)
 [![CMake-MSVC-2022](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc-2022.yml/badge.svg)](https://github.com/msterkowiec/AMTL/actions/workflows/cmake-msvc-2022.yml)
