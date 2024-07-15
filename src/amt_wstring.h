@@ -558,6 +558,90 @@ private:
 			return ((ITER*)this)->operator*();
 			#endif
 		}	
+
+		IteratorBase operator+(const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			auto baseIter = ((ITER*)this)->operator+(n);
+			IteratorBase resIter(baseIter, m_pStr);
+			return resIter;
+		}
+		IteratorBase operator-(const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			auto baseIter = ((ITER*)this)->operator-(n);
+			IteratorBase resIter(baseIter, m_pStr);
+			return resIter;
+		}
+		IteratorBase& operator+=(const difference_type n) __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			((ITER*)this)->operator+=(n);
+			return *this;
+		}
+		IteratorBase& operator-=(const difference_type n) __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterWritingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			//AssertNotEnd(); // commented out - allow for some arithmetics on end iterator
+			#endif
+			((ITER*)this)->operator-=(n); 
+			return *this;
+		}
+		difference_type operator-(const IteratorBase& o) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			CRegisterReadingThread r2(o);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			//AssertNotEnd(); // commented out - allow for some arithmetics on end iterator
+			#endif
+			return *((ITER*)this) - *((ITER*)&o);
+		}
+		wstring& operator[](const difference_type n) const __AMT_NOEXCEPT__
+		{
+			#if __AMT_CHECK_SYNC_OF_ACCESS_TO_ITERATORS__
+			CRegisterReadingThread r(*this);
+			#endif
+			#if __AMT_CHECK_ITERATORS_VALIDITY__
+			AssertIsValid();
+			AssertNotEnd();
+			#endif
+			size_t curIdx = *((ITER*)this) - m_pStr->begin();
+			AMT_CASSERT(curIdx + n < m_pStr->size());
+			#if __AMT_LET_DESTRUCTORS_THROW__ // this macro means we are in UTs... let the UT complete smoothly in this error condition...
+			if (curIdx + n >= m_pStr->size())
+			{
+				static wstring val{}; // workaround for UTs...
+				return val; 
+			}
+			#endif
+			return ITER::operator[](n);
+		}
+
 	};		
 
 public:
