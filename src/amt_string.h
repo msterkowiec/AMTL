@@ -746,7 +746,7 @@ public:
 			CRegisterWritingThread r2(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 		else
@@ -755,7 +755,7 @@ public:
 			CRegisterWritingThread r(*this);
 			#endif
 			++m_nCountOperInvalidateIter;
-			*((Base*)this) = *((Base*)&o);
+			*((Base*)this) = *((const Base*)&o);
 			return *this;
 		}
 	}
@@ -902,7 +902,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this);
 		#endif
-		return ((Base*)this)->at(pos);
+		return ((const Base*)this)->at(pos);
 	}
 	char& back()
 	{
@@ -916,7 +916,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->back();
+		return ((const Base*)this)->back();
 	}
 	char& front()
 	{
@@ -930,7 +930,7 @@ public:
 		#if __AMT_CHECK_MULTITHREADED_ISSUES__
 		CRegisterReadingThread r(*this); 
 		#endif
-		return ((Base*)this)->front();
+		return ((const Base*)this)->front();
 	}
 	string& append(const string& o)
 	{
