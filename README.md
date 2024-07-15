@@ -1,7 +1,7 @@
 //
 // Assertive MultiThreading Library
 //
-//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2022. Use, modification and
+//  Copyright Marcin Sterkowiec, Piotr Tracz, 2021-2024. Use, modification and
 //  distribution is subject to license (see accompanying file license.txt)
 //
 
