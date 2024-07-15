@@ -990,7 +990,7 @@ TEST(__AMT_TEST__, BasicSetTest)
 	EXPECT_EQ(oset.size(), 1);
 
 	amt::set<int> setInt{1,2,3};
-	auto it = setInt.erase(1);
+	auto it = setInt.erase(setInt.begin());
 	EXPECT_EQ(*it, 2);
 }
 
