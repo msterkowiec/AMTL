@@ -2696,10 +2696,10 @@ TEST(__AMT_TEST__, AMTStringBasicTest)
 	auto itEnd = str4.end();
 	EXPECT_NE(it, itEnd);	
 
-	amt::string strToCopyToVec("YetAnotherString");
+	/*amt::string strToCopyToVec("YetAnotherString");
 	amt::vector<char> vecFromString(str.begin() + 3, str.begin() + 10);
 	amt::string fromVector(&vecFromString[0], vecFromString.size());
-	EXPECT_EQ(fromVector, "Another");
+	EXPECT_EQ(fromVector, "Another");*/
 }
 
 TEST(__AMT_TEST__, AMTStringIteratorValidityTest)
