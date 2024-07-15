@@ -68,8 +68,6 @@ Currently AMTL may be considered a working POC.
 # To-do, at least:
 - amt::bool + check floating point types
 - customize cassert; e.g. be able to pass ptr to cassert function or force throw instead of displaying assert msg (may be suitable for tests)
-- amt::string
-- iterators of vector
 - completion of code for verification of numeric overflow: a) 64-bit types, b) double/float c) double/float on the right of operators
 - list, deque, queue, array, forward_list, stack, priority_queue, multiset, multimap
 - unordered_map, unordered_set, unordered_multimap, unordered_multiset
