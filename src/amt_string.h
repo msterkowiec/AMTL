@@ -633,7 +633,7 @@ private:
 			size_t curIdx = *((ITER*)this) - m_pStr->begin();
 			AMT_CASSERT(curIdx + n < m_pStr->size());
 			#if __AMT_LET_DESTRUCTORS_THROW__ // this macro means we are in UTs... let the UT complete smoothly in this error condition...
-			if (curIdx + n >= m_pVec->size())
+			if (curIdx + n >= m_pStr->size())
 			{
 				static T val{}; // workaround for UTs...
 				return val; 
