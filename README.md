@@ -92,9 +92,48 @@ It might be worth adding a new keyword (or a context specific token) "wraps", fo
 Requirement: the class/struct X that wraps type T has to have operator T defined (otherwise compilation error should be raised).
 Using keyword/token "wraps" would have the following effect:
 - in case of a conditional operator (?), which is very strict as far as types are concerned (both types have to be the same), usage of a wrapper type (X) should be treated as equivalent of usage of the wrapped type (T)
-- an instance of the wrapper type (X) can be used in a context that requires an implicit cast from type T (in other words: the cast from X to T should not be treated as an implicit cast but both types X and T should be treated as equivalent, whenever an implicit cast from T would be applied by compiler but usage of type X would be illegal); furhter explanation: if the original code (without AMTL) already contains some implicit cast, using an AMTL wrapper class instead of the original class might introduce yet another implicit cast, which would make the code illegal (not compilable; C++ compiler attempts to apply only one implicit cast at a time) - that's why it would be very convenient to make wrapper type equivalent to the original one (without need to use any implicit casts)
+- an instance of the wrapper type (X) can be used in a context that requires an implicit cast from type T (in other words: the cast from X to T should not be treated as an implicit cast but both types X and T should be treated as equivalent, whenever an implicit cast from T would be applied by compiler but usage of type X would be illegal); furhter explanation: if the original code (without AMTL) already contains some implicit cast, using an AMTL wrapper class instead of the original class might introduce yet another implicit cast, which would make the code illegal (not compilable; C++ compiler attempts to apply only one implicit cast at a time) - that's why it would be very convenient to make wrapper type equivalent to the original one (without need to use any implicit casts); see also an example below
 - if class/struct X (wrapper) is used in a bit field and the wrapped type (T) is a fundamental type, the fundamental type has precedence (wrapper is skipped)
+
+Example of implicit cast issue:
+```
+//
+// Uncomment this macro definition to enable AMTL types 
+// (without this def. amt::int32_t falls back to int)
+// 
+// #define __AMTL_ASSERTS_ARE_ON__ 
+//
+
+#include "amtl/amt_pod.h"
+
+class ComplexNum
+{
+	double re, im;
+public:
+	ComplexNum(double re, double im) : re(re), im(im){}
+	ComplexNum(int i) : re(i), im(0.0){}
+
+	const double& Im() const { return im; }
 	
+	static bool HasIm(ComplexNum num)
+	{
+		return num.Im() != 0.0;
+	}
+};
+
+int main()
+{
+	amt::int32_t i = 55;
+	return ComplexNum::HasIm(i); // this line depends on an implicit cast of i to ComplexNum; if we use an int wrapper, we'd have two implicit casts, which is too much for successful compilation
+}
+```
+This code compiles fine (although there is an implicit cast in call to ComplexNum::HasIm(i)) - unless definition of macro __AMTL_ASSERTS_ARE_ON__  is uncommented. 
+As soon as "i" no longer falls back to int, but is a class that wraps int up, the code would require two implicit casts, which is too much for successful compilation. MSVC reports the following compilation error:
+```
+error C2664: 'bool ComplexNum::HasIm(ComplexNum)': cannot convert argument 1 from 'amt::int32_t' to 'ComplexNum'
+```
+After applying AMTL types, manual change is needed, e.g. adding the explicit cast: return ComplexNum::HasIm((int) i);
+
 # Origin
 
 It may be worth adding a few words about project origin. As said, its idea sprang in the middle of April 2021 - during bug fixing of a piece of software that solves chess moremovers (it's been developed "after hours" for quite many years and treated as very well tested - large test suite, "robust", "reliable" etc. etc.)
