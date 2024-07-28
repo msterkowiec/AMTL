@@ -132,7 +132,15 @@ As soon as "i" no longer falls back to int, but is a class that wraps int up, th
 ```
 error C2664: 'bool ComplexNum::HasIm(ComplexNum)': cannot convert argument 1 from 'amt::int32_t' to 'ComplexNum'
 ```
-After applying AMTL types, manual change is needed, e.g. adding the explicit cast: return ComplexNum::HasIm((int) i);
+After applying AMTL types, manual change is needed, e.g. adding the explicit cast, either 
+```
+return ComplexNum::HasIm((int) i);
+```
+or
+```
+return ComplexNum::HasIm((ComplexNum) i);
+```
+Thus, one of the existing implicit casts has to be made explicit in order to compile the code successfully. If we were able to create "an official wrapper class" using a new keyword (e.g. wraps, as proposed above), we would no longer have this issue.
 
 # Origin
 
