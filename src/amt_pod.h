@@ -1291,7 +1291,14 @@ namespace amt
 			CRegisterReadingThread r(*this);
 			#endif
 			return m_val;
-		}		
+		}	
+		inline const volatile T operator ->() const volatile
+		{
+			#if __AMT_CHECK_MULTITHREADED_ISSUES__
+			CRegisterReadingThread r(*this);
+			#endif
+			return m_val;
+		}	
 		inline TypePointedTo& operator *()
 		{
 			#if __AMT_CHECK_MULTITHREADED_ISSUES__
