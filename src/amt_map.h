@@ -377,6 +377,21 @@ namespace amt
 				AMT_CASSERT(m_nPendingWriteRequests == 1);
 				#endif
 			}
+
+			auto base() const
+			{
+				if constexpr (std::is_same<ITER, typename Base::reverse_iterator>::value)
+				{
+					return iterator(ITER::base(), m_pMap);
+				}
+				else if constexpr (std::is_same<ITER, typename Base::const_reverse_iterator>::value)
+				{
+					return const_iterator(ITER::base(), m_pMap);
+				}
+				else
+					static_assert(false, "Cannot use base() for this iterator type");
+			}
+
 			__AMT_FORCEINLINE__ bool IsIteratorValid() const
 			{
 				#if __AMT_CHECK_ITERATORS_VALIDITY__
@@ -1164,3 +1179,5 @@ namespace amt
 #endif
 
 }
+
+
