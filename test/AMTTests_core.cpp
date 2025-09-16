@@ -1023,7 +1023,7 @@ TEST(__AMT_TEST__, TestReverseIteratorBase)
 				EXPECT_EQ(it->second, stdit->second);
 		}
 		++ rit;
-		++ rend;
+		++ stdrit;
 	}
 }
 
@@ -2943,5 +2943,6 @@ int main()
 	return 1;
 }
 #endif
+
 
 
