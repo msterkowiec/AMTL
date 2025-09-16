@@ -1069,7 +1069,7 @@ TEST(__AMT_TEST__, TestReverseIteratorBaseInVector)
 	{
 		auto str = std::to_string(i);
 		vec.push_back(str); 
-		stdVec.insert(str);
+		stdVec.push_back(str);
 	}
 
 	auto rit = vec.rbegin();
@@ -3009,6 +3009,7 @@ int main()
 	return 1;
 }
 #endif
+
 
 
 
