@@ -1016,11 +1016,11 @@ TEST(__AMT_TEST__, TestReverseIteratorBase)
 		auto stdit = stdrit.base();
 		if (it != map.end())
 		{
-			EXPECT_EQ(it->second == stdit->second);
+			EXPECT_EQ(it->second, stdit->second);
 			++ it;
 			++ stdit;
 			if (it != map.end())
-				EXPECT_EQ(it->second == stdit->second);
+				EXPECT_EQ(it->second, stdit->second);
 		}
 		++ rit;
 		++ rend;
@@ -2943,4 +2943,5 @@ int main()
 	return 1;
 }
 #endif
+
 
