@@ -994,6 +994,39 @@ TEST(__AMT_TEST__, BasicSetTest)
 	EXPECT_EQ(*it, 2);
 }
 
+TEST(__AMT_TEST__, TestReverseIteratorBase) 
+{
+	amt::map<size_t, std::string> map;
+	std::map<size_t, std::string> stdMap;
+
+	for (size_t i = 0 ; i < 2048 ; ++ i)
+	{
+		auto str = std::to_string(i);
+		map[i] = str; 
+		stdMap[i] = str;
+	}
+
+	auto rit = map.rbegin();
+	auto stdrit = stdMap.rbegin();
+	while (rit != map.rend() && stdrit != stdMap.rend())
+	{
+		if (rit->second != stdrit->second)
+			EXPECT_TRUE(false);
+		auto it = rit.base();
+		auto stdit = stdrit.base();
+		if (it != map.end())
+		{
+			EXPECT_EQ(it->second == stdit->second);
+			++ it;
+			++ stdit;
+			if (it != map.end())
+				EXPECT_EQ(it->second == stdit->second);
+		}
+		++ rit;
+		++ rend;
+	}
+}
+
 // -------------------------------------------------------
 
 class Employee
@@ -2910,3 +2943,4 @@ int main()
 	return 1;
 }
 #endif
+
