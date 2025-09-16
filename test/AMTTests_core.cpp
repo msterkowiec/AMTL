@@ -1060,6 +1060,39 @@ TEST(__AMT_TEST__, TestReverseIteratorBaseInSet)
 	}
 }
 
+TEST(__AMT_TEST__, TestReverseIteratorBaseInVector) 
+{
+	amt::vector<std::string> vec;
+	std::vector<std::string> stdVec;
+
+	for (size_t i = 0 ; i < 2048 ; ++ i)
+	{
+		auto str = std::to_string(i);
+		vec.push_back(str); 
+		stdVec.insert(str);
+	}
+
+	auto rit = vec.rbegin();
+	auto stdrit = stdVec.rbegin();
+	while (rit != vec.rend() && stdrit != stdVec.rend())
+	{
+		if (*rit != *stdrit)
+			EXPECT_TRUE(false);
+		auto it = rit.base();
+		auto stdit = stdrit.base();
+		if (it != vec.end())
+		{
+			EXPECT_EQ(*it, *stdit);
+			++ it;
+			++ stdit;
+			if (it != vec.end())
+				EXPECT_EQ(*it, *stdit);
+		}
+		++ rit;
+		++ stdrit;
+	}
+}
+
 // -------------------------------------------------------
 
 class Employee
@@ -2976,6 +3009,7 @@ int main()
 	return 1;
 }
 #endif
+
 
 
 
