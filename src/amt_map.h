@@ -389,7 +389,7 @@ namespace amt
 					return const_iterator(ITER::base(), m_pMap);
 				}
 				else
-					static_assert("Cannot use base() for this iterator type", false);
+					static_assert(false, "Cannot use base() for this iterator type");
 			}
 
 			__AMT_FORCEINLINE__ bool IsIteratorValid() const
@@ -1179,4 +1179,5 @@ namespace amt
 #endif
 
 }
+
 
