@@ -994,7 +994,7 @@ TEST(__AMT_TEST__, BasicSetTest)
 	EXPECT_EQ(*it, 2);
 }
 
-TEST(__AMT_TEST__, TestReverseIteratorBase) 
+TEST(__AMT_TEST__, TestReverseIteratorBaseInMap) 
 {
 	amt::map<size_t, std::string> map;
 	std::map<size_t, std::string> stdMap;
@@ -1021,6 +1021,39 @@ TEST(__AMT_TEST__, TestReverseIteratorBase)
 			++ stdit;
 			if (it != map.end())
 				EXPECT_EQ(it->second, stdit->second);
+		}
+		++ rit;
+		++ stdrit;
+	}
+}
+
+TEST(__AMT_TEST__, TestReverseIteratorBaseInSet) 
+{
+	amt::set<std::string> set;
+	std::set<std::string> stdSet;
+
+	for (size_t i = 0 ; i < 2048 ; ++ i)
+	{
+		auto str = std::to_string(i);
+		set.insert(str); 
+		stdSet.insert(str);
+	}
+
+	auto rit = set.rbegin();
+	auto stdrit = stdSet.rbegin();
+	while (rit != set.rend() && stdrit != stdSet.rend())
+	{
+		if (*rit != *stdrit)
+			EXPECT_TRUE(false);
+		auto it = rit.base();
+		auto stdit = stdrit.base();
+		if (it != set.end())
+		{
+			EXPECT_EQ(*it, *stdit);
+			++ it;
+			++ stdit;
+			if (it != set.end())
+				EXPECT_EQ(*it, *stdit);
 		}
 		++ rit;
 		++ stdrit;
@@ -2943,6 +2976,7 @@ int main()
 	return 1;
 }
 #endif
+
 
 
 
