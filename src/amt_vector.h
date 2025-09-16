@@ -507,11 +507,11 @@ namespace amt
 			{
 				if constexpr (std::is_same<ITER, typename Base::reverse_iterator>::value)
 				{
-					return iterator(ITER::base(), m_pSet);
+					return iterator(ITER::base(), m_pVec);
 				}
 				else if constexpr (std::is_same<ITER, typename Base::const_reverse_iterator>::value)
 				{
-					return const_iterator(ITER::base(), m_pSet);
+					return const_iterator(ITER::base(), m_pVec);
 				}
 				else
 					static_assert(false, "Cannot use base() for this iterator type");
@@ -1420,4 +1420,5 @@ namespace amt
 #endif
 
 } // end of namespace amt
+
 
